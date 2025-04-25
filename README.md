@@ -9,12 +9,7 @@ ros2 ws
     ```
 3. Build
     ```bash
-    cd nhk2025b_ros2
-    colcon build
-    ```
-4. Source
-    ```bash
-    source install/setup.bash
+    . colcon_build.sh
     ```
 
 ## Run
