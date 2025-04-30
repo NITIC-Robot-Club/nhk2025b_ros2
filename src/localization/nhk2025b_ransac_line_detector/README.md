@@ -1,2 +1,0 @@
-# nhk2025b_ransac_line_detector
-RANSACアルゴリズムを使用して点群から壁を検出します
