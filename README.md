@@ -6,10 +6,12 @@ ros2のwsです
     - Windowsの場合、WSLでUbuntu22.04をインストール後humbleインストール
     - Dockerが利用可能な場合、VSCodeのDevContainerを使って環境構築可能
 2. リポジトリをクローン
+    もしNHK2025Bを作成していない場合
     ```bash
-    cd ~
-    [ ! -d "NHK2025B " && mkdir NHK2025B]
-    cd NHK2025B
+    mkdir ~/NHK2025B
+    ```
+    ```bash
+    cd ~/NHK2025B
     git clone git@github.com:NITIC-Robot-Club/nhk2025b_ros2.git
     ```
 3. ビルド手順
