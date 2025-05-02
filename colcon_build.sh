@@ -7,6 +7,9 @@ if ! colcon build --symlink-install; then
     exit 1
 fi
 
-source install/setup.bash
-echo "Build succeeded. Source the workspace with:"
+echo "Build succeeded. Source the workspace:"
+echo ""
+echo ""
 echo "source $(pwd)/install/setup.bash"
+echo ""
+echo ""
