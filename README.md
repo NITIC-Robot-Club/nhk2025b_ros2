@@ -6,7 +6,7 @@ ros2のwsです
     - Windowsの場合、WSLでUbuntu22.04をインストール後humbleインストール
     - Dockerが利用可能な場合、VSCodeのDevContainerを使って環境構築可能
 2. リポジトリをクローン
-    もしNHK2025Bを作成していない場合
+    - もしNHK2025Bを作成していない場合
     ```bash
     mkdir ~/NHK2025B
     ```
