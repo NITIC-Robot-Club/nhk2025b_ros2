@@ -129,7 +129,7 @@ namespace ネームスペース名 {
         // rclcpp::Publisher<test_msgs::msg::MyMessage>::SharedPtr pub_;
         // rclcpp::Subscription<test_msgs::msg::MyMessage>::SharedPtr sub_;
         // rclcpp::TimerBase::SharedPtr timer_;
-    }
+    };
 }
 
 #endif//__ノード名_HPP__
