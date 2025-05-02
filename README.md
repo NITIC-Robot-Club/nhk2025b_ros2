@@ -16,8 +16,8 @@ ros2のwsです
     ```
 3. ビルド手順
     ```bash
-    cd NHK2025B/nhk2025b_ros2
-    . colcon_build.sh
+    cd ~/NHK2025B/nhk2025b_ros2
+    ./colcon_build.sh
     ```
 
 ## 開発
