@@ -3,11 +3,13 @@ name: build and test
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  push:
     tags:
       - 'build-test'
+  pull_request:
+    branches: [ main ]
+    tags:
+      - 'build-test'
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
 
