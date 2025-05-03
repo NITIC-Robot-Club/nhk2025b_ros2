@@ -1,0 +1,2 @@
+# nhk2025b_map_publisher
+マップデータを公開します

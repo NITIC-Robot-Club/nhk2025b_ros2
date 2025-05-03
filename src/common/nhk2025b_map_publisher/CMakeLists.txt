@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(nhk2025b_behavior)
+project(nhk2025b_map_publisher)
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
