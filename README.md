@@ -132,15 +132,15 @@ namespace ネームスペース名 {
 #endif//__ノード名_HPP__
 ```
 
-### src/ノード名.hpp
+### src/ノード名.cpp
 ```cpp
 #include "パッケージ名/ノード名.hpp"
 
 namespace ネームスペース名 {
     クラス名::クラス名(const rclcpp::NodeOptions & options)
         : Node("ノード名",options) {
-            // pub = this->create_publisher<test_msgs::msg::MyMessage>("topic名", 10);
-            // sub_ = this->create_subscription<test_msgs::msgMyMessage>("topic名", 10, std::bind(&クラス名::関数名, this, std::placeholders::_1));
+            // pub_ = this->create_publisher<test_msgs::msg::MyMessage>("topic名", 10);
+            // sub_ = this->create_subscription<test_msgs::msg::MyMessage>("topic名", 10, std::bind(&クラス名::関数名, this, std::placeholders::_1));
             // timer_ = this->create_wall_timer(std::chrono::milliseconds(周期), std::bind(&クラス名::関数名, this));
         }
 
