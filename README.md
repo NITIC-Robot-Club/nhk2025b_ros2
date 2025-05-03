@@ -73,6 +73,8 @@ ros2のwsです
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>ーーー依存ーーー</depend>
 
   <export>
@@ -121,34 +123,34 @@ namespace ネームスペース名 {
         クラス名(const rclcpp::NodeOptions & options);
     private:
         // コールバック関数とか変数とか
-        // void test_callback(const test_msgs::msg::MyMessage::SharedPtr msg);
-        // void timer_callback();
-        // rclcpp::Publisher<test_msgs::msg::MyMessage>::SharedPtr pub_;
-        // rclcpp::Subscription<test_msgs::msg::MyMessage>::SharedPtr sub_;
-        // rclcpp::TimerBase::SharedPtr timer_;
+        // void 受信時に呼び出す関数名(const test_msgs::msg::MyMessage::SharedPtr msg);
+        // void タイマーで呼び出す関数名();
+        // rclcpp::Publisher<test_msgs::msg::MyMessage>::SharedPtr パブリッシャー;
+        // rclcpp::Subscription<test_msgs::msg::MyMessage>::SharedPtr サブスクライバー;
+        // rclcpp::TimerBase::SharedPtr タイマー;
     };
 }
 
 #endif//__ノード名_HPP__
 ```
 
-### src/ノード名.hpp
+### src/ノード名.cpp
 ```cpp
 #include "パッケージ名/ノード名.hpp"
 
 namespace ネームスペース名 {
     クラス名::クラス名(const rclcpp::NodeOptions & options)
         : Node("ノード名",options) {
-            // pub = this->create_publisher<test_msgs::msg::MyMessage>("topic名", 10);
-            // sub_ = this->create_subscription<test_msgs::msgMyMessage>("topic名", 10, std::bind(&クラス名::関数名, this, std::placeholders::_1));
-            // timer_ = this->create_wall_timer(std::chrono::milliseconds(周期), std::bind(&クラス名::関数名, this));
+            // パブリッシャー = this->create_publisher<test_msgs::msg::MyMessage>("topic名", 10);
+            // サブスクライバー = this->create_subscription<test_msgs::msg::MyMessage>("topic名", 10, std::bind(&クラス名::受信時に呼び出す関数名, this, std::placeholders::_1));
+            // タイマー = this->create_wall_timer(std::chrono::milliseconds(周期), std::bind(&クラス名::タイマーで呼び出す関数名, this));
         }
 
-        // void クラス名::test_callback(const test_msgs::msg::MyMessage::SharedPtr msg) {
+        // void クラス名::受信時に呼び出す関数名(const test_msgs::msg::MyMessage::SharedPtr msg) {
         //     msg->test のように->を使って情報にアクセス
         // }
 
-        // void timer_callback() {
+        // void タイマーで呼び出す関数名() {
         //     定期的に実行
         // }
 }
