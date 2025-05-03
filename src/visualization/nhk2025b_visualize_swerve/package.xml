@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>nhk2025b_visualize_swerve</name>
+  <version>0.0.1</version>
+  <description>ステアの状態をrvizで表示する</description>
+  <maintainer email="lyco256@gmail.com">Lyco256</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>visualization_msgs</depend>
+  <depend>nhk2025b_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
