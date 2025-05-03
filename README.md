@@ -36,14 +36,11 @@ ros2のwsです
     - そのバグはどのような状況で再現できるか
     - どんな修正を含むのか
 3. ローカルで新しくブランチを作成
-    - ブランチ名はIssue番号を使う
-    - 例
-        - feat/#0_nhk2025b_newpackage
-        - feat/#1_nhk2025b_newpackage_add_new_feat
-        - fix/#2_nhk2025b_newpackage_fix_zero_division
-    - コマンド
+    - Issueを開き、右下のDevelopmentの`create branch`を押して自動生成する
+    - この操作により、リモートリポジトリに新しいブランチが作成されます
+    - 表示されたコマンドをローカルで実行して、新しいブランチをチェックアウトしてください
         ```bash
-        git branch ブランチ名
+        git fetch origin
         git checkout ブランチ名
         ```
 4. 変更を加える
