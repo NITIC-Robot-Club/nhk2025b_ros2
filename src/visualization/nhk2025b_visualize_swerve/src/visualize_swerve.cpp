@@ -10,8 +10,8 @@ namespace visualize_swerve {
     }
 
     void visualize_swerve::swerve_callback(const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
-        wheel_position = this->get_parameter("wheel_position").as_double();
-        wheel_radius = this->get_parameter("wheel_radius").as_double();
+        wheel_position = static_cast<float>(this->get_parameter("wheel_position").as_double());
+        wheel_radius = static_cast<float>(this->get_parameter("wheel_radius").as_double());
         float wheel_positions[4][2] = {
             {+ wheel_position, + wheel_position},
             {- wheel_position, + wheel_position},
