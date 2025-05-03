@@ -38,6 +38,10 @@ ros2のwsです
 3. ローカルで新しくブランチを作成
     - Issueを開き、右下のDevelopmentの`create branch`を押して自動生成する
     - 表示されたコマンドを実行してcheckoutする
+        ```bash
+        git fetch origin
+        git checkout ブランチ名
+        ```
 4. 変更を加える
     - コミットメッセージは最終的にはまとめられるが、わかりやすいものがいい
     - コミットメッセージに規則はない
