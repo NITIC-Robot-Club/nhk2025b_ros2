@@ -10,6 +10,7 @@ namespace map_publisher {
         map_publisher(const rclcpp::NodeOptions & options);
     private:
         float resolution_;
+        bool is_red;
         void publish_map();
         rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr publisher_;
         rclcpp::TimerBase::SharedPtr timer_;

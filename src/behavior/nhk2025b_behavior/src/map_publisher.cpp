@@ -7,17 +7,19 @@ namespace map_publisher {
         publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/behavior/map", 10);
         timer_ = this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&map_publisher::publish_map, this));
         resolution_ = this->declare_parameter<float>("resolution", 0.05); // 5cm
+        is_red = this->declare_parameter<bool>("is_red", false);
         RCLCPP_INFO(this->get_logger(), "Map publisher initialized with resolution: %f", resolution_);
     }
 
     void map_publisher::publish_map() {
         nav_msgs::msg::OccupancyGrid map;
         resolution_ = this->get_parameter("resolution").as_double();
+        is_red = this->get_parameter("is_red").as_bool();
         map.header.stamp = this->now();
         map.header.frame_id = "map";
         map.info.resolution = resolution_;  // m
-        map.info.width = 10.5 / resolution_; // 10m
-        map.info.height = 5.25 / resolution_;  // 5m
+        map.info.width = 10.8 / resolution_; // 10m
+        map.info.height = 5.4 / resolution_;  // 5m
         map.info.origin.position.x = 0.0;
         map.info.origin.position.y = 0.0;
         map.info.origin.position.z = 0.0;
@@ -40,6 +42,26 @@ namespace map_publisher {
         }
 
         // 左右の壁
+        if(is_red) {
+            // (0,5.25)~(10.8,5.4)
+            for (int i = 0; i < map.info.width; ++i) {
+                for (int j = 0; j < map.info.height; ++j) {
+                    if (j > 5.25 / resolution_) {
+                        map.data[i + j * map.info.width] = 100;
+                    }
+                }
+            }
+        } else {
+            // (0,0)~(10.8, 0.015)
+            for (int i = 0; i < map.info.width; ++i) {
+                for (int j = 0; j < map.info.height; ++j) {
+                    if (j < 0.015 / resolution_) {
+                        map.data[i + j * map.info.width] = 100;
+                    }
+                }
+            }
+        }
+
         publisher_->publish(map);
     }
 }
