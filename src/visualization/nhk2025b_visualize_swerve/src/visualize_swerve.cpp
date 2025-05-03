@@ -8,14 +8,6 @@ namespace visualize_swerve {
     }
 
     void visualize_swerve::swerve_callback(const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
-        // RCLCPP_INFO(this->get_logger(),"received message: %f,%f %f,%f %f,%f %f,%f",
-        //     msg->wheel_angle[0], msg->wheel_speed[0],
-        //     msg->wheel_angle[1], msg->wheel_speed[1],
-        //     msg->wheel_angle[2], msg->wheel_speed[2],
-        //     msg->wheel_angle[3], msg->wheel_speed[3]
-        // );
-
-
         visualization_msgs::msg::MarkerArray marker_array_;
         for(int i = 0; i < 4; i++) {
             visualization_msgs::msg::Marker marker;
