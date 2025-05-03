@@ -9,6 +9,7 @@
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>visualization_msgs</depend>
   <depend>nhk2025b_msgs</depend>
 

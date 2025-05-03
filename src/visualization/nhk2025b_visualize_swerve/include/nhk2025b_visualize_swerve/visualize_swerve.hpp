@@ -10,9 +10,18 @@ namespace visualize_swerve {
     public:
         visualize_swerve(const rclcpp::NodeOptions & options);
     private:
+        const float wheel_position = 0.622;
+        const float wheel_positions[4][2] = {
+            {+ wheel_position, + wheel_position},
+            {- wheel_position, + wheel_position},
+            {- wheel_position, - wheel_position},
+            {+ wheel_position, - wheel_position}
+        };
+        const float wheel_radius = 0.062;
+        float last_angle[4];
         void swerve_callback(const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
-        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_;
-        rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr sub_;
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
+        rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr swerve_subscriber_;
     };
 }
 
