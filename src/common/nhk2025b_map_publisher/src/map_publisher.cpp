@@ -1,5 +1,5 @@
 
-#include "nhk2025b_behavior/map_publisher.hpp"
+#include "nhk2025b_map_publisher/map_publisher.hpp"
 
 namespace map_publisher {
     map_publisher::map_publisher(const rclcpp::NodeOptions & options)
