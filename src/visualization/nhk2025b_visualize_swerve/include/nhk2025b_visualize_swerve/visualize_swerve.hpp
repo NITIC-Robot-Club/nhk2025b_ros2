@@ -10,14 +10,8 @@ namespace visualize_swerve {
     public:
         visualize_swerve(const rclcpp::NodeOptions & options);
     private:
-        const float wheel_position = 0.622;
-        const float wheel_positions[4][2] = {
-            {+ wheel_position, + wheel_position},
-            {- wheel_position, + wheel_position},
-            {- wheel_position, - wheel_position},
-            {+ wheel_position, - wheel_position}
-        };
-        const float wheel_radius = 0.062;
+        float wheel_position;
+        float wheel_radius;
         float last_angle[4];
         void swerve_callback(const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
