@@ -36,16 +36,8 @@ ros2のwsです
     - そのバグはどのような状況で再現できるか
     - どんな修正を含むのか
 3. ローカルで新しくブランチを作成
-    - ブランチ名はIssue番号を使う
-    - 例
-        - feat/#0_nhk2025b_newpackage
-        - feat/#1_nhk2025b_newpackage_add_new_feat
-        - fix/#2_nhk2025b_newpackage_fix_zero_division
-    - コマンド
-        ```bash
-        git branch ブランチ名
-        git checkout ブランチ名
-        ```
+    - Issueを開き、右下のDevelopmentの`create branch`を押して自動生成する
+    - 表示されたコマンドを実行してcheckoutする
 4. 変更を加える
     - コミットメッセージは最終的にはまとめられるが、わかりやすいものがいい
     - コミットメッセージに規則はない
