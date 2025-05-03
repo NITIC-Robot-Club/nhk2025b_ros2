@@ -2,10 +2,12 @@ name: build and test
 
 on:
   push:
-    branches: [ main, 28-feat-add-build-test-actions ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
+  push:
+    tags:
+      - 'build-test'
   schedule:
     - cron: '0 0 * * *'
 
