@@ -63,7 +63,7 @@ jobs:
       - name: Run clang-format (auto-fix)
         working-directory: nhk2025b_ros2
         run: |
-          find . -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
+          find src -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
 
       - name: Run clang-tidy (auto-fix)
         working-directory: nhk2025b_ros2
