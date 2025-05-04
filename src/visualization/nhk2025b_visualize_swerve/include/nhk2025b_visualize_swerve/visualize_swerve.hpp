@@ -6,8 +6,7 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 
 namespace visualize_swerve {
-class visualize_swerve : public rclcpp::Node
-{
+class visualize_swerve : public rclcpp::Node {
    public:
     visualize_swerve (const rclcpp::NodeOptions& options);
 

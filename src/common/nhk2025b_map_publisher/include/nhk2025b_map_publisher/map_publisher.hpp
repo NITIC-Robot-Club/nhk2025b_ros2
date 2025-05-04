@@ -6,16 +6,15 @@
 #include <std_msgs/msg/bool.hpp>
 
 namespace map_publisher {
-class map_publisher : public rclcpp::Node
-{
+class map_publisher : public rclcpp::Node {
    public:
     map_publisher (const rclcpp::NodeOptions& options);
 
    private:
-    void publish_map ();
-    bool is_red;
+    void  publish_map ();
+    bool  is_red;
     float resolution_;
-    
+
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr publisher_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr       team_color_subsctiber_;
     rclcpp::TimerBase::SharedPtr                               timer_;
