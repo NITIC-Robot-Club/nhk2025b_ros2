@@ -1,4 +1,4 @@
-name: Clang Auto Fix in ROS 2 Container
+name: c++ style auto fix
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
       - name: Build for compile_commands.json
         working-directory: nhk2025b_ros2
         run: |
-          colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --continue-on-error
 
       - name: Link compile_commands.json
         working-directory: nhk2025b_ros2
