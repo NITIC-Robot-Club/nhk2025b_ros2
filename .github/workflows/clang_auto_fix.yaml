@@ -18,6 +18,9 @@ on:
 
 jobs:
   auto_fix:
+    permissions:
+      contents: write
+
     strategy:
       matrix:
         os: 
@@ -58,7 +61,7 @@ jobs:
   
       - name: Link compile_commands.json
         working-directory: nhk2025b_ros2
-        run: ln -sf build/compile_commands.json .
+        run: ln -sf src/compile_commands.json .
 
       - name: Run clang-format (auto-fix)
         working-directory: nhk2025b_ros2
