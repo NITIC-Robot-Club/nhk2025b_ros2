@@ -2,10 +2,13 @@ name: c++ style auto fix and colcon build
 
 on:
   push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
+
 jobs:
-  auto_fix:
+  auto_fix_and_build:
     permissions:
       contents: write
 
@@ -32,9 +35,9 @@ jobs:
         run: |
           rosdep update
           apt-get update
-          apt-get install -y curl gnupg lsb-release
-          apt-get install -y clang clang-tidy clang-format git python3-colcon-common-extensions
-          apt-get install -y build-essential cmake
+          apt-get install -y curl lsb-release
+          apt-get install -y clang clang-tidy clang-format
+          apt-get install -y cmake
           rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
 
       - name: Install diagnostic-updater
