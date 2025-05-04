@@ -20,8 +20,10 @@ jobs:
   auto_fix:
     strategy:
       matrix:
-        os: [ubuntu-22.04]
-        rosdistro: [humble]
+        os: 
+          - ubuntu-22.04
+        rosdistro: 
+          - humble
 
     runs-on: ubuntu-latest
 
@@ -42,7 +44,7 @@ jobs:
           apt-get install -y clang clang-tidy clang-format git python3-colcon-common-extensions
           apt-get install -y build-essential cmake
           rosdep update
-          rosdep install --from-path . -i -y --rosdistro ${{ matrix.rosdistro }}
+          rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
 
       - name: Install diagnostic-updater
         working-directory: nhk2025b_ros2
