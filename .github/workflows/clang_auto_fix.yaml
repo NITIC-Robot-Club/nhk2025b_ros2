@@ -37,12 +37,16 @@ jobs:
       - name: Install dependencies
         working-directory: nhk2025b_ros2
         run: |
-          apt-get update && apt-get install -y sudo
-          sudo apt install -y curl gnupg lsb-release
-          sudo apt install -y clang clang-tidy clang-format git python3-colcon-common-extensions
-          sudo apt install -y build-essential cmake
+          apt-get update
+          apt-get install -y curl gnupg lsb-release
+          apt-get install -y clang clang-tidy clang-format git python3-colcon-common-extensions
+          apt-get install -y build-essential cmake
           rosdep update
           rosdep install --from-path . -i -y --rosdistro ${{ matrix.rosdistro }}
+
+      - name: Install diagnostic-updater
+        working-directory: nhk2025b_ros2
+        run: apt-get install ros-${{ matrix.rosdistro }}-diagnostic-updater
 
       - name: Build for compile_commands.json
         working-directory: nhk2025b_ros2
