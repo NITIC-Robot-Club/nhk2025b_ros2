@@ -14,7 +14,8 @@ class map_publisher : public rclcpp::Node
    private:
     void publish_map ();
     bool is_red;
-
+    float resolution_;
+    
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr publisher_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr       team_color_subsctiber_;
     rclcpp::TimerBase::SharedPtr                               timer_;
