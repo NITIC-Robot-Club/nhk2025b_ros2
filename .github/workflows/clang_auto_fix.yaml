@@ -53,32 +53,32 @@ jobs:
       - name: Build for compile_commands.json
         working-directory: nhk2025b_ros2
         run: |
-          colcon build
+          . /opt/ros/${{ matrix.rosdistro }}/setup.sh && 
+          colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --continue-on-error
+  
+      - name: Link compile_commands.json
+        working-directory: nhk2025b_ros2
+        run: ln -sf build/compile_commands.json .
 
-      # colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --continue-on-error
-      # - name: Link compile_commands.json
-      #   working-directory: nhk2025b_ros2
-      #   run: ln -sf build/compile_commands.json .
+      - name: Run clang-format (auto-fix)
+        working-directory: nhk2025b_ros2
+        run: |
+          find . -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
 
-      # - name: Run clang-format (auto-fix)
-      #   working-directory: nhk2025b_ros2
-      #   run: |
-      #     find . -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
+      - name: Run clang-tidy (auto-fix)
+        working-directory: nhk2025b_ros2
+        run: |
+          run-clang-tidy -p build -fix -quiet || true
 
-      # - name: Run clang-tidy (auto-fix)
-      #   working-directory: nhk2025b_ros2
-      #   run: |
-      #     run-clang-tidy -p build -fix -quiet || true
-
-      # - name: Commit and push changes
-      #   working-directory: nhk2025b_ros2
-      #   run: |
-      #     git config --global user.name "github-actions"
-      #     git config --global user.email "actions@github.com"
-      #     git add .
-      #     if git diff --cached --quiet; then
-      #       echo "No changes to commit."
-      #     else
-      #       git commit -m "Auto-fix: applied clang-format and clang-tidy"
-      #       git push
-      #     fi
+      - name: Commit and push changes
+        working-directory: nhk2025b_ros2
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-fix: applied clang-format and clang-tidy"
+            git push
+          fi
