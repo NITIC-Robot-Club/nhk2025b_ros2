@@ -1,27 +1,27 @@
-Language: Cpp
-BasedOnStyle: Google
-ColumnLimit: 150
-IndentWidth: 4
+Language: Cpp                               # C++
+BasedOnStyle: Google                        # Googleの思想
+ColumnLimit: 150                            # 1行の最大文字数
+IndentWidth: 4                              # インデント幅
 
-SpaceBeforeParens: Always               # () の前にスペース
-AlignAfterOpenBracket: AlwaysBreak      # 引数リストのカンマを改行する
-AlignArrayOfStructures: Right           # 構造体の配列を右揃え
-AlignConsecutiveAssignments: true       # 連続する代入を揃える
-AlignConsecutiveDeclarations: true      # 連続する宣言を揃える
-AlignEscapedNewlines: Left              # エスケープされた改行を左揃え
-AlignTrailingComments: true             # コメントを揃える
-AllowShortEnumsOnASingleLine: false     # enumを改行
-AllowShortFunctionsOnASingleLine: Empty # 短い関数を一行にしない
+SpaceBeforeParens: Always                   # () の前にスペース
+AlignAfterOpenBracket: AlwaysBreak          # 引数リストのカンマを改行する
+AlignArrayOfStructures: Right               # 構造体の配列を右揃え
+AlignConsecutiveAssignments: true           # 連続する代入を揃える
+AlignConsecutiveDeclarations: true          # 連続する宣言を揃える
+AlignEscapedNewlines: Left                  # エスケープされた改行を左揃え
+AlignTrailingComments: true                 # コメントを揃える
+AllowShortEnumsOnASingleLine: false         # enumを改行
+AllowShortFunctionsOnASingleLine: Empty     # 短い関数を一行にしない
 BraceWrapping:
-  AfterClass: true                      # classの後
-  AfterControlStatement: false          # 制御文の後
-  AfterEnum: true                       # enumの後
-  AfterFunction: true                   # 関数の後
-  AfterStruct: true                     # structの後
-  AfterUnion: true                      # unionの後
-  AfterExternBlock: false               # externの後
-  BeforeCatch: false                    # catchの前
-  BeforeElse: false                     # elseの前
-BreakBeforeBraces: Custom               # "{ }"の位置をカスタム設定する
-PointerAlignment: Right                 # ポインターの"*"、"&"は変数宣言の左に記述する
-AllowShortCaseLabelsOnASingleLine: false# case文を改行
+  AfterClass: true                          # classの後
+  AfterControlStatement: false              # 制御文の後
+  AfterEnum: true                           # enumの後
+  AfterFunction: true                       # 関数の後
+  AfterStruct: true                         # structの後
+  AfterUnion: true                          # unionの後
+  AfterExternBlock: false                   # externの後
+  BeforeCatch: false                        # catchの前
+  BeforeElse: false                         # elseの前
+BreakBeforeBraces: Custom                   # "{ }"の位置をカスタム設定する
+PointerAlignment: Right                     # ポインターの"*"、"&"は変数宣言の左に記述する
+AllowShortCaseLabelsOnASingleLine: false    # case文を改行
