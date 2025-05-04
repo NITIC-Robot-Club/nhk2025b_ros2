@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'run_build'
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 
 jobs:
@@ -25,6 +24,10 @@ jobs:
 
     container:
       image: ros:${{ matrix.rosdistro }}-ros-base
+
+    if: |
+      (githhub.event_name == 'labeled' && github.event.label.name == 'run_build') ||
+      (github.event_name != 'labeled')
 
     steps:
       - name: Check out repository
