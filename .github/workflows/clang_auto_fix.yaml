@@ -1,0 +1,78 @@
+name: Clang Auto Fix in ROS 2 Container
+
+on:
+  push:
+    paths:
+      - '**/*.cpp'
+      - '**/*.hpp'
+      - '**/*.h'
+      - '.clang-format'
+      - '.clang-tidy'
+  pull_request:
+    paths:
+      - '**/*.cpp'
+      - '**/*.hpp'
+      - '**/*.h'
+      - '.clang-format'
+      - '.clang-tidy'
+
+jobs:
+  auto_fix:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        rosdistro: [humble]
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: ros:${{ matrix.rosdistro }}-ros-base
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          path: nhk2025b_ros2
+
+      - name: Install dependencies
+        working-directory: nhk2025b_ros2
+        run: |
+          apt-get update && apt-get install -y sudo
+          sudo apt update
+          sudo apt install -y curl gnupg lsb-release
+          sudo apt install -y clang clang-tidy clang-format git python3-colcon-common-extensions
+          sudo apt install -y build-essential cmake
+          rosdep update
+          rosdep install --from-path . -i -y --rosdistro ${{ matrix.rosdistro }}
+
+      - name: Build for compile_commands.json
+        working-directory: nhk2025b_ros2
+        run: |
+          colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Link compile_commands.json
+        working-directory: nhk2025b_ros2
+        run: ln -sf build/compile_commands.json .
+
+      - name: Run clang-format (auto-fix)
+        working-directory: nhk2025b_ros2
+        run: |
+          find . -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
+
+      - name: Run clang-tidy (auto-fix)
+        working-directory: nhk2025b_ros2
+        run: |
+          run-clang-tidy -p build -fix -quiet || true
+
+      - name: Commit and push changes
+        working-directory: nhk2025b_ros2
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-fix: applied clang-format and clang-tidy"
+            git push
+          fi

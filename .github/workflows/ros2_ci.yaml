@@ -34,16 +34,19 @@ jobs:
           path: nhk2025b_ros2
 
       - name: Install dependencies
+        working-directory: nhk2025b_ros2
         run: |
           rosdep update && 
           apt-get update && 
           rosdep install --from-path . -i -y --rosdistro ${{ matrix.rosdistro }}
 
       - name: Install diagnostic-updater
+        working-directory: nhk2025b_ros2
         run: apt-get install ros-${{ matrix.rosdistro }}-diagnostic-updater
 
       - name: Build tests
         id: build_test
+        working-directory: nhk2025b_ros2
         run: |
           . /opt/ros/${{ matrix.rosdistro }}/setup.sh && 
           colcon build
