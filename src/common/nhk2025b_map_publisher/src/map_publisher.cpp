@@ -25,7 +25,7 @@ void map_publisher::publish_map ()
     map.info.origin.position.z               = 0.0;
     map.info.origin.orientation.w            = 1.0;
     map.data.resize (map.info.width * map.info.height, -1);
-    
+
     for (int i = 0; i < map.info.width; ++i) {
         for (int j = 0; j < map.info.height; ++j) {
             map.data[i + j * map.info.width] = 0;
