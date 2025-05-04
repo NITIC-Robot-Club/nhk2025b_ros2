@@ -22,19 +22,10 @@ void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::Shared
     visualization_msgs::msg::MarkerArray marker_array_;
     for (int i = 0; i < 4; i++) {
         visualization_msgs::msg::Marker marker;
-        marker.header.frame_id    = "base_link";
-        marker.header.stamp       = this->now ();
         marker.ns                 = "swerve";
         marker.id                 = i;
         marker.type               = visualization_msgs::msg::Marker::ARROW;
         marker.action             = visualization_msgs::msg::Marker::ADD;
-        marker.pose.position.x    = wheel_positions[i][0];
-        marker.pose.position.y    = wheel_positions[i][1];
-        marker.pose.position.z    = 0.0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = sin (msg->wheel_angle[i] / 2.);
-        marker.pose.orientation.w = cos (msg->wheel_angle[i] / 2.);
         marker.scale.x            = wheel_radius + msg->wheel_speed[i];
         marker.scale.y            = wheel_radius;
         marker.scale.z            = wheel_radius;
@@ -42,16 +33,28 @@ void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::Shared
         marker.color.g            = 1.0;
         marker.color.b            = 0.0;
         marker.color.a            = 1.0;
+        
         marker.lifetime           = rclcpp::Duration (0, 0);
+        marker.header.stamp       = this->now ();
+        marker.header.frame_id    = "base_link";
+        marker.pose.position.x    = wheel_positions[i][0];
+        marker.pose.position.y    = wheel_positions[i][1];
+        marker.pose.position.z    = 0.0;
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = sin (msg->wheel_angle[i] / 2.);
+        marker.pose.orientation.w = cos (msg->wheel_angle[i] / 2.);
         marker_array_.markers.push_back (marker);
 
         visualization_msgs::msg::Marker text;
-        text.header.frame_id    = "base_link";
-        text.header.stamp       = this->now ();
         text.ns                 = "swerve_angle_text";
         text.id                 = i;
         text.type               = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
         text.action             = visualization_msgs::msg::Marker::ADD;
+        text.text               = std::to_string (msg->wheel_angle[i] / M_PI) + "pi";
+
+        text.header.frame_id    = "base_link";
+        text.header.stamp       = this->now ();
         text.pose.position.x    = wheel_positions[i][0];
         text.pose.position.y    = wheel_positions[i][1];
         text.pose.position.z    = 0.3;
@@ -60,7 +63,6 @@ void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::Shared
         text.pose.orientation.z = 0.0;
         text.pose.orientation.w = 1.0;
         text.scale.z            = 0.05;
-        text.text               = std::to_string (msg->wheel_angle[i] / M_PI) + "pi";
         if (abs (msg->wheel_angle[i] - last_angle[i]) > M_PI) {
             text.color.r = 1.0;
             text.color.g = 0.0;

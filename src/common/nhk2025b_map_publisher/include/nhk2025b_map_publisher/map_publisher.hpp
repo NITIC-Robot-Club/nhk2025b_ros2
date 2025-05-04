@@ -1,5 +1,5 @@
-#ifndef __map_publisher_HPP__
-#define __map_publisher_HPP__
+#ifndef __map_publisher_hpp__
+#define __map_publisher_hpp__
 
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -21,4 +21,4 @@ class map_publisher : public rclcpp::Node {
 };
 }  // namespace map_publisher
 
-#endif  //__map_publisher_HPP__
+#endif  //__map_publisher_hpp__

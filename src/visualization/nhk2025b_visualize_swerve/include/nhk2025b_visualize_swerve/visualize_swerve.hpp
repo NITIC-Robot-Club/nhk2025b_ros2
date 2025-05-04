@@ -1,5 +1,5 @@
-#ifndef __visualize_swerve_HPP__
-#define __visualize_swerve_HPP__
+#ifndef __visualize_swerve_hpp__
+#define __visualize_swerve_hpp__
 
 #include <nhk2025b_msgs/msg/swerve.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -21,4 +21,4 @@ class visualize_swerve : public rclcpp::Node {
 };
 }  // namespace visualize_swerve
 
-#endif  //__visualize_swerve_HPP__
+#endif  //__visualize_swerve_hpp__
