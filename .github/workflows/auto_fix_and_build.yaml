@@ -26,7 +26,7 @@ jobs:
       image: ros:${{ matrix.rosdistro }}-ros-base
 
     if: |
-      (githhub.event_name == 'labeled' && github.event.label.name == 'run_build') ||
+      (github.event_name == 'labeled' && github.event.label.name == 'run_build') ||
       (github.event_name != 'labeled')
 
     steps:
