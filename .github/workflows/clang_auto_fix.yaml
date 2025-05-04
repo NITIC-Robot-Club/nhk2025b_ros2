@@ -39,12 +39,12 @@ jobs:
       - name: Install dependencies
         working-directory: nhk2025b_ros2
         run: |
+          rosdep update
           apt-get update
           apt-get install -y curl gnupg lsb-release
           apt-get install -y clang clang-tidy clang-format git python3-colcon-common-extensions
           apt-get install -y build-essential cmake
-          rosdep update
-          rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
+          rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }} -v
 
       - name: Install diagnostic-updater
         working-directory: nhk2025b_ros2
