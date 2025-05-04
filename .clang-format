@@ -1,0 +1,7 @@
+Language: Cpp
+BasedOnStyle: Google
+ColumnLimit: 100
+IndentWidth: 4
+
+SpaceBeforeParens: Always               # () の前にスペース
+BreakBeforeBraces: Attach               # { を改行しない（関数やクラス定義で）
