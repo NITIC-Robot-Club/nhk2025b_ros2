@@ -45,10 +45,6 @@ jobs:
           apt-get install -y cmake
           rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
 
-      - name: Install diagnostic-updater
-        working-directory: nhk2025b_ros2
-        run: apt-get install ros-${{ matrix.rosdistro }}-diagnostic-updater
-
       - name: Run clang-format (auto-fix)
         working-directory: nhk2025b_ros2
         run: |
@@ -61,7 +57,6 @@ jobs:
           git config --global user.email "actions@github.com"
           git fetch origin
           git checkout ${{ github.head_ref }}
-          git status
           git add .
           if git diff --cached --quiet; then
             echo "No changes to commit."
