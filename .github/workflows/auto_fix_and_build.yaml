@@ -36,7 +36,7 @@ jobs:
           rosdep update
           apt-get update
           apt-get install -y curl lsb-release
-          apt-get install -y clang clang-tidy clang-format
+          apt-get install -y clang clang-format
           apt-get install -y cmake
           rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
 
@@ -44,25 +44,10 @@ jobs:
         working-directory: nhk2025b_ros2
         run: apt-get install ros-${{ matrix.rosdistro }}-diagnostic-updater
 
-      - name: Build for compile_commands.json
-        working-directory: nhk2025b_ros2
-        run: |
-          . /opt/ros/${{ matrix.rosdistro }}/setup.sh && 
-          colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --continue-on-error
-  
-      - name: Link compile_commands.json
-        working-directory: nhk2025b_ros2
-        run: ln -sf build/compile_commands.json src/compile_commands.json
-
       - name: Run clang-format (auto-fix)
         working-directory: nhk2025b_ros2
         run: |
           find src -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
-
-      - name: Run clang-tidy (auto-fix)
-        working-directory: nhk2025b_ros2
-        run: |
-          run-clang-tidy -p src -fix -quiet || true
 
       - name: Commit and push changes
         working-directory: nhk2025b_ros2
