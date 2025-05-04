@@ -44,7 +44,7 @@ jobs:
           apt-get install -y curl gnupg lsb-release
           apt-get install -y clang clang-tidy clang-format git python3-colcon-common-extensions
           apt-get install -y build-essential cmake
-          rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }} -v
+          rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
 
       - name: Install diagnostic-updater
         working-directory: nhk2025b_ros2
@@ -68,7 +68,7 @@ jobs:
       - name: Run clang-tidy (auto-fix)
         working-directory: nhk2025b_ros2
         run: |
-          run-clang-tidy -p build -fix -quiet || true
+          run-clang-tidy -p src -fix -quiet || true
 
       - name: Commit and push changes
         working-directory: nhk2025b_ros2
