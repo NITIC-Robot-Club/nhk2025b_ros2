@@ -14,6 +14,7 @@ void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::Shared
 {
     wheel_position              = static_cast<float> (this->get_parameter ("wheel_position").as_double ());
     wheel_radius                = static_cast<float> (this->get_parameter ("wheel_radius").as_double ());
+    
     float wheel_positions[4][2] = {
         {+wheel_position, +wheel_position},
         {-wheel_position, +wheel_position},
