@@ -67,11 +67,11 @@ namespace canable {
             if (nbytes > 0) {
                 switch (frame.can_id) {
                     case 0x000: 
-                        nhk2025b_msgs::msg::RobotStatus robot_status;
-                        robot_status.signal = (frame.data[0] >> 0) & 0x01;      
-                        robot_status.is_resetting = (frame.data[0] >> 1) & 0x01;
-                        memcpy(&robot_status.battery_voltage, frame.data + 1, sizeof(float));
-                        break;
+                        robot_status_.signal = (frame.data[0] >> 0) & 0x01;      
+                        robot_status_.is_resetting = (frame.data[0] >> 1) & 0x01;
+                        memcpy(&robot_status_.voltage, frame.data + 1, sizeof(float));
+                        robot_status_pub_->publish(robot_status_);
+                        break;  
                     case 0x001:
                     case 0x002:
                     case 0x003:
@@ -105,7 +105,7 @@ namespace canable {
                     retry_write_count++;
                     if (retry_write_count < max_retry_write_count) {
                         RCLCPP_INFO(this->get_logger(), "Retrying to send CAN message...");
-                        write_can_socket(*msg);
+                        swerve_callback(msg);
                     } else {
                         RCLCPP_ERROR(this->get_logger(), "Max retry count reached. Giving up.");
                         retry_write_count = 0;

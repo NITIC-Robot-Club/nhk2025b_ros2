@@ -20,7 +20,6 @@ public:
 private:
     int init_can_socket(); // Initialize CAN socket
     void read_can_socket(); // Read messages from CAN socket
-    void write_can_socket(const canable_msgs::msg::Can &frame); // Write messages to CAN socket
     void swerve_callback(const nhk2025b_msgs::msg::Swerve::SharedPtr msg); // Callback for swerve messages
     bool retry_open_can = true;
     bool retry_write_can = true;
@@ -29,7 +28,8 @@ private:
     int can_socket_;
     struct sockaddr_can addr_;
     struct ifreq ifr_;
-    nhk2025b_msgs::msg::Swerve swerve_now_
+    nhk2025b_msgs::msg::Swerve swerve_now_;
+    nhk2025b_msgs::msg::RobotStatus robot_status_;
     bool swerve_flag_[4] = {false, false, false, false};
     
     rclcpp::Publisher<nhk2025b_msgs::msg::RobotStatus>::SharedPtr robot_status_pub_;
