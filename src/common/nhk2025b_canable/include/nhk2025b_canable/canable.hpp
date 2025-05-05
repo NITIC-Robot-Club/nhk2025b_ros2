@@ -28,11 +28,12 @@ class canable : public rclcpp::Node {
     int                             retry_write_count     = 0;
     int                             max_retry_write_count = 5;
     int                             can_socket_;
+    bool                            swerve_flag_[4] = {false, false, false, false};
+
     struct sockaddr_can             addr_;
     struct ifreq                    ifr_;
     nhk2025b_msgs::msg::Swerve      swerve_now_;
     nhk2025b_msgs::msg::RobotStatus robot_status_;
-    bool                            swerve_flag_[4] = {false, false, false, false};
 
     rclcpp::Publisher<nhk2025b_msgs::msg::RobotStatus>::SharedPtr robot_status_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr      swerve_pub_;
