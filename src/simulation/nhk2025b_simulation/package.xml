@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>nhk2025b_simulation</name>
+  <version>0.0.1</version>
+  <description>簡易的なシミュレーター</description>
+  <maintainer email="kzs321kzs@gmail.com">kzs321kzs@gmail.com</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>nhk2025b_msgs</depend>
+  <depend>sensor_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
