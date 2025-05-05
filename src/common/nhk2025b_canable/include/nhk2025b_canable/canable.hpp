@@ -20,15 +20,15 @@ class canable : public rclcpp::Node {
     ~canable ();
 
    private:
-    int                             init_can_socket ();                                                 // Initialize CAN socket
-    void                            read_can_socket ();                                                 // Read messages from CAN socket
-    void                            swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);  // Callback for swerve messages
-    bool                            retry_open_can        = true;
-    bool                            retry_write_can       = true;
-    int                             retry_write_count     = 0;
-    int                             max_retry_write_count = 5;
-    int                             can_socket_;
-    bool                            swerve_flag_[4] = {false, false, false, false};
+    int  init_can_socket ();                                                 // Initialize CAN socket
+    void read_can_socket ();                                                 // Read messages from CAN socket
+    void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);  // Callback for swerve messages
+    bool retry_open_can        = true;
+    bool retry_write_can       = true;
+    int  retry_write_count     = 0;
+    int  max_retry_write_count = 5;
+    int  can_socket_;
+    bool swerve_flag_[4] = {false, false, false, false};
 
     struct sockaddr_can             addr_;
     struct ifreq                    ifr_;
