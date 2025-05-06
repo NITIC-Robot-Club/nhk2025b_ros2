@@ -1,17 +1,12 @@
-name: c++ style auto fix and colcon build
+name: colcon build differential
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
-    types: 
-      - labeled
-      - ready_for_review 
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 
 jobs:
-  auto_fix_and_build:
+  colcon_build_differential:
     permissions:
       contents: write
 
@@ -42,37 +37,31 @@ jobs:
         run: |
           rosdep update
           apt-get update
-          apt-get install -y curl lsb-release
-          apt-get install -y clang clang-format
-          apt-get install -y cmake
           rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
 
-      - name: Run clang-format (auto-fix)
+      - name: Get changed packages name
+        id: get_changed_packages
         working-directory: nhk2025b_ros2
         run: |
-          find src -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
-
-      - name: Commit and push changes
-        working-directory: nhk2025b_ros2
-        run : |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
           git fetch origin
           git checkout ${{ github.head_ref }}
-          git add .
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "Auto-fix: applied clang-format and clang-tidy"
-            git push
-          fi
+          touch modified_packages.txt
+          echo $(bash .github/workflows/get_differential_package.sh origin/${{ github.base_ref }})  > modified_packages.txt
+          cat modified_packages.txt
 
+          
       - name: Build tests
         id: build_test
         working-directory: nhk2025b_ros2
         run: |
+          if [ ! -s modified_packages.txt ] || [ "$(cat modified_packages.txt | tr -d '\n')" = "" ]; then
+            echo "No modified packages found."
+            exit 0
+          fi
+          echo "Modified packages: $(cat modified_packages.txt)"
+          echo "Building modified packages..."
           . /opt/ros/${{ matrix.rosdistro }}/setup.sh && 
-          colcon build
+          colcon build --packages-up-to $(cat modified_packages.txt)
         continue-on-error: true
 
       - name: build_test command success

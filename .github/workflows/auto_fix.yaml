@@ -1,17 +1,12 @@
-name: c++ style auto fix and colcon build
+name: c++ style auto fix
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
-    types: 
-      - labeled
-      - ready_for_review 
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 
 jobs:
-  auto_fix_and_build:
+  auto_fix:
     permissions:
       contents: write
 
@@ -66,19 +61,6 @@ jobs:
             git commit -m "Auto-fix: applied clang-format and clang-tidy"
             git push
           fi
-
-      - name: Build tests
-        id: build_test
-        working-directory: nhk2025b_ros2
-        run: |
-          . /opt/ros/${{ matrix.rosdistro }}/setup.sh && 
-          colcon build
-        continue-on-error: true
-
-      - name: build_test command success
-        if: steps.build_test.outcome == 'success'
-        run: echo "result - success"
-
-      - name: build_test command failure
-        if: steps.build_test.outcome == 'failure'
-        run: echo "result - failure" && exit 1
+      
+      - name: Success
+        run: echo "Auto-fix completed successfully."
