@@ -8,17 +8,17 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
     pose_publisher_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/simulation/pose", 10);
     swerve_subscriber_      = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
         "/swerve_cmd", 10, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
-    timer_         = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
-    wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
-    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.062);
-    x_             = 0.0f;
-    y_             = 0.0f;
-    z_             = 0.0f;
-    x_sum_         = 0.0f;
-    y_sum_         = 0.0f;
-    z_sum_         = 0.0f;
-    count_         = 0;
-    sig_           = true;
+    timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
+    this->declare_parameter<double> ("wheel_position", 0.62);
+    this->declare_parameter<double> ("wheel_radius", 0.062);
+    x_     = 0.0f;
+    y_     = 0.0f;
+    z_     = 0.0f;
+    x_sum_ = 0.0f;
+    y_sum_ = 0.0f;
+    z_sum_ = 0.0f;
+    count_ = 0;
+    sig_   = true;
 }
 
 void simulation::timer_callback () {
@@ -62,8 +62,8 @@ void simulation::timer_callback () {
 void simulation::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
     swerve_publisher_->publish (*msg);
 
-    wheel_position = this->get_parameter ("wheel_position").as_double ();
-    wheel_radius   = this->get_parameter ("wheel_radius").as_double ();
+    this->get_parameter ("wheel_position", wheel_position);
+    this->get_parameter ("wheel_radius", wheel_radius);
 
     double wheel_positions[4][2] = {
         {+wheel_position, +wheel_position},
