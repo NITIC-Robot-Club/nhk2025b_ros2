@@ -45,16 +45,21 @@ jobs:
         run: |
           git fetch origin
           git checkout ${{ github.head_ref }}
-          modified_packages=$(bash .github/workflows/get_differential_package.sh origin/${{ github.base_ref }}) 
-          echo "Modified packages: $modified_packages"
           touch modified_packages.txt
-          echo "$modified_packages" > modified_packages.txt
+          echo $(bash .github/workflows/get_differential_package.sh origin/${{ github.base_ref }})  > modified_packages.txt
+          cat modified_packages.txt
 
           
       - name: Build tests
         id: build_test
         working-directory: nhk2025b_ros2
         run: |
+          if [ ! -s modified_packages.txt ]; then
+            echo "No modified packages found."
+            exit 0
+          fi
+          echo "Modified packages: $(cat modified_packages.txt)"
+          echo "Building modified packages..."
           . /opt/ros/${{ matrix.rosdistro }}/setup.sh && 
           colcon build --packages-up-to $(cat modified_packages.txt)
         continue-on-error: true
