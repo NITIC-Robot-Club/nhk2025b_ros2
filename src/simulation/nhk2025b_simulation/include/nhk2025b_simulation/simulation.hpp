@@ -18,8 +18,8 @@ class simulation : public rclcpp::Node {
     double wheel_radius;
     double wheel_position;
     double x_sum_, y_sum_, z_sum_;
-    int   count_;
-    bool  sig_;
+    int    count_;
+    bool   sig_;
     double x_, y_, z_;
 
     rclcpp::TimerBase::SharedPtr timer_;

@@ -12,7 +12,7 @@ map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_p
 
 void map_publisher::publish_map () {
     nav_msgs::msg::OccupancyGrid map;
-    resolution_                   = static_cast<float>(this->get_parameter ("resolution").as_double ()); // float
+    resolution_                   = static_cast<float> (this->get_parameter ("resolution").as_double ());  // float
     map.header.stamp              = this->now ();
     map.header.frame_id           = "map";
     map.info.resolution           = resolution_;         // m

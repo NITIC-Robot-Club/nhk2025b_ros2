@@ -39,8 +39,8 @@ void swerve_calculator::twist_callback (const geometry_msgs::msg::TwistStamped::
 
             swerve_msg.wheel_speed[i] = 0;
         } else {
-            vx          = x - z * position_y;
-            vy          = y + z * position_x;
+            vx           = x - z * position_y;
+            vy           = y + z * position_x;
             double v     = std::hypot (vx, vy);
             double omega = v / (2 * M_PI * wheel_radius);
 
