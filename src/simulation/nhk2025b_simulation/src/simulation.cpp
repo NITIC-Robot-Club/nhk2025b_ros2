@@ -13,7 +13,7 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
     wheel_radius   = this->declare_parameter<float> ("wheel_radius", 0.062);
     x_             = 0.0f;
     y_             = 0.0f;
-    z_             = 0.0f;  
+    z_             = 0.0f;
     x_sum_         = 0.0f;
     y_sum_         = 0.0f;
     z_sum_         = 0.0f;
