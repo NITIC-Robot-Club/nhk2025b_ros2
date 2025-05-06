@@ -43,6 +43,7 @@ jobs:
         id: get_changed_packages
         working-directory: nhk2025b_ros2
         run: |
+          git fetch origin
           git checkout ${{ github.head_ref }}
           modified_packages=$(bash .github/workflows/get_differential_package.sh origin/${{ github.base_ref }}) 
           echo "Modified packages: $modified_packages"
