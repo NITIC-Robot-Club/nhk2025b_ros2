@@ -7,12 +7,12 @@ map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_p
     team_color_subsctiber_ =
         this->create_subscription<std_msgs::msg::Bool> ("/is_red", 10, [this] (std_msgs::msg::Bool::SharedPtr msg) { is_red = msg->data; });
     timer_      = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&map_publisher::publish_map, this));
-    resolution_ = this->declare_parameter<float> ("resolution", 0.05);  // 5cm
+    resolution_ = this->declare_parameter<double> ("resolution", 0.05);  // 5cm
 }
 
 void map_publisher::publish_map () {
     nav_msgs::msg::OccupancyGrid map;
-    resolution_                   = this->get_parameter ("resolution").as_double ();
+    resolution_                   = static_cast<float>(this->get_parameter ("resolution").as_double ()); // float
     map.header.stamp              = this->now ();
     map.header.frame_id           = "map";
     map.info.resolution           = resolution_;         // m

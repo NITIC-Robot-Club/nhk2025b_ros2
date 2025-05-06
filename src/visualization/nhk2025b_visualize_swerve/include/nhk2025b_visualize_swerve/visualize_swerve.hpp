@@ -11,9 +11,9 @@ class visualize_swerve : public rclcpp::Node {
     visualize_swerve (const rclcpp::NodeOptions& options);
 
    private:
-    float wheel_position;
-    float wheel_radius;
-    float last_angle[4];
+    double wheel_position;
+    double wheel_radius;
+    double last_angle[4];
     void  swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
 
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
