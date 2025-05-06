@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  auto_fix_and_build:
+  auto_fix:
     permissions:
       contents: write
 

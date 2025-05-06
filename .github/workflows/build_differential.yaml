@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  auto_fix_and_build:
+  colcon_build_differential:
     permissions:
       contents: write
 
