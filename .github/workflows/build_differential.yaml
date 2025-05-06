@@ -39,26 +39,6 @@ jobs:
           apt-get update
           rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
 
-      - name: Run clang-format (auto-fix)
-        working-directory: nhk2025b_ros2
-        run: |
-          find src -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
-
-      - name: Commit and push changes
-        working-directory: nhk2025b_ros2
-        run : |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin
-          git checkout ${{ github.head_ref }}
-          git add .
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "Auto-fix: applied clang-format and clang-tidy"
-            git push
-          fi
-
       - name: Get changed packages name
         id: get_changed_packages
         working-directory: nhk2025b_ros2
