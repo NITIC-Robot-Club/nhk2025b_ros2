@@ -5,15 +5,15 @@ swerve_calculator::swerve_calculator (const rclcpp::NodeOptions& options) : Node
     twist_sub_ = create_subscription<geometry_msgs::msg::TwistStamped> (
         "/cmd_vel", 10, std::bind (&swerve_calculator::twist_callback, this, std::placeholders::_1));
     swerve_pub_    = create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve_cmd", 10);
-    wheel_position = this->declare_parameter<float> ("wheel_position", 0.62);
-    wheel_radius   = this->declare_parameter<float> ("wheel_radius", 0.062);
+    wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
+    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.062);
 }
 
 void swerve_calculator::twist_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
-    wheel_position = static_cast<float> (this->get_parameter ("wheel_position").as_double ());
-    wheel_radius   = static_cast<float> (this->get_parameter ("wheel_radius").as_double ());
+    wheel_position = this->get_parameter ("wheel_position").as_double ();
+    wheel_radius   = this->get_parameter ("wheel_radius").as_double ();
 
-    float wheel_positions[4][2] = {
+    double wheel_positions[4][2] = {
         {+wheel_position, +wheel_position},
         {-wheel_position, +wheel_position},
         {-wheel_position, -wheel_position},
@@ -25,26 +25,26 @@ void swerve_calculator::twist_callback (const geometry_msgs::msg::TwistStamped::
     swerve_msg.header.frame_id = "base_link";
 
     for (int i = 0; i < 4; i++) {
-        float x = msg->twist.linear.x;
-        float y = msg->twist.linear.y;
-        float z = msg->twist.angular.z;
+        double x = msg->twist.linear.x;
+        double y = msg->twist.linear.y;
+        double z = msg->twist.angular.z;
 
-        float position_x = wheel_positions[i][0];
-        float position_y = wheel_positions[i][1];
+        double position_x = wheel_positions[i][0];
+        double position_y = wheel_positions[i][1];
 
-        float vx, vy;
+        double vx, vy;
         if (x == 0 && y == 0 && z == 0) {
             vx = -position_y;
             vy = +position_x;
 
             swerve_msg.wheel_speed[i] = 0;
         } else {
-            vx          = x - z * position_y;
-            vy          = y + z * position_x;
-            float v     = std::hypot (vx, vy);
-            float omega = v / (2 * M_PI * wheel_radius);
+            vx           = x - z * position_y;
+            vy           = y + z * position_x;
+            double v     = std::hypot (vx, vy);
+            double omega = v / (2 * M_PI * wheel_radius);
 
-            swerve_msg.wheel_speed[i] = omega * 60;
+            swerve_msg.wheel_speed[i] = omega * 60.f;
         }
 
         swerve_msg.wheel_angle[i] = atan2 (vy, vx);
