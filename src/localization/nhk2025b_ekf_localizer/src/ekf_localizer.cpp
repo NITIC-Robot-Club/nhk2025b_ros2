@@ -15,8 +15,8 @@ ekf_localizer::ekf_localizer (const rclcpp::NodeOptions& options)
     imu_sub_ =
         this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 10, std::bind (&ekf_localizer::imu_callback, this, std::placeholders::_1));
 
-    odom_sub_ =
-        this->create_subscription<nav_msgs::msg::Odometry> ("/localization/wheel_odom", 10, std::bind (&ekf_localizer::odom_callback, this, std::placeholders::_1));
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
+        "/localization/wheel_odom", 10, std::bind (&ekf_localizer::odom_callback, this, std::placeholders::_1));
 
     lidar_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
         "/localization/lidar_pose", 10, std::bind (&ekf_localizer::lidar_callback, this, std::placeholders::_1));
