@@ -15,12 +15,12 @@ class simulation : public rclcpp::Node {
     void timer_callback ();
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
 
-    float wheel_radius;
-    float wheel_position;
-    float x_sum_, y_sum_, z_sum_;
-    int   count_;
-    bool  sig_;
-    float x_, y_, z_;
+    double wheel_radius;
+    double wheel_position;
+    double x_sum_, y_sum_, z_sum_;
+    int    count_;
+    bool   sig_;
+    double x_, y_, z_;
 
     rclcpp::TimerBase::SharedPtr timer_;
 

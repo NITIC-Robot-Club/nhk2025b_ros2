@@ -11,9 +11,9 @@ class map_publisher : public rclcpp::Node {
     map_publisher (const rclcpp::NodeOptions& options);
 
    private:
-    void  publish_map ();
-    bool  is_red;
-    float resolution_;
+    void   publish_map ();
+    bool   is_red;
+    double resolution_;
 
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr publisher_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr       team_color_subsctiber_;

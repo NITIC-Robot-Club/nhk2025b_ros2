@@ -5,15 +5,15 @@ visualize_swerve::visualize_swerve (const rclcpp::NodeOptions& options) : Node (
     marker_publisher_  = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/swerve", 10);
     swerve_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
         "/swerve_result", 10, std::bind (&visualize_swerve::swerve_callback, this, std::placeholders::_1));
-    wheel_position = this->declare_parameter<float> ("wheel_position", 0.62);
-    wheel_radius   = this->declare_parameter<float> ("wheel_radius", 0.062);
+    wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
+    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.062);
 }
 
 void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
-    wheel_position = static_cast<float> (this->get_parameter ("wheel_position").as_double ());
-    wheel_radius   = static_cast<float> (this->get_parameter ("wheel_radius").as_double ());
+    wheel_position = this->get_parameter ("wheel_position").as_double ();
+    wheel_radius   = this->get_parameter ("wheel_radius").as_double ();
 
-    float wheel_positions[4][2] = {
+    double wheel_positions[4][2] = {
         {+wheel_position, +wheel_position},
         {-wheel_position, +wheel_position},
         {-wheel_position, -wheel_position},
