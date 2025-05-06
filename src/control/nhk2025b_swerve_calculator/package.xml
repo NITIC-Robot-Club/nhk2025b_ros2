@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>nhk2025b_swerve_calculator</name>
+  <version>0.0.1</version>
+  <description>calculate swerve angle and speed</description>
+  <maintainer email="kzs321kzs@gmail.com">Kazusa Hashimoto</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>nhk2025b_msgs</depend>
+  <depend>geometry_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
