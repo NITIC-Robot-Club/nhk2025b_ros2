@@ -18,7 +18,7 @@ class swerve_calculator : public rclcpp::Node {
     float wheel_position;
 
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub_;
-    rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr        swerve_pub_;
+    rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr          swerve_pub_;
 };
 }  // namespace swerve_calculator
 
