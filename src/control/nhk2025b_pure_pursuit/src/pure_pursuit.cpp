@@ -32,13 +32,13 @@ void pure_pursuit::timer_callback () {
     }
 
     // get the closest point on the path
-    double min_distance = std::numeric_limits<double>::max ();
-    int closest_index = -1;
-    for (int index = 0; index< path_.poses.size(); index++) {
-        double distance = std::hypot (path_.poses[index].pose.position.x - current_pose_.pose.position.x,
-                                      path_.poses[index].pose.position.y - current_pose_.pose.position.y);
+    double min_distance  = std::numeric_limits<double>::max ();
+    int    closest_index = -1;
+    for (int index = 0; index < path_.poses.size (); index++) {
+        double distance = std::hypot (
+            path_.poses[index].pose.position.x - current_pose_.pose.position.x, path_.poses[index].pose.position.y - current_pose_.pose.position.y);
         if (distance < min_distance) {
-            min_distance = distance;
+            min_distance  = distance;
             closest_index = index;
         }
     }
@@ -51,34 +51,35 @@ void pure_pursuit::timer_callback () {
     // get the lookahead point
     int lookahead_index = closest_index;
     for (int index = closest_index; index < path_.poses.size (); index++) {
-        double distance = std::hypot (path_.poses[index].pose.position.x - current_pose_.pose.position.x,
-                                      path_.poses[index].pose.position.y - current_pose_.pose.position.y);
+        double distance = std::hypot (
+            path_.poses[index].pose.position.x - current_pose_.pose.position.x, path_.poses[index].pose.position.y - current_pose_.pose.position.y);
         if (distance > lookahead_distance_) {
             break;
         }
         lookahead_index = index;
     }
-    
+
     // calculate the angle to the lookahead point
-    double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
-    double dy = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
+    double dx              = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
+    double dy              = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
     double angle_to_target = std::atan2 (dy, dx);
-    double current_yaw = std::atan2 (current_pose_.pose.orientation.z, current_pose_.pose.orientation.w) * 2.0;
-    double angle_diff = angle_to_target - current_yaw;
+    double current_yaw     = std::atan2 (current_pose_.pose.orientation.z, current_pose_.pose.orientation.w) * 2.0;
+    double angle_diff      = angle_to_target - current_yaw;
     if (angle_diff > M_PI) {
         angle_diff -= 2.0 * M_PI;
     } else if (angle_diff < -M_PI) {
         angle_diff += 2.0 * M_PI;
     }
     // calculate the speed
-    double speed = std::hypot (path_.poses[lookahead_index].pose.position.x - path_.poses[closest_index].pose.position.x,
-                                path_.poses[lookahead_index].pose.position.y - path_.poses[closest_index].pose.position.y);
-    
+    double speed = std::hypot (
+        path_.poses[lookahead_index].pose.position.x - path_.poses[closest_index].pose.position.x,
+        path_.poses[lookahead_index].pose.position.y - path_.poses[closest_index].pose.position.y);
+
     geometry_msgs::msg::TwistStamped cmd_vel;
-    cmd_vel.header.stamp = this->now ();
+    cmd_vel.header.stamp    = this->now ();
     cmd_vel.header.frame_id = "base_link";
-    cmd_vel.twist.linear.x = speed * std::cos (angle_diff);
-    cmd_vel.twist.linear.y = speed * std::sin (angle_diff);
+    cmd_vel.twist.linear.x  = speed * std::cos (angle_diff);
+    cmd_vel.twist.linear.y  = speed * std::sin (angle_diff);
     cmd_vel.twist.angular.z = angle_p_ * angle_diff;
     cmd_vel_publisher_->publish (cmd_vel);
 }
