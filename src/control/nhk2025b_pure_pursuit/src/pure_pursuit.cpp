@@ -22,15 +22,12 @@ void pure_pursuit::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
     path_ = *msg;
 }
 
-
 void pure_pursuit::timer_callback () {
     this->get_parameter ("lookahead_distance", lookahead_distance_);
     this->get_parameter ("angle_p", angle_p_);
-
 }
 
-
-}
+}  // namespace pure_pursuit
 
 #include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE (pure_pursuit::pure_pursuit)

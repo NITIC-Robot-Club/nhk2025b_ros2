@@ -14,7 +14,7 @@ class pure_pursuit : public rclcpp::Node {
     double lookahead_distance_, angle_p_;
 
     geometry_msgs::msg::PoseStamped current_pose_;
-    nav_msgs::msg::Path path_;
+    nav_msgs::msg::Path             path_;
 
     void timer_callback ();
     void pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
