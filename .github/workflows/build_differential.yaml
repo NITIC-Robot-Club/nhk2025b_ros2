@@ -54,7 +54,7 @@ jobs:
         id: build_test
         working-directory: nhk2025b_ros2
         run: |
-          if [ ! -s modified_packages.txt ] || [ "$(cat modified_packages.txt | tr -d '\n'" = "" ]; then
+          if [ ! -s modified_packages.txt ] || [ "$(cat modified_packages.txt | tr -d '\n')" = "" ]; then
             echo "No modified packages found."
             exit 0
           fi
