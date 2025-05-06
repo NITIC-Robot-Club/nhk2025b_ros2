@@ -131,7 +131,6 @@ void simulation::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr ms
     y_sum_ += x[1];
     z_sum_ += x[2];
     count_++;
-    RCLCPP_INFO (this->get_logger (), "x: %f, y: %f, z: %f", x[0], x[1], x[2]);
 }
 }  // namespace simulation
 
