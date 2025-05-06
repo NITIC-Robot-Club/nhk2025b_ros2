@@ -4,8 +4,8 @@ namespace visualize_swerve {
 visualize_swerve::visualize_swerve (const rclcpp::NodeOptions& options) : Node ("visualize_swerve", options) {
     marker_publisher_  = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/swerve", 10);
     swerve_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
-        "/swerve", 10, std::bind (&visualize_swerve::swerve_callback, this, std::placeholders::_1));
-    wheel_position = this->declare_parameter<float> ("wheel_position", 0.622);
+        "/swerve_result", 10, std::bind (&visualize_swerve::swerve_callback, this, std::placeholders::_1));
+    wheel_position = this->declare_parameter<float> ("wheel_position", 0.62);
     wheel_radius   = this->declare_parameter<float> ("wheel_radius", 0.062);
 }
 
@@ -26,7 +26,7 @@ void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::Shared
         marker.id      = i;
         marker.type    = visualization_msgs::msg::Marker::ARROW;
         marker.action  = visualization_msgs::msg::Marker::ADD;
-        marker.scale.x = wheel_radius + msg->wheel_speed[i];
+        marker.scale.x = wheel_radius + msg->wheel_speed[i] / 60.0f * 2.0f * M_PI * wheel_radius;
         marker.scale.y = wheel_radius;
         marker.scale.z = wheel_radius;
         marker.color.r = 0.0;

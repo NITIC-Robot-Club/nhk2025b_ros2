@@ -9,17 +9,17 @@ ekf_localizer::ekf_localizer (const rclcpp::NodeOptions& options)
     P_ = Eigen::MatrixXd::Identity (6, 6);  // 共分散行列
 
     // パブリッシャの初期化
-    fused_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("fused_pose", 10);
+    fused_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
 
     // サブスクライバの設定
     imu_sub_ =
-        this->create_subscription<sensor_msgs::msg::Imu> ("imu/data", 10, std::bind (&ekf_localizer::imu_callback, this, std::placeholders::_1));
+        this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 10, std::bind (&ekf_localizer::imu_callback, this, std::placeholders::_1));
 
-    odom_sub_ =
-        this->create_subscription<nav_msgs::msg::Odometry> ("wheel_odom", 10, std::bind (&ekf_localizer::odom_callback, this, std::placeholders::_1));
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
+        "/localization/wheel_odom", 10, std::bind (&ekf_localizer::odom_callback, this, std::placeholders::_1));
 
     lidar_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "lidar_pose", 10, std::bind (&ekf_localizer::lidar_callback, this, std::placeholders::_1));
+        "/localization/lidar_pose", 10, std::bind (&ekf_localizer::lidar_callback, this, std::placeholders::_1));
 
     // 時間管理
     last_time_ = this->get_clock ()->now ();
