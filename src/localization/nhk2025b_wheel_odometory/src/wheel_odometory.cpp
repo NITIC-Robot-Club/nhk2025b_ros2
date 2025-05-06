@@ -10,12 +10,12 @@ wheel_odometory::wheel_odometory (const rclcpp::NodeOptions &options) : Node ("w
     current_x = 0.0;
     current_y = 0.0;
     current_z = 0.0;
+
+    // Add initialization for last_time in the constructor
+    last_time = this->get_clock()->now();
 }
 
 void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
-    // std_msgs/Header header
-    // float32[4] wheel_angle
-    // float32[4] wheel_speed
     this->get_parameter ("wheel_position", wheel_position);
     this->get_parameter ("wheel_radius", wheel_radius);
 
@@ -82,8 +82,7 @@ void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedP
     x[1] = A[1][3];
     x[2] = A[2][3];
 
-    // calculate delta time
-    rclcpp::Time     current_time (msg->header.stamp);
+    rclcpp::Time current_time = msg->header.stamp;
     rclcpp::Duration delta_time = current_time - last_time;
     last_time                   = current_time;
 
@@ -91,10 +90,9 @@ void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedP
     current_y += x[1] * delta_time.seconds ();
     current_z += x[2] * delta_time.seconds ();
 
-    // Calculate the odometry and twist messages based on the swerve message
     nav_msgs::msg::Odometry odom_msg;
     odom_msg.header.stamp            = msg->header.stamp;
-    odom_msg.header.frame_id         = "odom";
+    odom_msg.header.frame_id         = "map";
     odom_msg.child_frame_id          = "base_link";
     odom_msg.pose.pose.position.x    = current_x;
     odom_msg.pose.pose.position.y    = current_y;
@@ -110,8 +108,9 @@ void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedP
     odom_msg.twist.twist.angular.y   = 0.0;
     odom_msg.twist.twist.angular.z   = x[2];
 
-    // Fill in the odometry and twist messages with the calculated values
     odom_publisher->publish (odom_msg);
+
+    RCLCPP_INFO (this->get_logger (), "x: %f, y: %f, z: %f", current_x, current_y, current_z);
 }
 
 }  // namespace wheel_odometory
