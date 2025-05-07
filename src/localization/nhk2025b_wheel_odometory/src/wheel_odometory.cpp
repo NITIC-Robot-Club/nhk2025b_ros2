@@ -5,14 +5,16 @@ wheel_odometory::wheel_odometory (const rclcpp::NodeOptions &options) : Node ("w
     swerve_subscriber = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
         "/swerve_result", 10, std::bind (&wheel_odometory::swerve_callback, this, std::placeholders::_1));
     odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odom", 10);
-    this->declare_parameter ("wheel_radius", 0.062);
+    timer          = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&wheel_odometory::timer_callback, this));
+    this->declare_parameter ("wheel_radius", 0.031);
     this->declare_parameter ("wheel_position", 0.62);
     current_x = 0.0;
     current_y = 0.0;
     current_z = 0.0;
-
-    // Add initialization for last_time in the constructor
-    last_time = this->get_clock()->now();
+    sum_x     = 0.0;
+    sum_y     = 0.0;
+    sum_z     = 0.0;
+    count     = 0;
 }
 
 void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
@@ -82,16 +84,30 @@ void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedP
     x[1] = A[1][3];
     x[2] = A[2][3];
 
-    rclcpp::Time current_time = msg->header.stamp;
-    rclcpp::Duration delta_time = current_time - last_time;
-    last_time                   = current_time;
+    sum_x += x[0];
+    sum_y += x[1];
+    sum_z += x[2];
+    count++;
+}
 
-    current_x += x[0] * delta_time.seconds ();
-    current_y += x[1] * delta_time.seconds ();
-    current_z += x[2] * delta_time.seconds ();
+void wheel_odometory::timer_callback () {
+    if (count != 0) {
+        current_z += sum_z / count * 0.05;
+        double angle    = std::atan2 (sum_y / count, sum_x / count) + current_z;
+        double distance = std::hypot (sum_x / count, sum_y / count);
+        current_x += distance * std::cos (angle) * 0.05;
+        current_y += distance * std::sin (angle) * 0.05;
+    }
+
+    while (current_z > +M_PI) {
+        current_z -= M_PI * 2;
+    }
+    while (current_z < -M_PI) {
+        current_z += M_PI * 2;
+    }
 
     nav_msgs::msg::Odometry odom_msg;
-    odom_msg.header.stamp            = msg->header.stamp;
+    odom_msg.header.stamp            = this->now ();
     odom_msg.header.frame_id         = "map";
     odom_msg.child_frame_id          = "base_link";
     odom_msg.pose.pose.position.x    = current_x;
@@ -101,16 +117,19 @@ void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedP
     odom_msg.pose.pose.orientation.y = 0.0;
     odom_msg.pose.pose.orientation.z = std::sin (current_z / 2.0);
     odom_msg.pose.pose.orientation.w = std::cos (current_z / 2.0);
-    odom_msg.twist.twist.linear.x    = x[0];
-    odom_msg.twist.twist.linear.y    = x[1];
+    odom_msg.twist.twist.linear.x    = sum_x / 0.05;
+    odom_msg.twist.twist.linear.y    = sum_y / 0.05;
     odom_msg.twist.twist.linear.z    = 0.0;
     odom_msg.twist.twist.angular.x   = 0.0;
     odom_msg.twist.twist.angular.y   = 0.0;
-    odom_msg.twist.twist.angular.z   = x[2];
+    odom_msg.twist.twist.angular.z   = sum_z / 0.05;
 
     odom_publisher->publish (odom_msg);
 
-    RCLCPP_INFO (this->get_logger (), "x: %f, y: %f, z: %f", current_x, current_y, current_z);
+    sum_x = 0;
+    sum_y = 0;
+    sum_z = 0;
+    count = 0;
 }
 
 }  // namespace wheel_odometory
