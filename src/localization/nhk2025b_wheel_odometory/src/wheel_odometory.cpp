@@ -5,7 +5,7 @@ wheel_odometory::wheel_odometory (const rclcpp::NodeOptions &options) : Node ("w
     swerve_subscriber = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
         "/swerve_result", 10, std::bind (&wheel_odometory::swerve_callback, this, std::placeholders::_1));
     odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometory", 10);
-    timer          = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&wheel_odometory::timer_callback, this));
+    timer          = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&wheel_odometory::timer_callback, this));
     wheel_radius   = this->declare_parameter ("wheel_radius", 0.031);
     wheel_position = this->declare_parameter ("wheel_position", 0.62);
 
@@ -90,11 +90,11 @@ void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedP
 
 void wheel_odometory::timer_callback () {
     if (count != 0) {
-        current_z += sum_z / count * 0.05;
+        current_z += sum_z / count * 0.1;
         double angle    = std::atan2 (sum_y / count, sum_x / count) + current_z;
         double distance = std::hypot (sum_x / count, sum_y / count);
-        current_x += distance * std::cos (angle) * 0.05;
-        current_y += distance * std::sin (angle) * 0.05;
+        current_x += distance * std::cos (angle) * 0.1;
+        current_y += distance * std::sin (angle) * 0.1;
     }
 
     while (current_z > +M_PI) {
