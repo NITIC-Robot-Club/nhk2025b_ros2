@@ -12,15 +12,15 @@ class lidar_simulation : public rclcpp::Node {
     lidar_simulation (const rclcpp::NodeOptions &options);
 
    private:
-    double lidar_x,lidar_y,lidar_z;
+    double lidar_x, lidar_y, lidar_z;
 
-    nav_msgs::msg::OccupancyGrid current_map;
+    nav_msgs::msg::OccupancyGrid    current_map;
     geometry_msgs::msg::PoseStamped current_pose;
-    rclcpp::TimerBase::SharedPtr timer;
+    rclcpp::TimerBase::SharedPtr    timer;
 
     void timer_callback ();
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
-    void pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr    map_subscriber;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subscriber;
