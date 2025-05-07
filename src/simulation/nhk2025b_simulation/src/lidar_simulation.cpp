@@ -3,9 +3,7 @@
 namespace lidar_simulation {
 
 lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options)
-: Node ("lidar_simulation", options),
-  tf_buffer (this->get_clock ()),
-  tf_listener (tf_buffer) {
+    : Node ("lidar_simulation", options), tf_buffer (this->get_clock ()), tf_listener (tf_buffer) {
     pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
         "/localization/pose", 10, std::bind (&lidar_simulation::pose_callback, this, std::placeholders::_1));
     map_subscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
