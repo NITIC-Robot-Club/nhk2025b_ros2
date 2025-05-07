@@ -17,9 +17,36 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
         "/bt/goal_pose", 10, std::bind (&path_planner::goal_pose_callback, this, std::placeholders::_1));
     map_subscriber =
         this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/bt/map", 10, std::bind (&path_planner::map_callback, this, std::placeholders::_1));
-    timer = this->create_wall_timer (std::chrono::milliseconds (resolution_ms), std::bind (&path_planner::timer_callback, this));
+    timer = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 }
-void path_planner::timer_callback () {}
+void path_planner::timer_callback () {
+    nav_msgs::msg::Path   path;
+    std_msgs::msg::Header header;
+    header.frame_id = "map";
+    header.stamp    = this->now ();
+    // a = 1m/s2 , v = 2m/s ,x=6m
+    double x = 0, y = 0;
+    double v    = 0;
+    path.header = header;
+    double delta_t = 0.1;
+    for (double t = 0; t < 5; t += delta_t) {
+        if (t < 2) {
+            v += 1 * delta_t;
+        } else if (t > 3) {
+            v -= 1 * delta_t;
+        }
+        x += v * delta_t;
+        geometry_msgs::msg::PoseStamped pose;
+        pose.pose.position.x = x;
+        rclcpp::Time time (header.stamp);
+        rclcpp::Time new_time = time + rclcpp::Duration::from_seconds (delta_t);
+
+        header.stamp = new_time;
+        pose.header  = header;
+        path.poses.push_back (pose);
+    }
+    path_publisher->publish (path);
+}
 
 void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     current_pose.header = msg->header;
