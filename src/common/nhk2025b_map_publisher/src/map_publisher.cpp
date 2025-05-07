@@ -3,7 +3,7 @@
 
 namespace map_publisher {
 map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_publisher", options) {
-    publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 10);
+    publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/map", 10);
     team_color_subsctiber_ =
         this->create_subscription<std_msgs::msg::Bool> ("/is_red", 10, [this] (std_msgs::msg::Bool::SharedPtr msg) { is_red = msg->data; });
     timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&map_publisher::publish_map, this));
