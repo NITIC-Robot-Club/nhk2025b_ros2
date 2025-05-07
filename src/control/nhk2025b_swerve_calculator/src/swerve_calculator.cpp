@@ -6,7 +6,7 @@ swerve_calculator::swerve_calculator (const rclcpp::NodeOptions& options) : Node
         "/cmd_vel", 10, std::bind (&swerve_calculator::twist_callback, this, std::placeholders::_1));
     swerve_pub_    = create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve_cmd", 10);
     wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
-    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.062);
+    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.031);
 }
 
 void swerve_calculator::twist_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg) {

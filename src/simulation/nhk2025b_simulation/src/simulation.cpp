@@ -10,7 +10,7 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
         "/swerve_cmd", 10, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
     timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
     this->declare_parameter<double> ("wheel_position", 0.62);
-    this->declare_parameter<double> ("wheel_radius", 0.062);
+    this->declare_parameter<double> ("wheel_radius", 0.031);
     x_     = 0.0f;
     y_     = 0.0f;
     z_     = 0.0f;

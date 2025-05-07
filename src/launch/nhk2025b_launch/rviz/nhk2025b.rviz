@@ -5,8 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /Grid1/Offset1
-        - /Odometry1/Status1
       Splitter Ratio: 0.6000000238418579
     Tree Height: 818
   - Class: rviz_common/Selection
@@ -174,7 +172,7 @@ Visualization Manager:
       Name: Odometry
       Position Tolerance: 0.10000000149011612
       Shape:
-        Alpha: 1
+        Alpha: 0.5
         Axes Length: 1
         Axes Radius: 0.10000000149011612
         Color: 255; 25; 0
@@ -233,7 +231,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 42.03162384033203
+      Scale: 70
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
       X: 5
