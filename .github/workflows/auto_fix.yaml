@@ -2,7 +2,7 @@ name: c++ style auto fix
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
@@ -22,15 +22,19 @@ jobs:
     container:
       image: ros:${{ matrix.rosdistro }}-ros-base
 
-    if: |
-      (github.event_name == 'labeled' && github.event.label.name == 'run_build') ||
-      (github.event_name != 'labeled')
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
           path: nhk2025b_ros2
+
+      - name: Fetch origin
+        working-directory: nhk2025b_ros2
+        run: | 
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin
+          git checkout ${{ github.head_ref }}
 
       - name: Install dependencies
         working-directory: nhk2025b_ros2
@@ -50,10 +54,6 @@ jobs:
       - name: Commit and push changes
         working-directory: nhk2025b_ros2
         run : |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git fetch origin
-          git checkout ${{ github.head_ref }}
           git add .
           if git diff --cached --quiet; then
             echo "No changes to commit."
