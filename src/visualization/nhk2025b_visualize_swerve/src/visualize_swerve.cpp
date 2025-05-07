@@ -6,11 +6,10 @@ visualize_swerve::visualize_swerve (const rclcpp::NodeOptions& options) : Node (
     swerve_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
         "/swerve_result", 10, std::bind (&visualize_swerve::swerve_callback, this, std::placeholders::_1));
     wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
-    wheel_radius = this->declare_parameter<double> ("wheel_radius", 0.031);
+    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.031);
 }
 
 void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
-
     double wheel_positions[4][2] = {
         {+wheel_position, +wheel_position},
         {-wheel_position, +wheel_position},
