@@ -16,8 +16,8 @@ class lidar_simulation : public rclcpp::Node {
     lidar_simulation (const rclcpp::NodeOptions &options);
 
    private:
-    nav_msgs::msg::OccupancyGrid    current_map;
-    rclcpp::TimerBase::SharedPtr    timer;
+    nav_msgs::msg::OccupancyGrid current_map;
+    rclcpp::TimerBase::SharedPtr timer;
 
     tf2_ros::Buffer            tf_buffer;
     tf2_ros::TransformListener tf_listener;
@@ -25,8 +25,8 @@ class lidar_simulation : public rclcpp::Node {
     void timer_callback ();
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr    map_subscriber;
-    rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr        laser_publisher;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_subscriber;
+    rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr     laser_publisher;
 };
 }  // namespace lidar_simulation
 
