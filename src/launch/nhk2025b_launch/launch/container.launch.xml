@@ -3,6 +3,7 @@
     <composable_node pkg="nhk2025b_map_publisher" plugin="map_publisher::map_publisher" name="map_publisher"/>
     <composable_node pkg="nhk2025b_visualize_swerve" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
     <composable_node pkg="nhk2025b_swerve_calculator" plugin="swerve_calculator::swerve_calculator" name="swerve_calculator"/>
+    <composable_node pkg="nhk2025b_wheel_odometory" plugin="wheel_odometory::wheel_odometory" name="wheel_odometory"/>
     <composable_node pkg="nhk2025b_canable" plugin="canable::canable" name="canable"/>
   </node_container>
 </launch>
