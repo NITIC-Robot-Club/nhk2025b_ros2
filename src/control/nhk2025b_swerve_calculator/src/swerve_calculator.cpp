@@ -10,9 +10,6 @@ swerve_calculator::swerve_calculator (const rclcpp::NodeOptions& options) : Node
 }
 
 void swerve_calculator::twist_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
-    wheel_position = this->get_parameter ("wheel_position").as_double ();
-    wheel_radius   = this->get_parameter ("wheel_radius").as_double ();
-
     double wheel_positions[4][2] = {
         {+wheel_position, +wheel_position},
         {-wheel_position, +wheel_position},

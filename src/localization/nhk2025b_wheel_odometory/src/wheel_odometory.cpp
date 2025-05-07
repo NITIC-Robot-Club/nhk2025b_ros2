@@ -4,10 +4,11 @@ namespace wheel_odometory {
 wheel_odometory::wheel_odometory (const rclcpp::NodeOptions &options) : Node ("wheel_odometory", options) {
     swerve_subscriber = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
         "/swerve_result", 10, std::bind (&wheel_odometory::swerve_callback, this, std::placeholders::_1));
-    odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odom", 10);
+    odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometory", 10);
     timer          = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&wheel_odometory::timer_callback, this));
-    this->declare_parameter ("wheel_radius", 0.031);
-    this->declare_parameter ("wheel_position", 0.62);
+    wheel_radius   = this->declare_parameter ("wheel_radius", 0.031);
+    wheel_position = this->declare_parameter ("wheel_position", 0.62);
+
     current_x = 0.0;
     current_y = 0.0;
     current_z = 0.0;
@@ -18,9 +19,6 @@ wheel_odometory::wheel_odometory (const rclcpp::NodeOptions &options) : Node ("w
 }
 
 void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
-    this->get_parameter ("wheel_position", wheel_position);
-    this->get_parameter ("wheel_radius", wheel_radius);
-
     double wheel_positions[4][2] = {
         {+wheel_position, +wheel_position},
         {-wheel_position, +wheel_position},
