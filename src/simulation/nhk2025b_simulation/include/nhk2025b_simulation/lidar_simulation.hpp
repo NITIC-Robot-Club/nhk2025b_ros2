@@ -1,11 +1,7 @@
 #ifndef __lidar_simulation_hpp__
 #define __lidar_simulation_hpp__
 
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
@@ -16,17 +12,19 @@ class lidar_simulation : public rclcpp::Node {
     lidar_simulation (const rclcpp::NodeOptions &options);
 
    private:
-    nav_msgs::msg::OccupancyGrid current_map;
-    rclcpp::TimerBase::SharedPtr timer;
+    double lidar_x,lidar_y,lidar_z;
 
-    tf2_ros::Buffer            tf_buffer;
-    tf2_ros::TransformListener tf_listener;
+    nav_msgs::msg::OccupancyGrid current_map;
+    geometry_msgs::msg::PoseStamped current_pose;
+    rclcpp::TimerBase::SharedPtr timer;
 
     void timer_callback ();
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+    void pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_subscriber;
-    rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr     laser_publisher;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr    map_subscriber;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subscriber;
+    rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr        laser_publisher;
 };
 }  // namespace lidar_simulation
 

@@ -2,29 +2,29 @@
 
 namespace lidar_simulation {
 
-lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options)
-    : Node ("lidar_simulation", options), tf_buffer (this->get_clock ()), tf_listener (tf_buffer) {
+lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options) : Node ("lidar_simulation", options) {
     map_subscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
-        "/map", 10, std::bind (&lidar_simulation::map_callback, this, std::placeholders::_1));
+        "/behavior/map", 10, std::bind (&lidar_simulation::map_callback, this, std::placeholders::_1));
+    pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
+        "/simulation/pose", 10, std::bind (&lidar_simulation::pose_callback, this, std::placeholders::_1));
     laser_publisher = this->create_publisher<sensor_msgs::msg::LaserScan> ("/scan", rclcpp::SensorDataQoS ());
     timer           = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&lidar_simulation::timer_callback, this));
+    lidar_x = this->declare_parameter<double>("lidar_x",0);
+    lidar_y = this->declare_parameter<double>("lidar_y",0);
+    lidar_z = this->declare_parameter<double>("lidar_z",0);
 }
 
 void lidar_simulation::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
     current_map = *msg;
 }
 
+void lidar_simulation::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+    current_pose = *msg;
+}
+
 void lidar_simulation::timer_callback () {
     if (current_map.data.empty ()) {
         RCLCPP_WARN (this->get_logger (), "Map is empty");
-        return;
-    }
-
-    geometry_msgs::msg::TransformStamped transform;
-    try {
-        transform = tf_buffer.lookupTransform ("lidar", "map", tf2::TimePointZero);
-    } catch (const tf2::TransformException &ex) {
-        RCLCPP_WARN (this->get_logger (), "Could not get transform: %s", ex.what ());
         return;
     }
 
@@ -41,20 +41,25 @@ void lidar_simulation::timer_callback () {
     scan.ranges.resize (360, 10.0);
     scan.intensities.resize (360, 1.0);
 
-    double start_x = transform.transform.translation.x;
-    double start_y = transform.transform.translation.y;
-    for (size_t i = 0; i < 3600; ++i) {
-        double angle = scan.angle_min + i * scan.angle_increment + std::asin (transform.transform.rotation.z) * 2.0;
+    double yaw = std::asin(current_pose.pose.orientation.z)*2;
+    double start_x = current_pose.pose.position.x + lidar_x * std::cos(yaw) - lidar_y * std::sin(yaw);
+    double start_y = current_pose.pose.position.y + lidar_x * std::sin(yaw) + lidar_y * std::cos(yaw);
+    for (size_t i = 0; i < scan.ranges.size(); ++i) {  // Ensure we iterate within bounds
+        double angle = scan.angle_min + i * scan.angle_increment + yaw + lidar_z;
         for (double r = 0.1; r < scan.range_max; r += 0.1) {
             double x = start_x + r * std::cos (angle);
             double y = start_y + r * std::sin (angle);
 
-            int map_x = x / current_map.info.resolution;
-            int map_y = y / current_map.info.resolution;
-            if (map_x < 0 || map_x >= current_map.info.width || map_y < 0 || map_y >= current_map.info.height) {
+            int map_x = static_cast<int>(x / current_map.info.resolution);
+            int map_y = static_cast<int>(y / current_map.info.resolution);
+            if (map_x < 0 || map_x >= static_cast<int>(current_map.info.width) ||
+                map_y < 0 || map_y >= static_cast<int>(current_map.info.height)) {
                 continue;
             }
             int index = map_x + map_y * current_map.info.width;
+            if (index < 0 || index >= static_cast<int>(current_map.data.size())) {
+                continue;  // Ensure index is within bounds
+            }
             if (current_map.data[index] > 0) {
                 scan.ranges[i]      = r;
                 scan.intensities[i] = 1;
