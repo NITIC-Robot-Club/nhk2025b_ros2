@@ -18,6 +18,11 @@ rclcpp_components_register_node(${PROJECT_NAME}
     EXECUTABLE simulation
 )
 
+rclcpp_components_register_node(${PROJECT_NAME}
+    PLUGIN "lidar_simulation::lidar_simulation"
+    EXECUTABLE lidar_simulation
+)
+
 ament_auto_package(
     INSTALL_TO_SHARE
 )
