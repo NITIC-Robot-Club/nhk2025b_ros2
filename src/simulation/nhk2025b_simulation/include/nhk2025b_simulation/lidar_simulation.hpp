@@ -1,13 +1,13 @@
 #ifndef __lidar_simulation_hpp__
 #define __lidar_simulation_hpp__
 
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/buffer.h>
+
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf2_ros/buffer.h>
-
 
 namespace lidar_simulation {
 class lidar_simulation : public rclcpp::Node {
@@ -15,7 +15,6 @@ class lidar_simulation : public rclcpp::Node {
     lidar_simulation (const rclcpp::NodeOptions &options);
 
    private:
-
     geometry_msgs::msg::PoseStamped current_pose;
     nav_msgs::msg::OccupancyGrid    current_map;
     rclcpp::TimerBase::SharedPtr    timer;
