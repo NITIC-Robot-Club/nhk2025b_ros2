@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /Odometry1
+        - /Odometry1/Shape1
       Splitter Ratio: 0.6000000238418579
     Tree Height: 818
   - Class: rviz_common/Selection
@@ -151,7 +151,7 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /cmd_vel
       Value: true
-    - Angle Tolerance: 0.10000000149011612
+    - Angle Tolerance: 0.009999999776482582
       Class: rviz_default_plugins/Odometry
       Covariance:
         Orientation:
@@ -171,12 +171,12 @@ Visualization Manager:
       Enabled: true
       Keep: 10
       Name: Odometry
-      Position Tolerance: 0.10000000149011612
+      Position Tolerance: 0.009999999776482582
       Shape:
         Alpha: 0.5
         Axes Length: 1
         Axes Radius: 0.10000000149011612
-        Color: 255; 25; 0
+        Color: 192; 97; 203
         Head Length: 0.30000001192092896
         Head Radius: 0.10000000149011612
         Shaft Length: 1
