@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Odometry1
       Splitter Ratio: 0.6000000238418579
     Tree Height: 818
   - Class: rviz_common/Selection
@@ -187,7 +188,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /localization/wheel_odom
+        Value: /localization/wheel_odometory
       Value: true
   Enabled: true
   Global Options:
