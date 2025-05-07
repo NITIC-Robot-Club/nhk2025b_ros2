@@ -10,15 +10,16 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
         "/swerve_cmd", 10, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
     timer_         = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
     wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
-    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.062);
-    x_             = 0.0f;
-    y_             = 0.0f;
-    z_             = 0.0f;
-    x_sum_         = 0.0f;
-    y_sum_         = 0.0f;
-    z_sum_         = 0.0f;
-    count_         = 0;
-    sig_           = true;
+    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.031);
+
+    x_     = 0.0f;
+    y_     = 0.0f;
+    z_     = 0.0f;
+    x_sum_ = 0.0f;
+    y_sum_ = 0.0f;
+    z_sum_ = 0.0f;
+    count_ = 0;
+    sig_   = true;
 }
 
 void simulation::timer_callback () {
@@ -61,9 +62,6 @@ void simulation::timer_callback () {
 
 void simulation::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
     swerve_publisher_->publish (*msg);
-
-    wheel_position = this->get_parameter ("wheel_position").as_double ();
-    wheel_radius   = this->get_parameter ("wheel_radius").as_double ();
 
     double wheel_positions[4][2] = {
         {+wheel_position, +wheel_position},
@@ -131,7 +129,6 @@ void simulation::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr ms
     y_sum_ += x[1];
     z_sum_ += x[2];
     count_++;
-    RCLCPP_INFO (this->get_logger (), "x: %f, y: %f, z: %f", x[0], x[1], x[2]);
 }
 }  // namespace simulation
 

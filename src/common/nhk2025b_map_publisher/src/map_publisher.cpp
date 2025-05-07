@@ -6,13 +6,13 @@ map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_p
     publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 10);
     team_color_subsctiber_ =
         this->create_subscription<std_msgs::msg::Bool> ("/is_red", 10, [this] (std_msgs::msg::Bool::SharedPtr msg) { is_red = msg->data; });
-    timer_      = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&map_publisher::publish_map, this));
-    resolution_ = this->declare_parameter<double> ("resolution", 0.05);  // 5cm
+    timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&map_publisher::publish_map, this));
+    this->declare_parameter<double> ("resolution", 0.05);  // 5cm
 }
 
 void map_publisher::publish_map () {
     nav_msgs::msg::OccupancyGrid map;
-    resolution_                   = static_cast<float> (this->get_parameter ("resolution").as_double ());  // float
+    this->get_parameter ("resolution", resolution_);  // float
     map.header.stamp              = this->now ();
     map.header.frame_id           = "map";
     map.info.resolution           = resolution_;         // m
