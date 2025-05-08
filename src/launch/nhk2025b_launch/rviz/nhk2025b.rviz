@@ -142,7 +142,7 @@ Visualization Manager:
       History Length: 1
       Linear Arrow Scale: 1
       Linear Color: 204; 51; 51
-      Name: TwistStamped
+      Name: cmd_vel
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -226,7 +226,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: Pose
+      Name: lookahead
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -237,6 +237,26 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /lookahead_point
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 38; 162; 105
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: ekf
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /localization/current_pose
       Value: true
   Enabled: true
   Global Options:

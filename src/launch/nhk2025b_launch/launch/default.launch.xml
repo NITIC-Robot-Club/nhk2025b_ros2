@@ -1,0 +1,6 @@
+<launch>
+  <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_default_container" namespace="">
+    <composable_node pkg="nhk2025b_map_publisher" plugin="map_publisher::map_publisher" name="map_publisher"/>
+    <composable_node pkg="nhk2025b_visualize_swerve" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
+  </node_container>
+</launch>
