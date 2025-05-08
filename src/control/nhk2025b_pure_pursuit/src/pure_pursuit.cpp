@@ -68,7 +68,7 @@ void pure_pursuit::timer_callback () {
     double angle_diff = std::atan2 (dy, dx);
 
     double current_yaw = std::atan2 (current_pose_.pose.orientation.z, current_pose_.pose.orientation.w) * 2.0;
-    double yaw_diff  = std::asin (path_.poses[lookahead_index].pose.orientation.z) * 2 - current_yaw;
+    double yaw_diff    = std::asin (path_.poses[lookahead_index].pose.orientation.z) * 2 - current_yaw;
     if (yaw_diff > M_PI) {
         yaw_diff -= 2.0 * M_PI;
     } else if (yaw_diff < -M_PI) {
