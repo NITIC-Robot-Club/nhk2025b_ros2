@@ -151,6 +151,34 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /cmd_vel
       Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.07000000029802322
+      Head Length: 0.10000000149011612
+      Length: 0.5
+      Line Style: Billboards
+      Line Width: 0.10000000149011612
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 98; 160; 234
+      Pose Style: Arrows
+      Radius: 0.05000000074505806
+      Shaft Diameter: 0.019999999552965164
+      Shaft Length: 0.05000000074505806
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /planning/path
+      Value: true
     - Angle Tolerance: 0.009999999776482582
       Class: rviz_default_plugins/Odometry
       Covariance:
@@ -190,6 +218,26 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /localization/wheel_odometory
       Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 249; 240; 107
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /lookahead_point
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -199,23 +247,13 @@ Visualization Manager:
   Tools:
     - Class: rviz_default_plugins/Interact
       Hide Inactive Objects: true
-    - Class: rviz_default_plugins/SetInitialPose
-      Covariance x: 0.25
-      Covariance y: 0.25
-      Covariance yaw: 0.06853891909122467
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /initialpose
     - Class: rviz_default_plugins/SetGoal
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /goal_pose
+        Value: /behavior/goal_pose
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
