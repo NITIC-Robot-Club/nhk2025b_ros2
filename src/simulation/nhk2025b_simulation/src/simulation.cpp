@@ -24,11 +24,16 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
 
 void simulation::timer_callback () {
     if (count_ != 0 && sig_) {
-        z_ += z_sum_ / count_ * 0.1f;
+        z_ += z_sum_ / count_ * 0.1;
         double angle    = std::atan2 (y_sum_ / count_, x_sum_ / count_) + z_;
-        double distance = std::hypot (x_sum_ / count_, y_sum_ / count_);
-        x_ += distance * std::cos (angle) * 0.1f;
-        y_ += distance * std::sin (angle) * 0.1f;
+        if (!std::isnan(angle)) {
+            double distance = std::hypot (x_sum_ / count_, y_sum_ / count_);
+            x_ += distance * std::cos (angle) * 0.1;
+            y_ += distance * std::sin (angle) * 0.1;
+        } else {
+            RCLCPP_WARN (this->get_logger (), "NaN detected in angle calculation");
+            RCLCPP_INFO (this->get_logger (), "x_sum_: %f, y_sum_: %f, z_sum_: %f", x_sum_, y_sum_, z_sum_);
+        }
     }
 
     while (z_ > +M_PI) {
