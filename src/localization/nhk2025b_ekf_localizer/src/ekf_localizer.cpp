@@ -79,7 +79,7 @@ void ekf_localizer::predict(const nav_msgs::msg::Odometry& odom,
 void ekf_localizer::update(const geometry_msgs::msg::PoseStamped& pose_msg) {
     Eigen::VectorXd z(3);
     z << pose_msg.pose.position.x, pose_msg.pose.position.y,
-         tf2::getYaw(pose_msg.pose.orientation);
+        std::asin(pose_msg.pose.orientation.z) * 2.0;  // yaw
 
     Eigen::VectorXd h = x_.head(3);  // 状態ベクトルの位置と角度
 
@@ -90,11 +90,11 @@ void ekf_localizer::update(const geometry_msgs::msg::PoseStamped& pose_msg) {
     y(2) = std::atan2(std::sin(y(2)), std::cos(y(2)));
 
     // 観測誤差が大きすぎる場合は更新をスキップ
-    double error_threshold = 0.5;  // 0.5メートル以内、または5度以内に収束しない場合
-    if (y.norm() > error_threshold) {
-        RCLCPP_WARN(this->get_logger(), "Observation is unreliable. Skipping update.");
-        return;  // 更新しない
-    }
+    // double error_threshold = 0.5;  // 0.5メートル以内、または5度以内に収束しない場合
+    // if (y.norm() > error_threshold) {
+    //     RCLCPP_WARN(this->get_logger(), "Observation is unreliable. Skipping update.");
+    //     return;  // 更新しない
+    // }
 
     // 観測行列H（位置と角度の更新）
     Eigen::MatrixXd H = Eigen::MatrixXd::Zero(3, 6);
