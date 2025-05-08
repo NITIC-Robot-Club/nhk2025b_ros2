@@ -50,6 +50,10 @@ void pure_pursuit::timer_callback () {
         return;
     }
 
+    if (closest_index + 1 >= path_.poses.size ()) {
+        RCLCPP_WARN (this->get_logger (), "Closest index is out of range");
+        closest_index = path_.poses.size () - 2;
+    }
     // get the lookahead point
     int lookahead_index = closest_index;
     for (int index = closest_index; index < path_.poses.size (); index++) {
@@ -65,9 +69,8 @@ void pure_pursuit::timer_callback () {
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
 
-    double angle_diff = std::atan2 (dy, dx);
-
-    double current_yaw = std::atan2 (current_pose_.pose.orientation.z, current_pose_.pose.orientation.w) * 2.0;
+    double current_yaw = std::asin (current_pose_.pose.orientation.z) * 2;
+    double angle_diff  = std::atan2 (dy, dx) - current_yaw;
     double yaw_diff    = std::asin (path_.poses[lookahead_index].pose.orientation.z) * 2 - current_yaw;
     if (yaw_diff > M_PI) {
         yaw_diff -= 2.0 * M_PI;
@@ -75,20 +78,18 @@ void pure_pursuit::timer_callback () {
         yaw_diff += 2.0 * M_PI;
     }
 
-    if (closest_index + 1 >= path_.poses.size ()) {
-        RCLCPP_WARN (this->get_logger (), "Closest index is out of range");
-        closest_index = path_.poses.size () - 2;
-    }
-    rclcpp::Time     closest_time  = path_.poses[closest_index].header.stamp;
-    rclcpp::Time     closest1_time = path_.poses[closest_index + 1].header.stamp;
-    rclcpp::Duration dt            = closest1_time - closest_time;
+    int target_speed_index = closest_index;
+
+    rclcpp::Time     time0 = path_.poses[target_speed_index].header.stamp;
+    rclcpp::Time     time1 = path_.poses[target_speed_index + 1].header.stamp;
+    rclcpp::Duration dt    = time1 - time0;
     if (dt.seconds () <= 0.0) {
         RCLCPP_WARN (this->get_logger (), "dt is zero or negative");
         return;
     }
     double speed = std::hypot (
-                       path_.poses[closest_index + 1].pose.position.x - path_.poses[closest_index].pose.position.x,
-                       path_.poses[closest_index + 1].pose.position.y - path_.poses[closest_index].pose.position.y) /
+                       path_.poses[target_speed_index + 1].pose.position.x - path_.poses[target_speed_index].pose.position.x,
+                       path_.poses[target_speed_index + 1].pose.position.y - path_.poses[target_speed_index].pose.position.y) /
                    dt.seconds ();
 
     double yaw_speed = angle_p_ * yaw_diff;
