@@ -46,7 +46,7 @@ void lidar_simulation::timer_callback () {
     double start_y = current_pose.pose.position.y + lidar_x * std::sin (yaw) + lidar_y * std::cos (yaw);
     for (size_t i = 0; i < scan.ranges.size (); ++i) {  // Ensure we iterate within bounds
         double angle = scan.angle_min + i * scan.angle_increment + yaw + lidar_z;
-        for (double r = 0.1; r < scan.range_max; r += 0.1) {
+        for (double r = 0.1; r < scan.range_max; r += 0.01) {
             double x = start_x + r * std::cos (angle);
             double y = start_y + r * std::sin (angle);
 

@@ -51,7 +51,7 @@ void map_publisher::publish_map () {
                 }
             } else {
                 // 右 (0,0)~(10.8, 0.015)
-                if (x < 0.015 / resolution_) {
+                if (x < 0.15 / resolution_) {
                     map.data[y + x * map.info.width] = 100;
                 }
                 // 奥 (10.65,0)~(10.8,4.8)

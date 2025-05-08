@@ -13,8 +13,8 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
     wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
     wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.031);
 
-    x_     = 0.0f;
-    y_     = 0.0f;
+    x_     = 1.0f;
+    y_     = 1.0f;
     z_     = 0.0f;
     x_sum_ = 0.0f;
     y_sum_ = 0.0f;
