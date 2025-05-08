@@ -25,8 +25,8 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
 void simulation::timer_callback () {
     if (count_ != 0 && sig_) {
         z_ += z_sum_ / count_ * 0.1;
-        double angle    = std::atan2 (y_sum_ / count_, x_sum_ / count_) + z_;
-        if (!std::isnan(angle)) {
+        double angle = std::atan2 (y_sum_ / count_, x_sum_ / count_) + z_;
+        if (!std::isnan (angle)) {
             double distance = std::hypot (x_sum_ / count_, y_sum_ / count_);
             x_ += distance * std::cos (angle) * 0.1;
             y_ += distance * std::sin (angle) * 0.1;
