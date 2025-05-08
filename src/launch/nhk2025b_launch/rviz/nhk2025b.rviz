@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Path1/Status1
         - /Odometry1/Shape1
       Splitter Ratio: 0.6000000238418579
     Tree Height: 818
@@ -171,7 +172,14 @@ Visualization Manager:
       Radius: 0.05000000074505806
       Shaft Diameter: 0.019999999552965164
       Shaft Length: 0.05000000074505806
-      Value: /planning/path
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /planning/path
+      Value: true
     - Angle Tolerance: 0.009999999776482582
       Class: rviz_default_plugins/Odometry
       Covariance:
