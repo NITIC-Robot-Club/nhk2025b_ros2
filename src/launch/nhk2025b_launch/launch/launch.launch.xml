@@ -1,0 +1,4 @@
+<launch>
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/container.launch.xml"/>
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/rviz2.launch.xml"/>
+</launch>

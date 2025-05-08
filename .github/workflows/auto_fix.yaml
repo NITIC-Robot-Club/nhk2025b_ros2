@@ -1,0 +1,66 @@
+name: c++ style auto fix
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  auto_fix:
+    permissions:
+      contents: write
+
+    strategy:
+      matrix:
+        os: 
+          - ubuntu-22.04
+        rosdistro: 
+          - humble
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: ros:${{ matrix.rosdistro }}-ros-base
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          path: nhk2025b_ros2
+
+      - name: Fetch origin
+        working-directory: nhk2025b_ros2
+        run: | 
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin
+          git checkout ${{ github.head_ref }}
+
+      - name: Install dependencies
+        working-directory: nhk2025b_ros2
+        run: |
+          rosdep update
+          apt-get update
+          apt-get install -y curl lsb-release
+          apt-get install -y clang clang-format
+          apt-get install -y cmake
+          rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
+
+      - name: Run clang-format (auto-fix)
+        working-directory: nhk2025b_ros2
+        run: |
+          find src -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
+
+      - name: Commit and push changes
+        working-directory: nhk2025b_ros2
+        run : |
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-fix: applied clang-format and clang-tidy"
+            git push
+          fi
+      
+      - name: Success
+        run: echo "Auto-fix completed successfully."

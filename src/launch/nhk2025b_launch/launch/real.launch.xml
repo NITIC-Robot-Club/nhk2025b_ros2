@@ -1,0 +1,6 @@
+<launch>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml"/>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/real.launch.xml"/>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/swerve.launch.xml"/>
+</launch>

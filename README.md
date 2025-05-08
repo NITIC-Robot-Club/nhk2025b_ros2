@@ -17,7 +17,7 @@ ros2のwsです
 3. ビルド手順
     ```bash
     cd ~/NHK2025B/nhk2025b_ros2
-    ./colcon_build.sh
+    colcon build
     ```
 
 ## 開発
@@ -46,6 +46,8 @@ ros2のwsです
 4. 変更を加える
     - コミットメッセージは最終的にはまとめられるが、わかりやすいものがいい
     - コミットメッセージに規則はない
+    - auto lintが働いてコードがきれいになります
+    - 作業前にpullを忘れずに！
     - 変更が終わったらpushする
     ```bash
     git push origin ブランチ名
@@ -54,7 +56,6 @@ ros2のwsです
     - githubでリポジトリを開き、作成したブランチを開く
     - Compare & pull request ボタンを押してPRを作成する
     - PRのタイトルはIssueと同じにする
-    - PRの説明文には`close #Issue番号`を必ず含めること（例: `close #10`）
 6. コードレビュー&マージ
     - kazu-321 にコードレビューを割り当てる
     - 時間のあるときにコードの検証等を行うのでマージされるまで待つ
@@ -111,8 +112,8 @@ ament_auto_package(
 
 ### include/パッケージ名/ノード名.hpp
 ```cpp
-#ifndef __ノード名_HPP__
-#define __ノード名_HPP__
+#ifndef __ノード名_hpp__
+#define __ノード名_hpp__
 
 #include <rclcpp/rclcpp.hpp>
 // #include <test_msgs/msg/my_message.hpp>
@@ -131,7 +132,7 @@ namespace ネームスペース名 {
     };
 }
 
-#endif//__ノード名_HPP__
+#endif//__ノード名_hpp__
 ```
 
 ### src/ノード名.cpp
@@ -142,15 +143,17 @@ namespace ネームスペース名 {
     クラス名::クラス名(const rclcpp::NodeOptions & options)
         : Node("ノード名",options) {
             // パブリッシャー = this->create_publisher<test_msgs::msg::MyMessage>("topic名", 10);
-            // サブスクライバー = this->create_subscription<test_msgs::msg::MyMessage>("topic名", 10, std::bind(&クラス名::受信時に呼び出す関数名, this, std::placeholders::_1));
-            // タイマー = this->create_wall_timer(std::chrono::milliseconds(周期), std::bind(&クラス名::タイマーで呼び出す関数名, this));
+            // サブスクライバー = this->create_subscription<test_msgs::msg::MyMessage>
+            //    ("topic名", 10, std::bind(&クラス名::受信時に呼び出す関数名, this, std::placeholders::_1));
+            // タイマー = this->create_wall_timer(std::chrono::milliseconds(周期), 
+            //    std::bind(&クラス名::タイマーで呼び出す関数名, this));
         }
 
         // void クラス名::受信時に呼び出す関数名(const test_msgs::msg::MyMessage::SharedPtr msg) {
         //     msg->test のように->を使って情報にアクセス
         // }
 
-        // void タイマーで呼び出す関数名() {
+        // void クラス名::タイマーで呼び出す関数名() {
         //     定期的に実行
         // }
 }
