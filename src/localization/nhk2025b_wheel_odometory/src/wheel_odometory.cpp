@@ -115,12 +115,12 @@ void wheel_odometory::timer_callback () {
     odom_msg.pose.pose.orientation.y = 0.0;
     odom_msg.pose.pose.orientation.z = std::sin (current_z / 2.0);
     odom_msg.pose.pose.orientation.w = std::cos (current_z / 2.0);
-    odom_msg.twist.twist.linear.x    = sum_x / 0.05;
-    odom_msg.twist.twist.linear.y    = sum_y / 0.05;
+    odom_msg.twist.twist.linear.x    = sum_x / count;
+    odom_msg.twist.twist.linear.y    = sum_y / count;
     odom_msg.twist.twist.linear.z    = 0.0;
     odom_msg.twist.twist.angular.x   = 0.0;
     odom_msg.twist.twist.angular.y   = 0.0;
-    odom_msg.twist.twist.angular.z   = sum_z / 0.05;
+    odom_msg.twist.twist.angular.z   = sum_z / count;
 
     odom_publisher->publish (odom_msg);
 

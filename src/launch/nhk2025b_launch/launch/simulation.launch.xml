@@ -1,19 +1,12 @@
 <launch>
-  <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_default_container" namespace="">
-    <composable_node pkg="nhk2025b_map_publisher" plugin="map_publisher::map_publisher" name="map_publisher"/>
-    <composable_node pkg="nhk2025b_visualize_swerve" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
-  </node_container>
   <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_robot_container" namespace="">
     <composable_node pkg="nhk2025b_swerve_calculator" plugin="swerve_calculator::swerve_calculator" name="swerve_calculator"/>
     <composable_node pkg="nhk2025b_wheel_odometory" plugin="wheel_odometory::wheel_odometory" name="wheel_odometory"/>
-  </node_container>
-  <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_planning_container" namespace="">
-    <composable_node pkg="nhk2025b_path_planner" plugin="path_planner::path_planner" name="path_planner"/>
-    <composable_node pkg="nhk2025b_pure_pursuit" plugin="pure_pursuit::pure_pursuit" name="pure_pursuit"/>
   </node_container>
   <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_simulation_container" namespace="">
     <composable_node pkg="nhk2025b_simulation" plugin="simulation::simulation" name="simulation"/>
     <composable_node pkg="nhk2025b_simulation" plugin="lidar_simulation::lidar_simulation" name="lidar_simulation"/>
   </node_container>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/rviz2.launch.xml"/>
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml"/>
 </launch>
