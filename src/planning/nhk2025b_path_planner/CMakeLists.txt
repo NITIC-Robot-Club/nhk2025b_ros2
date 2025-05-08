@@ -1,6 +1,5 @@
-
 cmake_minimum_required(VERSION 3.8)
-project(nhk2025b_simulation)
+project(nhk2025b_path_planner)
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
@@ -14,13 +13,8 @@ target_include_directories(${PROJECT_NAME}
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-    PLUGIN "simulation::simulation"
-    EXECUTABLE simulation
-)
-
-rclcpp_components_register_node(${PROJECT_NAME}
-    PLUGIN "lidar_simulation::lidar_simulation"
-    EXECUTABLE lidar_simulation
+    PLUGIN "path_planner::path_planner"
+    EXECUTABLE path_planner
 )
 
 ament_auto_package(
