@@ -6,7 +6,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     pose_subscriber_   = this->create_subscription<geometry_msgs::msg::PoseStamped> (
         "/current_pose", 10, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
     path_subscriber_ =
-        this->create_subscription<nav_msgs::msg::Path> ("/path", 10, std::bind (&pure_pursuit::path_callback, this, std::placeholders::_1));
+        this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 10, std::bind (&pure_pursuit::path_callback, this, std::placeholders::_1));
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&pure_pursuit::timer_callback, this));
 
