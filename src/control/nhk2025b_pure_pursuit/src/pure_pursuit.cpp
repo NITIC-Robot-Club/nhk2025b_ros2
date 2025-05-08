@@ -3,8 +3,10 @@
 namespace pure_pursuit {
 pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pursuit", options) {
     cmd_vel_publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 10);
+    lookahead_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/lookahead_point", 10);
     pose_subscriber_   = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/current_pose", 10, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
+        "/simulation/pose", 10, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
+
     path_subscriber_ =
         this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 10, std::bind (&pure_pursuit::path_callback, this, std::placeholders::_1));
 
@@ -45,6 +47,8 @@ void pure_pursuit::timer_callback () {
 
     if (closest_index == -1) {
         RCLCPP_WARN (this->get_logger (), "No closest point found");
+        // RCLCPP_INFO (this->get_logger (), "Current pose: (%f, %f)", current_pose_.pose.position.x, current_pose_.pose.position.y);
+        // RCLCPP_INFO (this->get_logger(), "path[0]: (%f, %f)", path_.poses[0].pose.position.x, path_.poses[0].pose.position.y);
         return;
     }
 
@@ -62,18 +66,24 @@ void pure_pursuit::timer_callback () {
     // calculate the angle to the lookahead point
     double dx              = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy              = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
-    double angle_to_target = std::atan2 (dy, dx);
     double current_yaw     = std::atan2 (current_pose_.pose.orientation.z, current_pose_.pose.orientation.w) * 2.0;
-    double angle_diff      = angle_to_target - current_yaw;
+    double angle_diff      = std::asin(path_.poses[lookahead_index].pose.orientation.z)*2 - current_yaw;
     if (angle_diff > M_PI) {
         angle_diff -= 2.0 * M_PI;
     } else if (angle_diff < -M_PI) {
         angle_diff += 2.0 * M_PI;
     }
     // calculate the speed
+    rclcpp::Time closest_time = path_.poses[closest_index].header.stamp;
+    rclcpp::Time closest1_time = path_.poses[closest_index+1].header.stamp;
+    rclcpp::Duration dt = closest1_time - closest_time;
+    if (dt.seconds () <= 0.0) {
+        RCLCPP_WARN (this->get_logger (), "dt is zero or negative");
+        return;
+    }
     double speed = std::hypot (
-        path_.poses[lookahead_index].pose.position.x - path_.poses[closest_index].pose.position.x,
-        path_.poses[lookahead_index].pose.position.y - path_.poses[closest_index].pose.position.y);
+        path_.poses[closest_index+1].pose.position.x - path_.poses[closest_index].pose.position.x,
+        path_.poses[closest_index+1].pose.position.y - path_.poses[closest_index].pose.position.y)/dt.seconds ();
 
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.header.stamp    = this->now ();
@@ -82,6 +92,12 @@ void pure_pursuit::timer_callback () {
     cmd_vel.twist.linear.y  = speed * std::sin (angle_diff);
     cmd_vel.twist.angular.z = angle_p_ * angle_diff;
     cmd_vel_publisher_->publish (cmd_vel);
+
+    geometry_msgs::msg::PoseStamped lookahead_point;
+    lookahead_point.header.stamp    = this->now ();
+    lookahead_point.header.frame_id = "map";
+    lookahead_point.pose = path_.poses[lookahead_index].pose;
+    lookahead_publisher_->publish (lookahead_point);
 }
 
 }  // namespace pure_pursuit

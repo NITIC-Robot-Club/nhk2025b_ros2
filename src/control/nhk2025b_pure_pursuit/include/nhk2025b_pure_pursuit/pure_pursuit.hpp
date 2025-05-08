@@ -5,6 +5,7 @@
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <rclcpp/rclcpp.hpp>
+
 namespace pure_pursuit {
 class pure_pursuit : public rclcpp::Node {
    public:
@@ -23,6 +24,7 @@ class pure_pursuit : public rclcpp::Node {
     rclcpp::TimerBase::SharedPtr timer_;
 
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr   cmd_vel_publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    lookahead_publisher_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subscriber_;
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr             path_subscriber_;
 };
