@@ -12,8 +12,8 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&pure_pursuit::timer_callback, this));
 
-    this->declare_parameter ("lookahead_distance", 0.5);
-    this->declare_parameter ("angle_p", 1.0);
+    this->declare_parameter ("lookahead_distance", 1.0);
+    this->declare_parameter ("angle_p", 3.0);
 }
 
 void pure_pursuit::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
@@ -47,8 +47,6 @@ void pure_pursuit::timer_callback () {
 
     if (closest_index == -1) {
         RCLCPP_WARN (this->get_logger (), "No closest point found");
-        // RCLCPP_INFO (this->get_logger (), "Current pose: (%f, %f)", current_pose_.pose.position.x, current_pose_.pose.position.y);
-        // RCLCPP_INFO (this->get_logger(), "path[0]: (%f, %f)", path_.poses[0].pose.position.x, path_.poses[0].pose.position.y);
         return;
     }
 
@@ -67,12 +65,14 @@ void pure_pursuit::timer_callback () {
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
 
+    double angle_diff = std::atan2 (dy, dx);
+
     double current_yaw = std::atan2 (current_pose_.pose.orientation.z, current_pose_.pose.orientation.w) * 2.0;
-    double angle_diff  = std::asin (path_.poses[lookahead_index].pose.orientation.z) * 2 - current_yaw;
-    if (angle_diff > M_PI) {
-        angle_diff -= 2.0 * M_PI;
-    } else if (angle_diff < -M_PI) {
-        angle_diff += 2.0 * M_PI;
+    double yaw_diff  = std::asin (path_.poses[lookahead_index].pose.orientation.z) * 2 - current_yaw;
+    if (yaw_diff > M_PI) {
+        yaw_diff -= 2.0 * M_PI;
+    } else if (yaw_diff < -M_PI) {
+        yaw_diff += 2.0 * M_PI;
     }
 
     if (closest_index + 1 >= path_.poses.size ()) {
@@ -91,12 +91,14 @@ void pure_pursuit::timer_callback () {
                        path_.poses[closest_index + 1].pose.position.y - path_.poses[closest_index].pose.position.y) /
                    dt.seconds ();
 
+    double yaw_speed = angle_p_ * yaw_diff;
+
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.header.stamp    = this->now ();
     cmd_vel.header.frame_id = "base_link";
     cmd_vel.twist.linear.x  = speed * std::cos (angle_diff);
     cmd_vel.twist.linear.y  = speed * std::sin (angle_diff);
-    cmd_vel.twist.angular.z = angle_p_ * angle_diff;
+    cmd_vel.twist.angular.z = yaw_speed;
     cmd_vel_publisher_->publish (cmd_vel);
 
     geometry_msgs::msg::PoseStamped lookahead_point;
