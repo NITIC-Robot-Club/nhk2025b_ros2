@@ -66,6 +66,7 @@ void pure_pursuit::timer_callback () {
     // calculate the angle to the lookahead point
     double dx          = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy          = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
+
     double current_yaw = std::atan2 (current_pose_.pose.orientation.z, current_pose_.pose.orientation.w) * 2.0;
     double angle_diff  = std::asin (path_.poses[lookahead_index].pose.orientation.z) * 2 - current_yaw;
     if (angle_diff > M_PI) {
@@ -73,7 +74,11 @@ void pure_pursuit::timer_callback () {
     } else if (angle_diff < -M_PI) {
         angle_diff += 2.0 * M_PI;
     }
-    // calculate the speed
+    
+    if(closest_index + 1 >= path_.poses.size ()) {
+        RCLCPP_WARN (this->get_logger (), "Closest index is out of range");
+        closest_index = path_.poses.size () - 2;
+    }
     rclcpp::Time     closest_time  = path_.poses[closest_index].header.stamp;
     rclcpp::Time     closest1_time = path_.poses[closest_index + 1].header.stamp;
     rclcpp::Duration dt            = closest1_time - closest_time;
