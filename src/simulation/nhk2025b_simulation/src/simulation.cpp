@@ -8,6 +8,7 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
     pose_publisher_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/simulation/pose", 10);
     swerve_subscriber_      = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
         "/swerve_cmd", 10, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
+    imu_publisher_ = this->create_publisher<sensor_msgs::msg::Imu> ("/sensor/imu", 10);
     timer_         = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
     wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
     wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.031);
@@ -18,6 +19,8 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
     x_sum_ = 0.0f;
     y_sum_ = 0.0f;
     z_sum_ = 0.0f;
+    x_vec_ = 0.0f;
+    y_vec_ = 0.0f;
     count_ = 0;
     sig_   = true;
 }
@@ -30,6 +33,24 @@ void simulation::timer_callback () {
             double distance = std::hypot (x_sum_ / count_, y_sum_ / count_);
             x_ += distance * std::cos (angle) * 0.1;
             y_ += distance * std::sin (angle) * 0.1;
+            
+            sensor_msgs::msg::Imu imu;
+            imu.header.stamp       = this->now ();
+            imu.header.frame_id    = "base_link";
+            imu.orientation.x      = 0.0;
+            imu.orientation.y      = 0.0;
+            imu.orientation.z      = std::sin (z_ / 2.0f);
+            imu.orientation.w      = std::cos (z_ / 2.0f);
+            imu.angular_velocity.x = 0.0;
+            imu.angular_velocity.y = 0.0;
+            imu.angular_velocity.z = z_sum_ / count_ * 0.1;
+            imu.linear_acceleration.x = (x_sum_ / count_  - x_vec_)/0.1;
+            imu.linear_acceleration.y = (y_sum_ / count_  - y_vec_)/0.1;
+            imu.linear_acceleration.z = 0.0;
+            imu_publisher_->publish (imu);
+
+            x_vec_ = x_sum_ / count_;
+            y_vec_ = y_sum_ / count_;
         } else {
             RCLCPP_WARN (this->get_logger (), "NaN detected in angle calculation");
             RCLCPP_INFO (this->get_logger (), "x_sum_: %f, y_sum_: %f, z_sum_: %f", x_sum_, y_sum_, z_sum_);
