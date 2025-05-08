@@ -33,19 +33,19 @@ void simulation::timer_callback () {
             double distance = std::hypot (x_sum_ / count_, y_sum_ / count_);
             x_ += distance * std::cos (angle) * 0.1;
             y_ += distance * std::sin (angle) * 0.1;
-            
+
             sensor_msgs::msg::Imu imu;
-            imu.header.stamp       = this->now ();
-            imu.header.frame_id    = "base_link";
-            imu.orientation.x      = 0.0;
-            imu.orientation.y      = 0.0;
-            imu.orientation.z      = std::sin (z_ / 2.0f);
-            imu.orientation.w      = std::cos (z_ / 2.0f);
-            imu.angular_velocity.x = 0.0;
-            imu.angular_velocity.y = 0.0;
-            imu.angular_velocity.z = z_sum_ / count_ * 0.1;
-            imu.linear_acceleration.x = (x_sum_ / count_  - x_vec_)/0.1;
-            imu.linear_acceleration.y = (y_sum_ / count_  - y_vec_)/0.1;
+            imu.header.stamp          = this->now ();
+            imu.header.frame_id       = "base_link";
+            imu.orientation.x         = 0.0;
+            imu.orientation.y         = 0.0;
+            imu.orientation.z         = std::sin (z_ / 2.0f);
+            imu.orientation.w         = std::cos (z_ / 2.0f);
+            imu.angular_velocity.x    = 0.0;
+            imu.angular_velocity.y    = 0.0;
+            imu.angular_velocity.z    = z_sum_ / count_ * 0.1;
+            imu.linear_acceleration.x = (x_sum_ / count_ - x_vec_) / 0.1;
+            imu.linear_acceleration.y = (y_sum_ / count_ - y_vec_) / 0.1;
             imu.linear_acceleration.z = 0.0;
             imu_publisher_->publish (imu);
 
