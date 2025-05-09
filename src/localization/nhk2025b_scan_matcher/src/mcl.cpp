@@ -9,14 +9,14 @@ mcl::mcl (const rclcpp::NodeOptions& options)
       tf_broadcaster_ (std::make_unique<tf2_ros::TransformBroadcaster> (*this)),
       rng_ (std::random_device{}()) {
     this->declare_parameter ("num_particles", 150);
-    this->declare_parameter ("motion_noise_linear", 0.1);
-    this->declare_parameter ("motion_noise_angle", 0.1);
-    this->declare_parameter ("resample_threshold", 0.5);
+    this->declare_parameter ("motion_noise_linear", 0.01);
+    this->declare_parameter ("motion_noise_angle", 0.01);
+    this->declare_parameter ("gaussian_stddev", 1.0);
 
     this->get_parameter ("num_particles", num_particles_);
     this->get_parameter ("motion_noise_linear", motion_noise_linear_);
     this->get_parameter ("motion_noise_angle", motion_noise_angle_);
-    this->get_parameter ("resample_threshold", resample_threshold_);
+    this->get_parameter ("gaussian_stddev", gaussian_stddev_);
 
     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan> (
         "/sensor/scan", rclcpp::SensorDataQoS (), std::bind (&mcl::scan_callback, this, std::placeholders::_1));
@@ -82,9 +82,9 @@ void mcl::pose_callback (const geometry_msgs::msg::PoseWithCovarianceStamped::Sh
     current_pose_ = pose_msg->pose.pose;  // Extract pose from PoseWithCovarianceStamped
 
     this->get_parameter ("num_particles", num_particles_);
-    this->get_parameter ("motion_noise_lin", motion_noise_linear_);
-    this->get_parameter ("motion_noise_ang", motion_noise_angle_);
-    this->get_parameter ("resample_threshold", resample_threshold_);
+    this->get_parameter ("motion_noise_linear", motion_noise_linear_);
+    this->get_parameter ("motion_noise_angle", motion_noise_angle_);
+    this->get_parameter ("gaussian_stddev", gaussian_stddev_);
     initialize_particles_gaussian (current_pose_);
 }
 
@@ -137,12 +137,12 @@ void mcl::initialize_particles_gaussian (const geometry_msgs::msg::Pose& initial
     particles_.clear ();
 
     // Define Gaussian distributions for x, y, and theta based on the initial pose
-    std::normal_distribution<double> dist_x (initial_pose.position.x, map_->info.width * map_->info.resolution / 6.0);
-    std::normal_distribution<double> dist_y (initial_pose.position.y, map_->info.height * map_->info.resolution / 6.0);
+    std::normal_distribution<double> dist_x (initial_pose.position.x, gaussian_stddev_);
+    std::normal_distribution<double> dist_y (initial_pose.position.y, gaussian_stddev_);
     tf2::Quaternion                  q;
     tf2::fromMsg (initial_pose.orientation, q);
     double                           initial_theta = tf2::getYaw (q);
-    std::normal_distribution<double> dist_theta (initial_theta, M_PI / 6.0);
+    std::normal_distribution<double> dist_theta (initial_theta, M_PI);
 
     while (particles_.size () < static_cast<size_t> (num_particles_)) {
         double x = dist_x (rng_);
