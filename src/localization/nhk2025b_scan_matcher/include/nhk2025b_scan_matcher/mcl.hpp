@@ -19,6 +19,8 @@
 #include <string>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <vector>
+#include <queue>
+
 
 namespace mcl {
 
@@ -45,6 +47,8 @@ class mcl : public rclcpp::Node {
     void                     motion_update (const geometry_msgs::msg::Pose &current, const geometry_msgs::msg::Pose &last);
     void                     sensor_update (const sensor_msgs::msg::LaserScan &scan);
     void                     resample_particles ();
+    void                     create_distance_map();
+
     geometry_msgs::msg::Pose estimate_pose () const;
 
     // ユーティリティ
@@ -76,9 +80,11 @@ class mcl : public rclcpp::Node {
 
     // パラメータ
     int    num_particles_;
-    double motion_noise_lin_;
-    double motion_noise_ang_;
+    double motion_noise_linear_;
+    double motion_noise_angle_;
     double resample_threshold_;
+
+    std::vector<double> distance_map_;
 };
 
 }  // namespace mcl
