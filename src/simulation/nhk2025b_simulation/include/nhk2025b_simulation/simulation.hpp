@@ -1,10 +1,11 @@
 #ifndef __simulation_hpp__
 #define __simulation_hpp__
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nhk2025b_msgs/msg/robot_status.hpp>
 #include <nhk2025b_msgs/msg/swerve.hpp>
-#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 
 namespace simulation {

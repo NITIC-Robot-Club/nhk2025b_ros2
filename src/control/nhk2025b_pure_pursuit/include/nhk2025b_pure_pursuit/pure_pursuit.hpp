@@ -1,10 +1,11 @@
 #ifndef __pure_pursuit_hpp__
 #define __pure_pursuit_hpp__
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <rclcpp/rclcpp.hpp>
 
 namespace pure_pursuit {
 class pure_pursuit : public rclcpp::Node {

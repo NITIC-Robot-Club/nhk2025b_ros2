@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(nhk2025b_wheel_odometory)
+project(nhk2025b_wheel_odometry)
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
@@ -13,8 +13,8 @@ target_include_directories(${PROJECT_NAME}
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-    PLUGIN "wheel_odometory::wheel_odometory"
-    EXECUTABLE wheel_odometory
+    PLUGIN "wheel_odometry::wheel_odometry"
+    EXECUTABLE wheel_odometry
 )
 
 ament_auto_package(

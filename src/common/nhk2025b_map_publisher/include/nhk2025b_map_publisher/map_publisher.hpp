@@ -1,8 +1,9 @@
 #ifndef __map_publisher_hpp__
 #define __map_publisher_hpp__
 
-#include <nav_msgs/msg/occupancy_grid.hpp>
 #include <rclcpp/rclcpp.hpp>
+
+#include <nav_msgs/msg/occupancy_grid.hpp>
 #include <std_msgs/msg/bool.hpp>
 
 namespace map_publisher {
