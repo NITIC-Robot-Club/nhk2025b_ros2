@@ -3,11 +3,11 @@
 
 namespace simulation {
 simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation", options) {
-    swerve_publisher_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve_result", 10);
+    swerve_publisher_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 10);
     robot_status_publisher_ = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 10);
     pose_publisher_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/simulation/pose", 10);
     swerve_subscriber_      = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
-        "/swerve_cmd", 10, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
+        "/swerve/cmd", 10, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
     imu_publisher_        = this->create_publisher<sensor_msgs::msg::Imu> ("/sensor/imu", 10);
     timer_                = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
     wheel_position        = this->declare_parameter<double> ("wheel_position", 0.62);

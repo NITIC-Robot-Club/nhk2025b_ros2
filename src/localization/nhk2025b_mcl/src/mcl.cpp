@@ -29,8 +29,8 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
         "/localization/wheel_odometory", 10, std::bind (&mcl::odom_callback, this, std::placeholders::_1));
 
-    pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/mcl_pose", 10);
-    particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/mcl_particles", 10);
+    pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
+    particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 10);
 }
 
 void mcl::create_distance_map () {
