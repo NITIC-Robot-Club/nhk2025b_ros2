@@ -51,7 +51,7 @@ void pure_pursuit::timer_callback () {
     }
 
     if (closest_index + 1 >= path_.poses.size ()) {
-        RCLCPP_WARN (this->get_logger (), "Closest index is out of range");
+        // RCLCPP_WARN (this->get_logger (), "Closest index is out of range");
         closest_index = path_.poses.size () - 2;
     }
     // get the lookahead point
