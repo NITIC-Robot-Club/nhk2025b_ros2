@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(nhk2025b_scan_matcher)
+project(nhk2025b_mcl)
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
@@ -10,11 +10,6 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
 
 target_include_directories(${PROJECT_NAME}
     SYSTEM PUBLIC
-)
-
-rclcpp_components_register_node(${PROJECT_NAME}
-    PLUGIN "ndt::ndt"
-    EXECUTABLE ndt
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
