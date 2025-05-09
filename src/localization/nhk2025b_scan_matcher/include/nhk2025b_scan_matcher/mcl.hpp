@@ -81,7 +81,8 @@ class mcl : public rclcpp::Node {
     int    num_particles_;
     double motion_noise_linear_;
     double motion_noise_angle_;
-    double gaussian_stddev_;
+    double gaussian_stddev_linear_;
+    double gaussian_stddev_angle_;
 
     std::vector<double> distance_map_;
 };

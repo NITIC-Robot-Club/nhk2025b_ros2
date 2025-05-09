@@ -11,12 +11,14 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     this->declare_parameter ("num_particles", 150);
     this->declare_parameter ("motion_noise_linear", 0.01);
     this->declare_parameter ("motion_noise_angle", 0.01);
-    this->declare_parameter ("gaussian_stddev", 1.0);
+    this->declare_parameter ("gaussian_stddev_linear", 1.0);
+    this->declare_parameter ("gaussian_stddev_angle", 1.0);
 
     this->get_parameter ("num_particles", num_particles_);
     this->get_parameter ("motion_noise_linear", motion_noise_linear_);
     this->get_parameter ("motion_noise_angle", motion_noise_angle_);
-    this->get_parameter ("gaussian_stddev", gaussian_stddev_);
+    this->get_parameter ("gaussian_stddev_linear", gaussian_stddev_linear_);
+    this->get_parameter ("gaussian_stddev_angle", gaussian_stddev_angle_);
 
     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan> (
         "/sensor/scan", rclcpp::SensorDataQoS (), std::bind (&mcl::scan_callback, this, std::placeholders::_1));
@@ -29,6 +31,10 @@ mcl::mcl (const rclcpp::NodeOptions& options)
 
     pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/mcl_pose", 10);
     particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/mcl_particles", 10);
+
+    while(!map) {};
+    
+    initialize_particles_gaussian (current_pose_);
 }
 
 void mcl::create_distance_map () {
@@ -84,7 +90,8 @@ void mcl::pose_callback (const geometry_msgs::msg::PoseWithCovarianceStamped::Sh
     this->get_parameter ("num_particles", num_particles_);
     this->get_parameter ("motion_noise_linear", motion_noise_linear_);
     this->get_parameter ("motion_noise_angle", motion_noise_angle_);
-    this->get_parameter ("gaussian_stddev", gaussian_stddev_);
+    this->get_parameter ("gaussian_stddev_linear", gaussian_stddev_linear_);
+    this->get_parameter ("gaussian_stddev_angle", gaussian_stddev_angle_);
     initialize_particles_gaussian (current_pose_);
 }
 
@@ -137,12 +144,12 @@ void mcl::initialize_particles_gaussian (const geometry_msgs::msg::Pose& initial
     particles_.clear ();
 
     // Define Gaussian distributions for x, y, and theta based on the initial pose
-    std::normal_distribution<double> dist_x (initial_pose.position.x, gaussian_stddev_);
-    std::normal_distribution<double> dist_y (initial_pose.position.y, gaussian_stddev_);
+    std::normal_distribution<double> dist_x (initial_pose.position.x, gaussian_stddev_linear_);
+    std::normal_distribution<double> dist_y (initial_pose.position.y, gaussian_stddev_linear_);
     tf2::Quaternion                  q;
     tf2::fromMsg (initial_pose.orientation, q);
     double                           initial_theta = tf2::getYaw (q);
-    std::normal_distribution<double> dist_theta (initial_theta, M_PI);
+    std::normal_distribution<double> dist_theta (initial_theta, gaussian_stddev_angle_);
 
     while (particles_.size () < static_cast<size_t> (num_particles_)) {
         double x = dist_x (rng_);

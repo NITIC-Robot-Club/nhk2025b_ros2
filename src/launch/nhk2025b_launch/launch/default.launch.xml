@@ -8,8 +8,8 @@
   <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_localization_test_container" namespace="">
     <composable_node pkg="nhk2025b_ekf_localizer" plugin="ekf_localizer::ekf_localizer" name="ekf_localizer"/>
     <composable_node pkg="nhk2025b_scan_matcher" plugin="mcl::mcl" name="mcl">
-      <param name="num_particles" value="300"/>
-      <param name="motion_noise_linear" value="0.05"/>
+      <param name="num_particles" value="500"/>
+      <param name="motion_noise_linear" value="0.01"/>
       <param name="motion_noise_angular" value="0.05"/>
     </composable_node>
   </node_container>

@@ -18,8 +18,8 @@ void map_publisher::publish_map () {
     map.info.resolution           = resolution_;         // m
     map.info.width                = 10.8 / resolution_;  // 10m
     map.info.height               = 5.4 / resolution_;   // 5m
-    map.info.origin.position.x    = -0.15;
-    map.info.origin.position.y    = -0.15;
+    map.info.origin.position.x    = 0.0;
+    map.info.origin.position.y    = 0.0;
     map.info.origin.position.z    = 0.0;
     map.info.origin.orientation.w = 1.0;
     map.data.resize (map.info.width * map.info.height, -1);
