@@ -1,8 +1,9 @@
 #ifndef __visualize_swerve_hpp__
 #define __visualize_swerve_hpp__
 
-#include <nhk2025b_msgs/msg/swerve.hpp>
 #include <rclcpp/rclcpp.hpp>
+
+#include <nhk2025b_msgs/msg/swerve.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
 namespace visualize_swerve {

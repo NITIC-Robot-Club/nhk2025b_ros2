@@ -1,9 +1,10 @@
 #ifndef __wheel_odometry_hpp__
 #define __wheel_odometry_hpp__
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <nav_msgs/msg/odometry.hpp>
 #include <nhk2025b_msgs/msg/swerve.hpp>
-#include <rclcpp/rclcpp.hpp>
 
 namespace wheel_odometry {
 class wheel_odometry : public rclcpp::Node {
