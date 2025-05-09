@@ -7,16 +7,13 @@ ekf_localizer::ekf_localizer (const rclcpp::NodeOptions& options)
     x_ = Eigen::VectorXd::Zero (6);         // [x, y, yaw, vx, vy, wz]
     P_ = Eigen::MatrixXd::Identity (6, 6);  // 共分散
 
-    fused_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
+    fused_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/ekf/pose", 10);
 
     imu_sub_ =
         this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 50, std::bind (&ekf_localizer::imu_callback, this, std::placeholders::_1));
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
         "/localization/wheel_odometory", 20, std::bind (&ekf_localizer::odom_callback, this, std::placeholders::_1));
-
-    lidar_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/simulation/pose", 5, std::bind (&ekf_localizer::lidar_callback, this, std::placeholders::_1));
 
     last_time_ = this->get_clock ()->now ();
 }
@@ -33,6 +30,14 @@ void ekf_localizer::imu_callback (const sensor_msgs::msg::Imu::SharedPtr msg) {
 
 void ekf_localizer::odom_callback (const nav_msgs::msg::Odometry::SharedPtr msg) {
     latest_odom_ = *msg;
+
+    // debug
+    geometry_msgs::msg::PoseStamped odom_pose;
+    odom_pose.header.stamp    = this->get_clock ()->now ();
+    odom_pose.header.frame_id = "map";
+    odom_pose.pose = msg->pose.pose;
+    fused_pose_pub_->publish (odom_pose);
+    // debug
 }
 
 void ekf_localizer::lidar_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
