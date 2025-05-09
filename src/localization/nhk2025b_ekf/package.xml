@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>nhk2025b_ekf_localizer</name>
+  <name>nhk2025b_ekf</name>
   <version>0.0.1</version>
   <description>EKFで自己位置推定</description>
   <maintainer email="kzs321kzs@gmail.com">Kazusa Hashimoto</maintainer>
