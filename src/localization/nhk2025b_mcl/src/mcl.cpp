@@ -25,7 +25,7 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     map_sub_ =
         this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 10, std::bind (&mcl::map_callback, this, std::placeholders::_1));
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> (
-        "/initialpose", 10, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
+        "/localization/initialpose", 10, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
         "/localization/wheel_odometory", 10, std::bind (&mcl::odom_callback, this, std::placeholders::_1));
 

@@ -5,7 +5,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     cmd_vel_publisher_   = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 10);
     lookahead_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_pose", 10);
     pose_subscriber_     = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/localization/pose", 10, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
+        "/localization/current_pose", 10, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
 
     path_subscriber_ =
         this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 10, std::bind (&pure_pursuit::path_callback, this, std::placeholders::_1));

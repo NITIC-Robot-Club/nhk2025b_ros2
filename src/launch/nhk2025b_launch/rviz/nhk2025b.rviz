@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: LaserScan
   - Class: rviz_common/Displays
     Help Height: 70
     Name: Displays
@@ -94,18 +94,23 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
         base_link:
           Value: true
         lidar:
+          Value: false
+        map:
           Value: true
-      Marker Scale: 1
+      Marker Scale: 2
       Name: TF
-      Show Arrows: true
+      Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        map:
+          base_link:
+            lidar:
+              {}
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/MarkerArray
@@ -209,10 +214,10 @@ Visualization Manager:
       Name: Odometry
       Position Tolerance: 0.009999999776482582
       Shape:
-        Alpha: 0.5
+        Alpha: 0.10000000149011612
         Axes Length: 1
         Axes Radius: 0.10000000149011612
-        Color: 192; 97; 203
+        Color: 0; 0; 0
         Head Length: 0.30000001192092896
         Head Radius: 0.10000000149011612
         Shaft Length: 1
@@ -226,12 +231,12 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /localization/wheel_odometory
       Value: true
-    - Alpha: 0.5
+    - Alpha: 0.699999988079071
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
       Color: 249; 240; 107
-      Enabled: false
+      Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: lookahead
@@ -244,27 +249,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /lookahead_point
-      Value: false
-    - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.10000000149011612
-      Class: rviz_default_plugins/Pose
-      Color: 26; 95; 180
-      Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
-      Name: Pose
-      Shaft Length: 1
-      Shaft Radius: 0.05000000074505806
-      Shape: Arrow
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /localization/current_pose
+        Value: /control/lookahead_pose
       Value: true
     - Alpha: 0.5
       Axes Length: 1
@@ -296,16 +281,16 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/LaserScan
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4096
+      Max Intensity: 1
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 1
       Name: LaserScan
-      Position Transformer: ""
+      Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.05000000074505806
@@ -320,12 +305,12 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Alpha: 1
+    - Alpha: 0.30000001192092896
       Arrow Length: 0.30000001192092896
       Axes Length: 0.30000001192092896
       Axes Radius: 0.009999999776482582
       Class: rviz_default_plugins/PoseArray
-      Color: 255; 25; 0
+      Color: 119; 118; 123
       Enabled: true
       Head Length: 0.07000000029802322
       Head Radius: 0.029999999329447746
@@ -339,17 +324,17 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /mcl_particles
+        Value: /localization/mcl_particles
       Value: true
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
-      Color: 255; 25; 0
+      Color: 26; 95; 180
       Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: mcl pose
+      Name: current mcl pose
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -359,7 +344,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /mcl_pose
+        Value: /localization/current_pose
       Value: true
   Enabled: true
   Global Options:
@@ -376,7 +361,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /simulation/pose
+        Value: /behavior/goal_pose
     - Class: rviz_default_plugins/SetInitialPose
       Covariance x: 0.25
       Covariance y: 0.25
@@ -386,7 +371,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: initialpose
+        Value: /localization/initialpose
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
