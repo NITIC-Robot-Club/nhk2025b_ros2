@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>nhk2025b_ekf_localizer</name>
+  <name>nhk2025b_mcl</name>
   <version>0.0.1</version>
-  <description>EKFで自己位置推定</description>
+  <description>mcl</description>
   <maintainer email="kzs321kzs@gmail.com">Kazusa Hashimoto</maintainer>
   <license>MIT</license>
 
@@ -10,13 +10,11 @@
 
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>tf2_geometry_msgs</depend>
-  <depend>eigen</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

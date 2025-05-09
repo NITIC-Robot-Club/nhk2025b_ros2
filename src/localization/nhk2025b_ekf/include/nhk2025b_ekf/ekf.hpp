@@ -1,5 +1,5 @@
-#ifndef __ekf_localizer_hpp__
-#define __ekf_localizer_hpp__
+#ifndef __ekf_hpp__
+#define __ekf_hpp__
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -11,11 +11,11 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-namespace ekf_localizer {
+namespace ekf {
 
-class ekf_localizer : public rclcpp::Node {
+class ekf : public rclcpp::Node {
    public:
-    explicit ekf_localizer (const rclcpp::NodeOptions& options);
+    explicit ekf (const rclcpp::NodeOptions& options);
 
    private:
     // センサコールバック関数
@@ -49,6 +49,6 @@ class ekf_localizer : public rclcpp::Node {
     tf2_ros::TransformListener tf_listener_;
 };
 
-}  // namespace ekf_localizer
+}  // namespace ekf
 
-#endif  // __ekf_localizer_hpp__
+#endif  // __ekf_hpp__

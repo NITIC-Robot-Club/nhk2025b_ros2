@@ -25,19 +25,25 @@ void path_planner::timer_callback () {
     header.frame_id = "map";
     header.stamp    = this->now ();
     // a = 1m/s2 , v = 2m/s ,x=6m
-    double x = 0, y = 0;
+    double x = 1, y = 1;
+    double z       = 0;
     double v       = 0;
     path.header    = header;
     double delta_t = 0.1;
     for (double t = 0; t < 5; t += delta_t) {
         if (t < 2) {
             v += 1 * delta_t;
-        } else if (t > 3) {
+        } else if (t > 5 - 2) {
             v -= 1 * delta_t;
         }
         x += v * delta_t;
+        y += 0.1 * delta_t;
+        z += 0.1 * delta_t;
         geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x = x;
+        pose.pose.position.x    = x;
+        pose.pose.position.y    = y;
+        pose.pose.orientation.z = sin (z / 2);
+        pose.pose.orientation.w = cos (z / 2);
         rclcpp::Time time (header.stamp);
         rclcpp::Time new_time = time + rclcpp::Duration::from_seconds (delta_t);
 

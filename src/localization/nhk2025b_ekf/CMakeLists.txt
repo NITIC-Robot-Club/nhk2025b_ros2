@@ -1,6 +1,6 @@
 
 cmake_minimum_required(VERSION 3.8)
-project(nhk2025b_ekf_localizer)
+project(nhk2025b_ekf)
 
 find_package(ament_cmake_auto REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -15,8 +15,8 @@ target_include_directories(${PROJECT_NAME}
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-    PLUGIN "ekf_localizer::ekf_localizer"
-    EXECUTABLE ekf_localizer
+    PLUGIN "ekf::ekf"
+    EXECUTABLE ekf
 )
 
 ament_auto_package(
