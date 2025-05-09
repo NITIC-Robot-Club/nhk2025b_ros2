@@ -4,7 +4,7 @@
 namespace map_publisher {
 map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_publisher", options) {
     publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 10);
-    timer_ = this->create_wall_timer (std::chrono::milliseconds (1000), std::bind (&map_publisher::publish_map, this));
+    timer_     = this->create_wall_timer (std::chrono::milliseconds (1000), std::bind (&map_publisher::publish_map, this));
     this->declare_parameter<double> ("resolution", 0.05);  // 5cm
     this->declare_parameter<bool> ("is_red", false);
 }
@@ -12,7 +12,7 @@ map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_p
 void map_publisher::publish_map () {
     nav_msgs::msg::OccupancyGrid map;
     this->get_parameter ("resolution", resolution_);  // float
-    this->get_parameter ("is_red", is_red);  // bool
+    this->get_parameter ("is_red", is_red);           // bool
     map.header.stamp              = this->now ();
     map.header.frame_id           = "map";
     map.info.resolution           = resolution_;         // m
