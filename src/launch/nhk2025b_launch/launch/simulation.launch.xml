@@ -7,6 +7,6 @@
   </node_container>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/rviz2.launch.xml"/>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml"/>
-  <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/localization.launch.xml"/>
+  <!-- <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/> -->
 </launch>

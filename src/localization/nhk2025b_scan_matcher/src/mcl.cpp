@@ -32,9 +32,6 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/mcl_pose", 10);
     particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/mcl_particles", 10);
 
-    while (!map) {
-    };
-
     initialize_particles_gaussian (current_pose_);
 }
 
@@ -140,8 +137,6 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
 }
 
 void mcl::initialize_particles_gaussian (const geometry_msgs::msg::Pose& initial_pose) {
-    if (!map_) return;
-
     particles_.clear ();
 
     // Define Gaussian distributions for x, y, and theta based on the initial pose
