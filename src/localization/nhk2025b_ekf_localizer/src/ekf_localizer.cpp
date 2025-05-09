@@ -35,7 +35,7 @@ void ekf_localizer::odom_callback (const nav_msgs::msg::Odometry::SharedPtr msg)
     geometry_msgs::msg::PoseStamped odom_pose;
     odom_pose.header.stamp    = this->get_clock ()->now ();
     odom_pose.header.frame_id = "map";
-    odom_pose.pose = msg->pose.pose;
+    odom_pose.pose            = msg->pose.pose;
     fused_pose_pub_->publish (odom_pose);
     // debug
 }
