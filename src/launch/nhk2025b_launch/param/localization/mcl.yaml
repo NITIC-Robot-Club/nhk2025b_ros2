@@ -1,5 +1,7 @@
-gaussian_stddev_angle: 1.0
-gaussian_stddev_linear: 1.0
-motion_noise_angle: 0.13
-motion_noise_linear: 0.05
-num_particles: 500
+mcl:
+  ros__parameters:
+    gaussian_stddev_angle: 1.0
+    gaussian_stddev_linear: 1.0
+    motion_noise_angle: 0.13
+    motion_noise_linear: 0.05
+    num_particles: 500

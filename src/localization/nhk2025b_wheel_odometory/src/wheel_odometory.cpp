@@ -9,8 +9,19 @@ wheel_odometory::wheel_odometory (const rclcpp::NodeOptions &options) : Node ("w
     wheel_radius   = this->declare_parameter ("wheel_radius", 0.031);
     wheel_position = this->declare_parameter ("wheel_position", 0.62);
 
-    current_x = 0.0;
-    current_y = 0.0;
+    bool is_red         = this->declare_parameter<bool> ("is_red", false);
+    double initial_x_blue = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
+    double initial_y_blue = this->declare_parameter<double> ("initial_positions.blue.y", 1.0);
+    double initial_x_red  = this->declare_parameter<double> ("initial_positions.red.x",  1.0);
+    double initial_y_red  = this->declare_parameter<double> ("initial_positions.red.y",  4.4);
+    if (is_red) {
+        current_x = initial_x_red;
+        current_y = initial_y_red;
+    } else {
+        current_x = initial_x_blue;
+        current_y = initial_y_blue;
+    }
+
     current_z = 0.0;
     sum_x     = 0.0;
     sum_y     = 0.0;

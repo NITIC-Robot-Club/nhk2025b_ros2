@@ -16,7 +16,6 @@ class map_publisher : public rclcpp::Node {
     double resolution_;
 
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr publisher_;
-    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr       team_color_subsctiber_;
     rclcpp::TimerBase::SharedPtr                               timer_;
 };
 }  // namespace map_publisher
