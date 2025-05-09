@@ -9,9 +9,9 @@ mcl::mcl(const rclcpp::NodeOptions & options)
   tf_broadcaster_(std::make_unique<tf2_ros::TransformBroadcaster>(*this)),
   rng_(std::random_device{}())
 {
-  this->declare_parameter("num_particles", 50);
-  this->declare_parameter("motion_noise_lin", 0.01);
-  this->declare_parameter("motion_noise_ang", 0.01);
+  this->declare_parameter("num_particles", 150);
+  this->declare_parameter("motion_noise_lin", 0.1);
+  this->declare_parameter("motion_noise_ang", 0.1);
   this->declare_parameter("resample_threshold", 0.5);
 
   this->get_parameter("num_particles", num_particles_);
@@ -23,7 +23,7 @@ mcl::mcl(const rclcpp::NodeOptions & options)
       "/sensor/scan", rclcpp::SensorDataQoS(), std::bind(&mcl::scan_callback, this, std::placeholders::_1));
   map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
       "/behavior/map", 10, std::bind(&mcl::map_callback, this, std::placeholders::_1));
-  pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+  pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "/initialpose", 10, std::bind(&mcl::pose_callback, this, std::placeholders::_1));
   odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
       "/localization/wheel_odometory", 10, std::bind(&mcl::odom_callback, this, std::placeholders::_1));
@@ -34,33 +34,48 @@ mcl::mcl(const rclcpp::NodeOptions & options)
 
 void mcl::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr map_msg) {
   map_ = map_msg;
-  RCLCPP_INFO(this->get_logger(), "Received map");
 }
 
-void mcl::pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr pose_msg) {
-  last_pose_ = current_pose_;
-  current_pose_ = *pose_msg;
-  initialize_particles_uniform();
-  RCLCPP_INFO(this->get_logger(), "Initialized %d particles", static_cast<int>(particles_.size()));
+void mcl::pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
+  current_pose_ = pose_msg->pose.pose; // Extract pose from PoseWithCovarianceStamped
+
+  this->get_parameter("num_particles", num_particles_);
+  this->get_parameter("motion_noise_lin", motion_noise_lin_);
+  this->get_parameter("motion_noise_ang", motion_noise_ang_);
+  this->get_parameter("resample_threshold", resample_threshold_);
+  initialize_particles_gaussian(current_pose_);
 }
 
 void mcl::odom_callback(const nav_msgs::msg::Odometry::SharedPtr odom_msg) {
-  last_pose_ = current_pose_;
-  current_pose_.header = odom_msg->header;
-  current_pose_.pose = odom_msg->pose.pose;
-  RCLCPP_INFO(this->get_logger(), "Received odom");
+    current_pose_ = odom_msg->pose.pose;
 }
 
 void mcl::scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) {
-  if (!map_ || particles_.empty()) return;
-
-  RCLCPP_INFO(this->get_logger(), "Received scan");
-  motion_update(current_pose_, last_pose_);
+    if (!map_ || particles_.empty()) return;
+    
+    motion_update(current_pose_, last_pose_);
+    last_pose_ = current_pose_;
   sensor_update(*scan_msg);
   resample_particles();
 
-  auto estimated = estimate_pose();
+  geometry_msgs::msg::PoseStamped estimated;
+  estimated.pose  = estimate_pose();
+  estimated.header.frame_id = "map";
+  estimated.header.stamp = this->now();
+  
+    // publish tf
+      geometry_msgs::msg::TransformStamped transform;
+      transform.header.stamp = this->now();
+      transform.header.frame_id = "map";
+      transform.child_frame_id = "base_link";
+      transform.transform.translation.x = estimated.pose.position.x;
+      transform.transform.translation.y = estimated.pose.position.y;
+      transform.transform.rotation.z = estimated.pose.orientation.z;
+      transform.transform.rotation.w = estimated.pose.orientation.w;
+      tf_broadcaster_->sendTransform(transform);
+
   pose_pub_->publish(estimated);
+
 
   geometry_msgs::msg::PoseArray pose_array;
   pose_array.header.frame_id = "map";
@@ -75,15 +90,20 @@ void mcl::scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) {
   particles_pub_->publish(pose_array);
 }
 
-void mcl::initialize_particles_uniform() {
+
+
+void mcl::initialize_particles_gaussian(const geometry_msgs::msg::Pose &initial_pose) {
   if (!map_) return;
 
   particles_.clear();
-  std::uniform_real_distribution<double> dist_x(map_->info.origin.position.x,
-                                                map_->info.origin.position.x + map_->info.width * map_->info.resolution);
-  std::uniform_real_distribution<double> dist_y(map_->info.origin.position.y,
-                                                map_->info.origin.position.y + map_->info.height * map_->info.resolution);
-  std::uniform_real_distribution<double> dist_theta(-M_PI, M_PI);
+
+  // Define Gaussian distributions for x, y, and theta based on the initial pose
+  std::normal_distribution<double> dist_x(initial_pose.position.x, map_->info.width * map_->info.resolution / 6.0);
+  std::normal_distribution<double> dist_y(initial_pose.position.y, map_->info.height * map_->info.resolution / 6.0);
+  tf2::Quaternion q;
+  tf2::fromMsg(initial_pose.orientation, q);
+  double initial_theta = tf2::getYaw(q);
+  std::normal_distribution<double> dist_theta(initial_theta, M_PI / 6.0);
 
   while (particles_.size() < static_cast<size_t>(num_particles_)) {
     double x = dist_x(rng_);
@@ -94,21 +114,30 @@ void mcl::initialize_particles_uniform() {
   }
 }
 
-void mcl::motion_update(const geometry_msgs::msg::PoseStamped & current,
-                        const geometry_msgs::msg::PoseStamped & last) {
-  double dx = current.pose.position.x - last.pose.position.x;
-  double dy = current.pose.position.y - last.pose.position.y;
-  double dtheta = tf2::getYaw(current.pose.orientation) - tf2::getYaw(last.pose.orientation);
+void mcl::motion_update(const geometry_msgs::msg::Pose & current,
+                        const geometry_msgs::msg::Pose & last) {
+  double dx = current.position.x - last.position.x;
+  double dy = current.position.y - last.position.y;
+  double dtheta = tf2::getYaw(current.orientation) - tf2::getYaw(last.orientation);
 
   std::normal_distribution<double> noise_x(0.0, motion_noise_lin_);
   std::normal_distribution<double> noise_y(0.0, motion_noise_lin_);
   std::normal_distribution<double> noise_theta(0.0, motion_noise_ang_);
 
+  double cos_last_theta = cos(tf2::getYaw(last.orientation));
+  double sin_last_theta = sin(tf2::getYaw(last.orientation));
+
   for (auto & p : particles_) {
+    // Transform the motion to the particle's frame of reference
+    double local_dx = cos_last_theta * dx + sin_last_theta * dy;
+    double local_dy = -sin_last_theta * dx + cos_last_theta * dy;
+
     double cos_theta = cos(p.theta);
     double sin_theta = sin(p.theta);
-    p.x += cos_theta * dx - sin_theta * dy + noise_x(rng_);
-    p.y += sin_theta * dx + cos_theta * dy + noise_y(rng_);
+
+    // Apply the motion update with noise
+    p.x += cos_theta * local_dx - sin_theta * local_dy + noise_x(rng_);
+    p.y += sin_theta * local_dx + cos_theta * local_dy + noise_y(rng_);
     p.theta += dtheta + noise_theta(rng_);
   }
 }
@@ -188,10 +217,8 @@ void mcl::resample_particles() {
   particles_ = std::move(new_particles);
 }
 
-geometry_msgs::msg::PoseStamped mcl::estimate_pose() const {
-  geometry_msgs::msg::PoseStamped pose;
-  pose.header.frame_id = "map";
-  pose.header.stamp = rclcpp::Clock().now();
+geometry_msgs::msg::Pose mcl::estimate_pose() const {
+  geometry_msgs::msg::Pose pose;
 
   double x = 0.0, y = 0.0, sin_sum = 0.0, cos_sum = 0.0;
 
@@ -202,11 +229,11 @@ geometry_msgs::msg::PoseStamped mcl::estimate_pose() const {
     cos_sum += cos(p.theta) * p.weight;
   }
 
-  pose.pose.position.x = x;
-  pose.pose.position.y = y;
+  pose.position.x = x;
+  pose.position.y = y;
   tf2::Quaternion q;
   q.setRPY(0, 0, atan2(sin_sum, cos_sum));
-  pose.pose.orientation = tf2::toMsg(q);
+  pose.orientation = tf2::toMsg(q);
 
   return pose;
 }

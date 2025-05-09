@@ -4,4 +4,9 @@
     <composable_node pkg="nhk2025b_visualize_swerve" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
   </node_container>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/tf.launch.xml"/>
+
+  <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_localization_test_container" namespace="">
+    <composable_node pkg="nhk2025b_ekf_localizer" plugin="ekf_localizer::ekf_localizer" name="ekf_localizer"/>
+    <composable_node pkg="nhk2025b_scan_matcher" plugin="mcl::mcl" name="mcl"/>
+  </node_container>
 </launch>

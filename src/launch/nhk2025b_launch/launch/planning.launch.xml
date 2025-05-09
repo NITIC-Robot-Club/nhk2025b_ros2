@@ -2,12 +2,5 @@
   <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_planning_container" namespace="">
     <composable_node pkg="nhk2025b_path_planner" plugin="path_planner::path_planner" name="path_planner"/>
     <composable_node pkg="nhk2025b_pure_pursuit" plugin="pure_pursuit::pure_pursuit" name="pure_pursuit"/>
-    <composable_node pkg="nhk2025b_ekf_localizer" plugin="ekf_localizer::ekf_localizer" name="ekf_localizer"/>
-    <!-- <composable_node pkg="nhk2025b_scan_matcher" plugin="ndt::ndt" name="ndt">
-      <param name="ndt_max_iterations" value="100"/>
-      <param name="ndt_resolution" value="2.0"/>
-      <param name="ndt_step_size" value="0.1"/>
-      <param name="ndt_transformation_epsilon" value="0.01"/>
-    </composable_node> -->
   </node_container>
 </launch>

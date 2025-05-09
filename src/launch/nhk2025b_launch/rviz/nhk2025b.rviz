@@ -6,8 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Odometry1/Shape1
-        - /Pose1
-        - /Pose2/Topic1
+        - /ekf1/Topic1
         - /LaserScan1/Topic1
       Splitter Ratio: 0.6000000238418579
     Tree Height: 818
@@ -205,8 +204,8 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: false
-      Enabled: false
-      Keep: 100
+      Enabled: true
+      Keep: 30
       Name: Odometry
       Position Tolerance: 0.009999999776482582
       Shape:
@@ -226,7 +225,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/wheel_odometory
-      Value: false
+      Value: true
     - Alpha: 0.5
       Axes Length: 1
       Axes Radius: 0.10000000149011612
@@ -275,7 +274,7 @@ Visualization Manager:
       Enabled: false
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: Pose
+      Name: ekf
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -330,7 +329,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.07000000029802322
       Head Radius: 0.029999999329447746
-      Name: PoseArray
+      Name: mcl particle
       Shaft Length: 0.23000000417232513
       Shaft Radius: 0.009999999776482582
       Shape: Arrow (Flat)
@@ -350,7 +349,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: Pose
+      Name: mcl pose
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow

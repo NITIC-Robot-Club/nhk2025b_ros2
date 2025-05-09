@@ -4,8 +4,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_array.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 
 #include <tf2_ros/transform_broadcaster.h>
@@ -37,16 +38,16 @@ private:
   // コールバック
   void map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr map_msg);
   void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr scan_msg);
-  void pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr pose_msg);
+  void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg);
   void odom_callback(const nav_msgs::msg::Odometry::SharedPtr odom_msg);
 
   // 内部処理
-  void initialize_particles_uniform();
-  void motion_update(const geometry_msgs::msg::PoseStamped & current,
-                     const geometry_msgs::msg::PoseStamped & last);
+  void initialize_particles_gaussian(const geometry_msgs::msg::Pose &initial_pose);
+  void motion_update(const geometry_msgs::msg::Pose & current,
+                     const geometry_msgs::msg::Pose & last);
   void sensor_update(const sensor_msgs::msg::LaserScan & scan);
   void resample_particles();
-  geometry_msgs::msg::PoseStamped estimate_pose() const;
+  geometry_msgs::msg::Pose estimate_pose() const;
 
   // ユーティリティ
   bool is_pose_valid(double x, double y) const;
@@ -60,7 +61,7 @@ private:
   // ノード内変数
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
@@ -72,8 +73,8 @@ private:
 
   std::vector<Particle> particles_;
   nav_msgs::msg::OccupancyGrid::SharedPtr map_;
-  geometry_msgs::msg::PoseStamped current_pose_;
-  geometry_msgs::msg::PoseStamped last_pose_;
+  geometry_msgs::msg::Pose current_pose_;
+  geometry_msgs::msg::Pose last_pose_;
 
   std::default_random_engine rng_;
 
