@@ -2,15 +2,13 @@
 
 namespace ekf {
 
-ekf::ekf (const rclcpp::NodeOptions& options)
-    : Node ("ekf", options), tf_buffer_ (this->get_clock ()), tf_listener_ (tf_buffer_) {
+ekf::ekf (const rclcpp::NodeOptions& options) : Node ("ekf", options), tf_buffer_ (this->get_clock ()), tf_listener_ (tf_buffer_) {
     x_ = Eigen::VectorXd::Zero (6);         // [x, y, yaw, vx, vy, wz]
     P_ = Eigen::MatrixXd::Identity (6, 6);  // 共分散
 
     fused_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/ekf/pose", 10);
 
-    imu_sub_ =
-        this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 50, std::bind (&ekf::imu_callback, this, std::placeholders::_1));
+    imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 50, std::bind (&ekf::imu_callback, this, std::placeholders::_1));
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
         "/localization/wheel_odometory", 20, std::bind (&ekf::odom_callback, this, std::placeholders::_1));
