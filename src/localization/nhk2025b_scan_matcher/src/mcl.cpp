@@ -76,7 +76,7 @@ void mcl::create_distance_map () {
 }
 
 void mcl::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr map_msg) {
-    if(!map_) {
+    if (!map_) {
         map_ = map_msg;
         create_distance_map ();
         initialize_particles_gaussian (map_->info.origin);
@@ -140,7 +140,7 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
 }
 
 void mcl::initialize_particles_gaussian (const geometry_msgs::msg::Pose& initial_pose) {
-    if(!map_) return;
+    if (!map_) return;
     particles_.clear ();
 
     // Define Gaussian distributions for x, y, and theta based on the initial pose
