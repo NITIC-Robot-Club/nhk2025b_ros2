@@ -1,2 +1,2 @@
-# nhk2025b_wheel_odometory
+# nhk2025b_wheel_odometry
 CANを受信して足回りのオドメトリを計算
