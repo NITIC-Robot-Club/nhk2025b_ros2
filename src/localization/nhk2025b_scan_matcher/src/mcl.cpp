@@ -32,8 +32,9 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/mcl_pose", 10);
     particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/mcl_particles", 10);
 
-    while(!map) {};
-    
+    while (!map) {
+    };
+
     initialize_particles_gaussian (current_pose_);
 }
 
