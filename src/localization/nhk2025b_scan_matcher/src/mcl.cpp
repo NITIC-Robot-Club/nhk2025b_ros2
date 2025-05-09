@@ -31,8 +31,6 @@ mcl::mcl (const rclcpp::NodeOptions& options)
 
     pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/mcl_pose", 10);
     particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/mcl_particles", 10);
-
-    initialize_particles_gaussian (current_pose_);
 }
 
 void mcl::create_distance_map () {
@@ -78,6 +76,11 @@ void mcl::create_distance_map () {
 }
 
 void mcl::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr map_msg) {
+    if(!map_) {
+        map_ = map_msg;
+        create_distance_map ();
+        initialize_particles_gaussian (map_->info.origin);
+    }
     map_ = map_msg;
     create_distance_map ();
 }
@@ -137,6 +140,7 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
 }
 
 void mcl::initialize_particles_gaussian (const geometry_msgs::msg::Pose& initial_pose) {
+    if(!map_) return;
     particles_.clear ();
 
     // Define Gaussian distributions for x, y, and theta based on the initial pose
@@ -154,6 +158,8 @@ void mcl::initialize_particles_gaussian (const geometry_msgs::msg::Pose& initial
         Particle p{x, y, dist_theta (rng_), 1.0 / num_particles_};
         particles_.push_back (p);
     }
+
+    RCLCPP_INFO (this->get_logger (), "Initialized %zu particles", particles_.size ());
 }
 
 void mcl::motion_update (const geometry_msgs::msg::Pose& current, const geometry_msgs::msg::Pose& last) {
