@@ -31,37 +31,42 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/mcl_particles", 10);
 }
 
-void mcl::create_distance_map() {
+void mcl::create_distance_map () {
     if (!map_) return;
 
-    distance_map_.resize(map_->info.width * map_->info.height, std::numeric_limits<double>::max());
+    distance_map_.resize (map_->info.width * map_->info.height, std::numeric_limits<double>::max ());
 
     std::queue<std::pair<int, int>> queue;
-    for (int y = 0; y < static_cast<int>(map_->info.height); ++y) {
-        for (int x = 0; x < static_cast<int>(map_->info.width); ++x) {
+    for (int y = 0; y < static_cast<int> (map_->info.height); ++y) {
+        for (int x = 0; x < static_cast<int> (map_->info.width); ++x) {
             int index = y * map_->info.width + x;
             if (map_->data[index] > 50) {
                 distance_map_[index] = 0.0;
-                queue.emplace(x, y);
+                queue.emplace (x, y);
             }
         }
     }
 
-    const std::vector<std::pair<int, int>> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-    while (!queue.empty()) {
-        auto [cx, cy] = queue.front();
-        queue.pop();
+    const std::vector<std::pair<int, int>> directions = {
+        { 1,  0},
+        {-1,  0},
+        { 0,  1},
+        { 0, -1}
+    };
+    while (!queue.empty ()) {
+        auto [cx, cy] = queue.front ();
+        queue.pop ();
 
         int current_index = cy * map_->info.width + cx;
         for (const auto& [dx, dy] : directions) {
             int nx = cx + dx;
             int ny = cy + dy;
-            if (nx >= 0 && nx < static_cast<int>(map_->info.width) && ny >= 0 && ny < static_cast<int>(map_->info.height)) {
-                int neighbor_index = ny * map_->info.width + nx;
-                double new_distance = distance_map_[current_index] + map_->info.resolution;
+            if (nx >= 0 && nx < static_cast<int> (map_->info.width) && ny >= 0 && ny < static_cast<int> (map_->info.height)) {
+                int    neighbor_index = ny * map_->info.width + nx;
+                double new_distance   = distance_map_[current_index] + map_->info.resolution;
                 if (new_distance < distance_map_[neighbor_index]) {
                     distance_map_[neighbor_index] = new_distance;
-                    queue.emplace(nx, ny);
+                    queue.emplace (nx, ny);
                 }
             }
         }
@@ -70,7 +75,7 @@ void mcl::create_distance_map() {
 
 void mcl::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr map_msg) {
     map_ = map_msg;
-    create_distance_map();
+    create_distance_map ();
 }
 
 void mcl::pose_callback (const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
@@ -188,9 +193,9 @@ void mcl::sensor_update (const sensor_msgs::msg::LaserScan& scan) {
 }
 
 double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::LaserScan& scan) const {
-    if (!map_ || distance_map_.empty()) return 0.0;
+    if (!map_ || distance_map_.empty ()) return 0.0;
 
-    double score = 0.0;
+    double       score     = 0.0;
     const double max_range = scan.range_max;
     const double sigma_hit = 0.2;
     const double z_hit     = 0.8;
@@ -208,9 +213,9 @@ double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::Laser
         int my = static_cast<int> ((hit_y - map_->info.origin.position.y) / map_->info.resolution);
 
         if (mx >= 0 && mx < static_cast<int> (map_->info.width) && my >= 0 && my < static_cast<int> (map_->info.height)) {
-            int index = my * map_->info.width + mx;
+            int    index    = my * map_->info.width + mx;
             double distance = distance_map_[index];
-            double prob_hit       = exp (-0.5 * pow (distance / sigma_hit, 2)) / (sigma_hit * sqrt (2 * M_PI));
+            double prob_hit = exp (-0.5 * pow (distance / sigma_hit, 2)) / (sigma_hit * sqrt (2 * M_PI));
             score += z_hit * prob_hit + z_rand / max_range;
         } else {
             score += z_rand / max_range;

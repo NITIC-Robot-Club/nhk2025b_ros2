@@ -13,14 +13,13 @@
 #include <memory>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <queue>
 #include <random>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <string>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <vector>
-#include <queue>
-
 
 namespace mcl {
 
@@ -43,11 +42,11 @@ class mcl : public rclcpp::Node {
     void odom_callback (const nav_msgs::msg::Odometry::SharedPtr odom_msg);
 
     // 内部処理
-    void                     initialize_particles_gaussian (const geometry_msgs::msg::Pose &initial_pose);
-    void                     motion_update (const geometry_msgs::msg::Pose &current, const geometry_msgs::msg::Pose &last);
-    void                     sensor_update (const sensor_msgs::msg::LaserScan &scan);
-    void                     resample_particles ();
-    void                     create_distance_map();
+    void initialize_particles_gaussian (const geometry_msgs::msg::Pose &initial_pose);
+    void motion_update (const geometry_msgs::msg::Pose &current, const geometry_msgs::msg::Pose &last);
+    void sensor_update (const sensor_msgs::msg::LaserScan &scan);
+    void resample_particles ();
+    void create_distance_map ();
 
     geometry_msgs::msg::Pose estimate_pose () const;
 
