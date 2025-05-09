@@ -27,7 +27,7 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> (
         "/localization/initialpose", 10, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
-        "/localization/wheel_odometory", 10, std::bind (&mcl::odom_callback, this, std::placeholders::_1));
+        "/localization/wheel_odometry", 10, std::bind (&mcl::odom_callback, this, std::placeholders::_1));
 
     pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
     particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 10);

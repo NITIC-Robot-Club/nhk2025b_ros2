@@ -1,11 +1,11 @@
-#include "nhk2025b_wheel_odometory/wheel_odometory.hpp"
+#include "nhk2025b_wheel_odometry/wheel_odometry.hpp"
 
-namespace wheel_odometory {
-wheel_odometory::wheel_odometory (const rclcpp::NodeOptions &options) : Node ("wheel_odometory", options) {
+namespace wheel_odometry {
+wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("wheel_odometry", options) {
     swerve_subscriber = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
-        "/swerve/result", 10, std::bind (&wheel_odometory::swerve_callback, this, std::placeholders::_1));
-    odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometory", 10);
-    timer          = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&wheel_odometory::timer_callback, this));
+        "/swerve/result", 10, std::bind (&wheel_odometry::swerve_callback, this, std::placeholders::_1));
+    odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 10);
+    timer          = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&wheel_odometry::timer_callback, this));
     wheel_radius   = this->declare_parameter ("wheel_radius", 0.031);
     wheel_position = this->declare_parameter ("wheel_position", 0.62);
 
@@ -29,7 +29,7 @@ wheel_odometory::wheel_odometory (const rclcpp::NodeOptions &options) : Node ("w
     count     = 0;
 }
 
-void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
+void wheel_odometry::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
     double wheel_positions[4][2] = {
         {+wheel_position, +wheel_position},
         {-wheel_position, +wheel_position},
@@ -99,7 +99,7 @@ void wheel_odometory::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedP
     count++;
 }
 
-void wheel_odometory::timer_callback () {
+void wheel_odometry::timer_callback () {
     if (count != 0) {
         current_z += sum_z / count * 0.1;
         double angle    = std::atan2 (sum_y / count, sum_x / count) + current_z;
@@ -141,7 +141,7 @@ void wheel_odometory::timer_callback () {
     count = 0;
 }
 
-}  // namespace wheel_odometory
+}  // namespace wheel_odometry
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE (wheel_odometory::wheel_odometory)
+RCLCPP_COMPONENTS_REGISTER_NODE (wheel_odometry::wheel_odometry)
