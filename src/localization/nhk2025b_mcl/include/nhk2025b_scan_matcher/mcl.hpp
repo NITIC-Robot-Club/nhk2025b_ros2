@@ -67,7 +67,7 @@ class mcl : public rclcpp::Node {
 
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
     rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr   particles_pub_;
-    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr  distance_map_pub_;
+    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr    distance_map_pub_;
 
     std::shared_ptr<tf2_ros::Buffer>               tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener>    tf_listener_;
@@ -86,7 +86,7 @@ class mcl : public rclcpp::Node {
     double motion_noise_angle_;
     double gaussian_stddev_linear_;
     double gaussian_stddev_angle_;
-    int random_particle_map_num_;
+    int    random_particle_map_num_;
 
     std::vector<double> distance_map_;
 };

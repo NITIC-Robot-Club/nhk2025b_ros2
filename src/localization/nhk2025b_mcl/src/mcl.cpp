@@ -8,11 +8,11 @@ mcl::mcl (const rclcpp::NodeOptions& options)
       tf_listener_ (std::make_shared<tf2_ros::TransformListener> (*tf_buffer_)),
       tf_broadcaster_ (std::make_unique<tf2_ros::TransformBroadcaster> (*this)),
       rng_ (std::random_device{}()) {
-    num_particles_ = this->declare_parameter ("num_particles", 150);
-    motion_noise_linear_= this->declare_parameter ("motion_noise_linear", 0.01);
-    motion_noise_angle_=this->declare_parameter ("motion_noise_angle", 0.01);
-    gaussian_stddev_linear_=this->declare_parameter ("gaussian_stddev_linear", 1.0);
-    gaussian_stddev_angle_=this->declare_parameter ("gaussian_stddev_angle", 1.0);
+    num_particles_           = this->declare_parameter ("num_particles", 150);
+    motion_noise_linear_     = this->declare_parameter ("motion_noise_linear", 0.01);
+    motion_noise_angle_      = this->declare_parameter ("motion_noise_angle", 0.01);
+    gaussian_stddev_linear_  = this->declare_parameter ("gaussian_stddev_linear", 1.0);
+    gaussian_stddev_angle_   = this->declare_parameter ("gaussian_stddev_angle", 1.0);
     random_particle_map_num_ = this->declare_parameter ("random_particle_map_num", 100);
 
     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan> (
@@ -22,7 +22,7 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> (
         "/localization/initialpose", 10, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
-        "/localization/wheel_odometry", 10, std::bind (&mcl::odom_callback, this, std::placeholders::_1));            
+        "/localization/wheel_odometry", 10, std::bind (&mcl::odom_callback, this, std::placeholders::_1));
     distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 10);
 
     pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
@@ -34,8 +34,8 @@ void mcl::create_distance_map () {
 
     nav_msgs::msg::OccupancyGrid distance_map_msg;
     distance_map_msg.header.frame_id = "map";
-    distance_map_msg.header.stamp = this->now ();
-    distance_map_msg.info = map_->info;
+    distance_map_msg.header.stamp    = this->now ();
+    distance_map_msg.info            = map_->info;
     distance_map_msg.data.resize (map_->info.width * map_->info.height, 0);
 
     distance_map_.resize (map_->info.width * map_->info.height, std::numeric_limits<double>::max ());
@@ -222,7 +222,7 @@ double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::Laser
     const double z_hit     = 0.8;
     const double z_rand    = 0.2;
 
-    for (size_t i = 0; i < scan.ranges.size (); i ++) {
+    for (size_t i = 0; i < scan.ranges.size (); i++) {
         double range = scan.ranges[i];
         if (std::isnan (range) || range > max_range) continue;
 
@@ -258,7 +258,7 @@ void mcl::resample_particles () {
     }
 
     std::uniform_real_distribution<double> dist (0.0, sum);
-    
+
     for (int i = 0; i < num_particles_; ++i) {
         double   r        = dist (rng_);
         auto     it       = std::lower_bound (cumulative.begin (), cumulative.end (), r);
@@ -267,12 +267,13 @@ void mcl::resample_particles () {
         selected.weight   = 1.0 / num_particles_;
         new_particles.push_back (selected);
     }
-    
+
     // random_particle_map_num_ = 0;
     // auto pose = estimate_pose ();
 
-    // std::uniform_real_distribution<double> dist_map_x (map_->info.origin.position.x, map_->info.origin.position.x + map_->info.resolution*map_->info.width);
-    // std::uniform_real_distribution<double> dist_map_y (map_->info.origin.position.y, map_->info.origin.position.y + map_->info.resolution*map_->info.height);
+    // std::uniform_real_distribution<double> dist_map_x (map_->info.origin.position.x, map_->info.origin.position.x +
+    // map_->info.resolution*map_->info.width); std::uniform_real_distribution<double> dist_map_y (map_->info.origin.position.y,
+    // map_->info.origin.position.y + map_->info.resolution*map_->info.height);
 
     // for (int i = 0; i < random_particle_map_num_; ++i) {
     //     for(int j = 0; j < 4; j++){
