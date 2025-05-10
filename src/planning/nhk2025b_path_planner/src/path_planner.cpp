@@ -41,8 +41,8 @@ void path_planner::timer_callback () {
         delta_yaw += 2 * M_PI;
 
     double x = 0, y = 0;
-    double v_x = current_vel.twist.linear.x;
-    double v_y = current_vel.twist.linear.y;
+    double v_x     = current_vel.twist.linear.x;
+    double v_y     = current_vel.twist.linear.y;
     path.header    = header;
     double dt      = resolution_ms / 1000.0;
     bool   decel_x = false, decel_y = false;
