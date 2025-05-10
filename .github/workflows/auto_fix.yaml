@@ -65,5 +65,5 @@ jobs:
       - name: Success
         run: echo "Auto-fix completed successfully."
       
-      - name: build differential
-        uses: ./.github/actions/build_differential
+  build_differential:
+    uses: NITIC-Robot-Club/nhk2025b_ros2/.github/workflows/build_differential.yaml@{{ github.ref }}
