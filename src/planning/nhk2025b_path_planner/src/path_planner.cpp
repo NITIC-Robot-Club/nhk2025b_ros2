@@ -12,7 +12,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 10);
     current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/simulation/pose", 10, std::bind (&path_planner::current_pose_callback, this, std::placeholders::_1));
+        "/localization/current_pose", 10, std::bind (&path_planner::current_pose_callback, this, std::placeholders::_1));
     goal_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
         "/behavior/goal_pose", 10, std::bind (&path_planner::goal_pose_callback, this, std::placeholders::_1));
     map_subscriber =
@@ -41,19 +41,17 @@ void path_planner::timer_callback () {
         delta_yaw += 2 * M_PI;
 
     double x = 0, y = 0;
-    double v_x = 0, v_y = 0;
+    double v_x = 1, v_y = 0;
     path.header    = header;
-    double delta_t = resolution_ms / 1000.0;
+    double dt = resolution_ms / 1000.0;
     bool   decel_x = false, decel_y = false;
     double limit_acceleration = 0.9 * max_xy_acceleration_m_s2;
-    for (double t = 0; hypot (x, y) < distance && t < 20.0; t += delta_t) {
-        x += v_x * delta_t;
-        y += v_y * delta_t;
+    for (double t = 0; hypot (x, y) < distance && t < 5.0; t += dt) {
+        x += v_x * dt;
+        y += v_y * dt;
         geometry_msgs::msg::PoseStamped pose;
         pose.pose.position.x = current_pose.pose.position.x + x;
-        // pose.pose.position.x = t;
         pose.pose.position.y = current_pose.pose.position.y + y;
-        // pose.pose.position.y = v;
         double now_yaw          = current_yaw + delta_yaw / (1.0 + std::exp (-7.5 * (hypot (x, y) / distance - 0.5)));
         pose.pose.orientation.z = std::sin (now_yaw / 2.0);
         pose.pose.orientation.w = std::cos (now_yaw / 2.0);
@@ -62,35 +60,43 @@ void path_planner::timer_callback () {
         path.poses.push_back (pose);
 
         rclcpp::Time time (header.stamp);
-        rclcpp::Time new_time = time + rclcpp::Duration::from_seconds (delta_t);
+        rclcpp::Time new_time = time + rclcpp::Duration::from_seconds (dt);
         header.stamp          = new_time;
         if (decel_x) {
-            v_x = std::sqrt (2 * limit_acceleration * (err_x - x));
+            v_x = std::sqrt (2 * limit_acceleration * abs(err_x - x));
+            if(err_x - x < 0) {
+                v_x*=-1;
+            }
         } else if (err_x - x <= v_x * v_x / (2 * limit_acceleration)) {
             decel_x = true;
-            v_x     = std::sqrt (2 * limit_acceleration * (err_x - x));
+            v_x     = std::sqrt (2 * limit_acceleration * abs(err_x - x));
+            if(err_x - x < 0) {
+                v_x*=-1;
+            }
         } else if (v_x < max_xy_velocity_m_s) {
-            v_x += max_xy_acceleration_m_s2 * delta_t;
+            v_x += max_xy_acceleration_m_s2 * dt;
         } else {
             v_x = max_xy_velocity_m_s;
         }
 
         if (decel_y) {
-            v_y = std::sqrt (2 * limit_acceleration * (err_y - y));
+            v_y = std::sqrt (2 * limit_acceleration * abs(err_y - y));
+            if(err_y - y < 0) {
+                v_y*=-1;
+            }
         } else if (err_y - y <= v_y * v_y / (2 * limit_acceleration)) {
             decel_y = true;
-            v_y     = std::sqrt (2 * limit_acceleration * (err_y - y));
+            v_y     = std::sqrt (2 * limit_acceleration * abs(err_y - y));
+            if(err_y - y < 0) {
+                v_y*=-1;
+            }
         } else if (v_y < max_xy_velocity_m_s) {
-            v_y += max_xy_acceleration_m_s2 * delta_t;
+            v_y += max_xy_acceleration_m_s2 * dt;
         } else {
             v_y = max_xy_velocity_m_s;
         }
-        // v = std::abs(v);
-        RCLCPP_INFO (this->get_logger (), "u");
     }
     path_publisher->publish (path);
-
-    RCLCPP_INFO (this->get_logger (), "pub!!!");
 }
 
 void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
@@ -98,7 +104,6 @@ void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped:
 }
 
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    RCLCPP_INFO (this->get_logger (), "kita");
     goal_pose = *msg;
 }
 

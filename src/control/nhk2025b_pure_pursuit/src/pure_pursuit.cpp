@@ -29,7 +29,7 @@ void pure_pursuit::timer_callback () {
     this->get_parameter ("angle_p", angle_p_);
 
     if (path_.poses.empty ()) {
-        RCLCPP_WARN (this->get_logger (), "Path is empty");
+        // RCLCPP_WARN (this->get_logger (), "Path is empty");
         return;
     }
 
@@ -46,7 +46,7 @@ void pure_pursuit::timer_callback () {
     }
 
     if (closest_index == -1) {
-        RCLCPP_WARN (this->get_logger (), "No closest point found");
+        // RCLCPP_WARN (this->get_logger (), "No closest point found");
         return;
     }
 
