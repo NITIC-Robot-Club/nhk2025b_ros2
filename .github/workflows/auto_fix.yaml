@@ -2,7 +2,10 @@ name: c++ style auto fix
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: 
+      - opened
+      - synchronize
+      - reopened
   workflow_dispatch:
 
 jobs:
@@ -14,13 +17,8 @@ jobs:
       matrix:
         os: 
           - ubuntu-22.04
-        rosdistro: 
-          - humble
 
     runs-on: ubuntu-latest
-
-    container:
-      image: ros:${{ matrix.rosdistro }}-ros-base
 
     steps:
       - name: Check out repository
@@ -39,12 +37,10 @@ jobs:
       - name: Install dependencies
         working-directory: nhk2025b_ros2
         run: |
-          rosdep update
           apt-get update
           apt-get install -y curl lsb-release
           apt-get install -y clang clang-format
           apt-get install -y cmake
-          rosdep install --from-path src -i -y --rosdistro ${{ matrix.rosdistro }}
 
       - name: Run clang-format (auto-fix)
         working-directory: nhk2025b_ros2
@@ -65,5 +61,3 @@ jobs:
       - name: Success
         run: echo "Auto-fix completed successfully."
       
-  build_differential:
-    uses: NITIC-Robot-Club/nhk2025b_ros2/.github/workflows/build_differential.yaml@{{ github.ref }}

@@ -2,13 +2,14 @@ name: colcon build differential
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-  workflow_call:
+    types: 
+      - opened
+      - synchronize
+      - reopened
+      - labeled
 
 jobs:
   colcon_build_differential:
-    permissions:
-      contents: write
 
     strategy:
       matrix:
@@ -22,6 +23,10 @@ jobs:
     container:
       image: ros:${{ matrix.rosdistro }}-ros-base
       
+    if: |
+      (github.event_name == 'labeled' && github.event.label.name == 'run_build_full') ||
+      (github.event_name != 'labeled')
+    
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
