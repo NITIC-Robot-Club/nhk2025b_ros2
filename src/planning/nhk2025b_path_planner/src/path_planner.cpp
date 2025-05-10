@@ -46,7 +46,7 @@ void path_planner::timer_callback () {
     double delta_t = resolution_ms / 1000.0;
     bool   decel_x = false, decel_y = false;
     double limit_acceleration = 0.9 * max_xy_acceleration_m_s2;
-    for (double t = 0; hypot(x, y) < distance && t < 20.0; t += delta_t) {
+    for (double t = 0; hypot (x, y) < distance && t < 20.0; t += delta_t) {
         x += v_x * delta_t;
         y += v_y * delta_t;
         geometry_msgs::msg::PoseStamped pose;
@@ -58,12 +58,12 @@ void path_planner::timer_callback () {
         pose.pose.orientation.z = std::sin (now_yaw / 2.0);
         pose.pose.orientation.w = std::cos (now_yaw / 2.0);
 
-        pose.header  = header;
+        pose.header = header;
         path.poses.push_back (pose);
 
         rclcpp::Time time (header.stamp);
         rclcpp::Time new_time = time + rclcpp::Duration::from_seconds (delta_t);
-        header.stamp = new_time;
+        header.stamp          = new_time;
         if (decel_x) {
             v_x = std::sqrt (2 * limit_acceleration * (err_x - x));
         } else if (err_x - x <= v_x * v_x / (2 * limit_acceleration)) {
@@ -86,11 +86,11 @@ void path_planner::timer_callback () {
             v_y = max_xy_velocity_m_s;
         }
         // v = std::abs(v);
-        RCLCPP_INFO(this->get_logger(), "u");
+        RCLCPP_INFO (this->get_logger (), "u");
     }
     path_publisher->publish (path);
 
-    RCLCPP_INFO(this->get_logger(), "pub!!!");
+    RCLCPP_INFO (this->get_logger (), "pub!!!");
 }
 
 void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
@@ -98,7 +98,7 @@ void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped:
 }
 
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    RCLCPP_INFO(this->get_logger(), "kita");
+    RCLCPP_INFO (this->get_logger (), "kita");
     goal_pose = *msg;
 }
 
