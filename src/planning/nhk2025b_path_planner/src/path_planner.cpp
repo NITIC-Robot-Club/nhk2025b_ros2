@@ -56,6 +56,7 @@ void path_planner::timer_callback () {
         double now_yaw = current_yaw + delta_yaw / (1.0 + std::exp(-7.5 * (hypot(x,y) / distance - 0.5)));
         pose.pose.orientation.z = std::sin(now_yaw / 2.0);
         pose.pose.orientation.w = std::cos(now_yaw / 2.0);
+      
         rclcpp::Time time (header.stamp);
         rclcpp::Time new_time = time + rclcpp::Duration::from_seconds (delta_t);
 

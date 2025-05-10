@@ -1,5 +1,8 @@
 # nhk2025b_ros2
+[![colcon build all packages](https://github.com/NITIC-Robot-Club/nhk2025b_ros2/actions/workflows/build_full.yaml/badge.svg?branch=main)](https://github.com/NITIC-Robot-Club/nhk2025b_ros2/actions/workflows/build_full.yaml)
+
 ros2のwsです
+
 
 ## 準備
 1. ROS 2 humble をインストール

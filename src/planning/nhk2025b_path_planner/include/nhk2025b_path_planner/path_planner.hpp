@@ -1,6 +1,8 @@
 #ifndef __path_planner_HPP__
 #define __path_planner_HPP__
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/path.hpp>

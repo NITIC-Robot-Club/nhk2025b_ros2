@@ -3,18 +3,28 @@
 
 namespace simulation {
 simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation", options) {
-    swerve_publisher_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve_result", 10);
+    swerve_publisher_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 10);
     robot_status_publisher_ = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 10);
     pose_publisher_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/simulation/pose", 10);
     swerve_subscriber_      = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
-        "/swerve_cmd", 10, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
-    imu_publisher_ = this->create_publisher<sensor_msgs::msg::Imu> ("/sensor/imu", 10);
-    timer_         = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
-    wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
-    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.031);
+        "/swerve/cmd", 10, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
+    imu_publisher_        = this->create_publisher<sensor_msgs::msg::Imu> ("/sensor/imu", 10);
+    timer_                = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
+    wheel_position        = this->declare_parameter<double> ("wheel_position", 0.62);
+    wheel_radius          = this->declare_parameter<double> ("wheel_radius", 0.031);
+    bool   is_red         = this->declare_parameter<bool> ("is_red", false);
+    double initial_x_blue = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
+    double initial_y_blue = this->declare_parameter<double> ("initial_positions.blue.y", 1.0);
+    double initial_x_red  = this->declare_parameter<double> ("initial_positions.red.x", 1.0);
+    double initial_y_red  = this->declare_parameter<double> ("initial_positions.red.y", 4.4);
 
-    x_     = 1.0f;
-    y_     = 1.0f;
+    if (is_red) {
+        x_ = initial_x_red;
+        y_ = initial_y_red;
+    } else {
+        x_ = initial_x_blue;
+        y_ = initial_y_blue;
+    }
     z_     = 0.0f;
     x_sum_ = 0.0f;
     y_sum_ = 0.0f;

@@ -1,0 +1,9 @@
+/**:
+  ros__parameters:
+    initial_positions:
+      blue:
+        x: 0.65
+        y: 0.65
+      red:
+        x: 0.65
+        y: 4.75
