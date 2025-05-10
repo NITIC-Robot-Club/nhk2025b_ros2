@@ -66,3 +66,5 @@ jobs:
       - name: Success
         run: echo "Auto-fix completed successfully."
       
+  build_differential:
+    uses: ./.github/workflows/build_differential.yaml
