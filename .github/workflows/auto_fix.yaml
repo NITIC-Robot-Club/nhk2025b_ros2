@@ -68,3 +68,4 @@ jobs:
       
   build_differential:
     uses: ./.github/workflows/build_differential.yaml
+    needs: auto_fix
