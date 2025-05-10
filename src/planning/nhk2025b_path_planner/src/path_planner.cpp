@@ -41,13 +41,13 @@ void path_planner::timer_callback () {
         delta_yaw += 2 * M_PI;
 
     double x = 0, y = 0;
-    double v_x =1.0, v_y = 0;
+    double v_x = 1.0, v_y = 0;
     path.header    = header;
     double delta_t = resolution_ms / 1000.0;
-    bool decel_x = false, decel_y = false;
+    bool   decel_x = false, decel_y = false;
     double limit_acceleration = 0.9 * max_xy_acceleration_m_s2;
-    double v_prev = 0.0;
-    for (double t = 0; x<=err_x && y<=err_y; t += delta_t) {
+    double v_prev             = 0.0;
+    for (double t = 0; x <= err_x && y <= err_y; t += delta_t) {
         x += v_x * delta_t;
         y += v_y * delta_t;
         geometry_msgs::msg::PoseStamped pose;
@@ -65,25 +65,25 @@ void path_planner::timer_callback () {
         header.stamp = new_time;
         pose.header  = header;
         path.poses.push_back (pose);
-        if(decel_x){
-            v_x =std::sqrt(2 * limit_acceleration * (err_x - x));
-        }else if (err_x - x <= v_x * v_x / (2 * limit_acceleration)) {
+        if (decel_x) {
+            v_x = std::sqrt (2 * limit_acceleration * (err_x - x));
+        } else if (err_x - x <= v_x * v_x / (2 * limit_acceleration)) {
             decel_x = true;
-            v_x =std::sqrt(2 * limit_acceleration * (err_x - x));
-        }else if (v_x < max_xy_velocity_m_s) {
+            v_x     = std::sqrt (2 * limit_acceleration * (err_x - x));
+        } else if (v_x < max_xy_velocity_m_s) {
             v_x += max_xy_acceleration_m_s2 * delta_t;
-        }else {
+        } else {
             v_x = max_xy_velocity_m_s;
         }
 
-        if(decel_y){
-            v_y =std::sqrt(2 * limit_acceleration * (err_y - y));
-        }else if (err_y - y <= v_y * v_y / (2 * limit_acceleration)) {
+        if (decel_y) {
+            v_y = std::sqrt (2 * limit_acceleration * (err_y - y));
+        } else if (err_y - y <= v_y * v_y / (2 * limit_acceleration)) {
             decel_y = true;
-            v_y =std::sqrt(2 * limit_acceleration * (err_y - y));
-        }else if (v_y < max_xy_velocity_m_s) {
+            v_y     = std::sqrt (2 * limit_acceleration * (err_y - y));
+        } else if (v_y < max_xy_velocity_m_s) {
             v_y += max_xy_acceleration_m_s2 * delta_t;
-        }else {
+        } else {
             v_y = max_xy_velocity_m_s;
         }
         // v = std::abs(v);
