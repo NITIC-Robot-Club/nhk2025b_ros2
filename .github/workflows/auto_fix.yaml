@@ -64,3 +64,6 @@ jobs:
       
       - name: Success
         run: echo "Auto-fix completed successfully."
+      
+      - name: build differential
+        uses: ./.github/actions/build_differential
