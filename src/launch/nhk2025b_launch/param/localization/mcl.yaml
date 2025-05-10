@@ -4,4 +4,5 @@ mcl:
     gaussian_stddev_linear: 1.0
     motion_noise_angle: 0.13
     motion_noise_linear: 0.05
-    num_particles: 500
+    num_particles: 300
+    random_particle_map_num: 10
