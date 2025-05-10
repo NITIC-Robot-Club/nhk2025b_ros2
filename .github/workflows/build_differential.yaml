@@ -3,7 +3,6 @@ name: colcon build differential
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  workflow_dispatch:
 
 jobs:
   colcon_build_differential:
