@@ -1,0 +1,13 @@
+<launch>
+  <arg name="is_red" default="false"/>
+  <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_localization_container" namespace="">
+    <composable_node pkg="nhk2025b_ekf" plugin="ekf::ekf" name="ekf"/>
+    <composable_node pkg="nhk2025b_wheel_odometry" plugin="wheel_odometry::wheel_odometry" name="wheel_odometry">
+      <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
+      <param name="is_red" value="$(var is_red)"/>
+    </composable_node>
+    <composable_node pkg="nhk2025b_mcl" plugin="mcl::mcl" name="mcl">
+      <param from="$(find-pkg-share nhk2025b_launch)/param/localization/mcl.yaml"/>
+    </composable_node>
+  </node_container>
+</launch>

@@ -1,9 +1,10 @@
 #ifndef __lidar_simulation_hpp__
 #define __lidar_simulation_hpp__
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
-#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 
 namespace lidar_simulation {

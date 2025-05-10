@@ -1,6 +1,11 @@
 #ifndef __CANABLE_NODE_HPP__
 #define __CANABLE_NODE_HPP__
 
+#include "rclcpp/rclcpp.hpp"
+
+#include "nhk2025b_msgs/msg/robot_status.hpp"
+#include "nhk2025b_msgs/msg/swerve.hpp"
+
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <net/if.h>
@@ -8,10 +13,6 @@
 #include <unistd.h>
 
 #include <cstring>
-
-#include "nhk2025b_msgs/msg/robot_status.hpp"
-#include "nhk2025b_msgs/msg/swerve.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 namespace canable {
 class canable : public rclcpp::Node {

@@ -1,11 +1,12 @@
 #ifndef __path_planner_HPP__
 #define __path_planner_HPP__
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <geometry_msgs/msg/twist_stamped.hpp>
-#include <rclcpp/rclcpp.hpp>
 
 namespace path_planner {
 class path_planner : public rclcpp::Node {
@@ -24,19 +25,19 @@ class path_planner : public rclcpp::Node {
     void current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
-    void vel_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
+    void vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void timer_callback ();
 
-    geometry_msgs::msg::PoseStamped                                  current_pose;
-    geometry_msgs::msg::PoseStamped                                  goal_pose;
-    nav_msgs::msg::OccupancyGrid                                     map;
-    geometry_msgs::msg::TwistStamped current_vel;
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr                path_publisher;
-    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr current_pose_subscriber;
-    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_subscriber;
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr    map_subscriber;
-    rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr    vel_subscriber;
-    rclcpp::TimerBase::SharedPtr                                     timer;
+    geometry_msgs::msg::PoseStamped                                   current_pose;
+    geometry_msgs::msg::PoseStamped                                   goal_pose;
+    nav_msgs::msg::OccupancyGrid                                      map;
+    geometry_msgs::msg::TwistStamped                                  current_vel;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr                 path_publisher;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscriber;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  goal_pose_subscriber;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr     map_subscriber;
+    rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_subscriber;
+    rclcpp::TimerBase::SharedPtr                                      timer;
 };
 }  // namespace path_planner
 

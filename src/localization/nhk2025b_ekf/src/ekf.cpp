@@ -1,27 +1,22 @@
-#include "nhk2025b_ekf_localizer/ekf_localizer.hpp"
+#include "nhk2025b_ekf/ekf.hpp"
 
-namespace ekf_localizer {
+namespace ekf {
 
-ekf_localizer::ekf_localizer (const rclcpp::NodeOptions& options)
-    : Node ("ekf_localizer", options), tf_buffer_ (this->get_clock ()), tf_listener_ (tf_buffer_) {
+ekf::ekf (const rclcpp::NodeOptions& options) : Node ("ekf", options), tf_buffer_ (this->get_clock ()), tf_listener_ (tf_buffer_) {
     x_ = Eigen::VectorXd::Zero (6);         // [x, y, yaw, vx, vy, wz]
     P_ = Eigen::MatrixXd::Identity (6, 6);  // 共分散
 
-    fused_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
+    fused_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/ekf/pose", 10);
 
-    imu_sub_ =
-        this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 50, std::bind (&ekf_localizer::imu_callback, this, std::placeholders::_1));
+    imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 10, std::bind (&ekf::imu_callback, this, std::placeholders::_1));
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
-        "/localization/wheel_odometory", 20, std::bind (&ekf_localizer::odom_callback, this, std::placeholders::_1));
-
-    lidar_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/simulation/pose", 5, std::bind (&ekf_localizer::lidar_callback, this, std::placeholders::_1));
+        "/localization/wheel_odometry", 10, std::bind (&ekf::odom_callback, this, std::placeholders::_1));
 
     last_time_ = this->get_clock ()->now ();
 }
 
-void ekf_localizer::imu_callback (const sensor_msgs::msg::Imu::SharedPtr msg) {
+void ekf::imu_callback (const sensor_msgs::msg::Imu::SharedPtr msg) {
     latest_imu_ = *msg;
 
     rclcpp::Time current_time = this->get_clock ()->now ();
@@ -31,11 +26,19 @@ void ekf_localizer::imu_callback (const sensor_msgs::msg::Imu::SharedPtr msg) {
     last_time_ = current_time;
 }
 
-void ekf_localizer::odom_callback (const nav_msgs::msg::Odometry::SharedPtr msg) {
+void ekf::odom_callback (const nav_msgs::msg::Odometry::SharedPtr msg) {
     latest_odom_ = *msg;
+
+    // debug
+    geometry_msgs::msg::PoseStamped odom_pose;
+    odom_pose.header.stamp    = this->get_clock ()->now ();
+    odom_pose.header.frame_id = "map";
+    odom_pose.pose            = msg->pose.pose;
+    fused_pose_pub_->publish (odom_pose);
+    // debug
 }
 
-void ekf_localizer::lidar_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+void ekf::lidar_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     update (*msg);
 
     geometry_msgs::msg::PoseStamped fused_pose;
@@ -50,7 +53,7 @@ void ekf_localizer::lidar_callback (const geometry_msgs::msg::PoseStamped::Share
     fused_pose_pub_->publish (fused_pose);
 }
 
-void ekf_localizer::predict (const nav_msgs::msg::Odometry& odom, const sensor_msgs::msg::Imu& imu, double dt) {
+void ekf::predict (const nav_msgs::msg::Odometry& odom, const sensor_msgs::msg::Imu& imu, double dt) {
     double vx = odom.twist.twist.linear.x;
     double vy = odom.twist.twist.linear.y;
     double wz = imu.angular_velocity.z;
@@ -73,7 +76,7 @@ void ekf_localizer::predict (const nav_msgs::msg::Odometry& odom, const sensor_m
     P_ = P_ + Q * dt;
 }
 // EKF更新ステップ
-void ekf_localizer::update (const geometry_msgs::msg::PoseStamped& pose_msg) {
+void ekf::update (const geometry_msgs::msg::PoseStamped& pose_msg) {
     Eigen::VectorXd z (3);
     z << pose_msg.pose.position.x, pose_msg.pose.position.y,
         std::asin (pose_msg.pose.orientation.z) * 2.0;  // yaw
@@ -113,7 +116,7 @@ void ekf_localizer::update (const geometry_msgs::msg::PoseStamped& pose_msg) {
     P_ = (Eigen::MatrixXd::Identity (6, 6) - K * H) * P_;
 }
 
-}  // namespace ekf_localizer
+}  // namespace ekf
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE (ekf_localizer::ekf_localizer)
+RCLCPP_COMPONENTS_REGISTER_NODE (ekf::ekf)

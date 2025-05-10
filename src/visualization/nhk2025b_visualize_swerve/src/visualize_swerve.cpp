@@ -4,7 +4,7 @@ namespace visualize_swerve {
 visualize_swerve::visualize_swerve (const rclcpp::NodeOptions& options) : Node ("visualize_swerve", options) {
     marker_publisher_  = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/swerve", 10);
     swerve_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
-        "/swerve_result", 10, std::bind (&visualize_swerve::swerve_callback, this, std::placeholders::_1));
+        "/swerve/result", 10, std::bind (&visualize_swerve::swerve_callback, this, std::placeholders::_1));
     wheel_position = this->declare_parameter<double> ("wheel_position", 0.62);
     wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.031);
 }

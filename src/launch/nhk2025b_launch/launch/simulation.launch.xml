@@ -1,12 +1,17 @@
 <launch>
-  <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_robot_container" namespace="">
-    <composable_node pkg="nhk2025b_swerve_calculator" plugin="swerve_calculator::swerve_calculator" name="swerve_calculator"/>
-    <composable_node pkg="nhk2025b_wheel_odometory" plugin="wheel_odometory::wheel_odometory" name="wheel_odometory"/>
-  </node_container>
+  <arg name="is_red" default="false"/>
   <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_simulation_container" namespace="">
-    <composable_node pkg="nhk2025b_simulation" plugin="simulation::simulation" name="simulation"/>
+    <composable_node pkg="nhk2025b_simulation" plugin="simulation::simulation" name="simulation">
+      <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
+      <param name="is_red" value="$(var is_red)"/>
+    </composable_node>
     <composable_node pkg="nhk2025b_simulation" plugin="lidar_simulation::lidar_simulation" name="lidar_simulation"/>
+    <composable_node pkg="nhk2025b_swerve_calculator" plugin="swerve_calculator::swerve_calculator" name="swerve_calculator"/>
   </node_container>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/rviz2.launch.xml"/>
-  <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml"/>
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml">
+    <arg name="is_red" value="$(var is_red)"/>
+  </include>
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/localization.launch.xml"/>
+  <!-- <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/> -->
 </launch>

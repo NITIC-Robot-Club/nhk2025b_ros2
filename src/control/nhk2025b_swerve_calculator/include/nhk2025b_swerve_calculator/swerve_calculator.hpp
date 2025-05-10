@@ -2,9 +2,10 @@
 #ifndef __swerve_calculator_hpp__
 #define __swerve_calculator_hpp__
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nhk2025b_msgs/msg/swerve.hpp>
-#include <rclcpp/rclcpp.hpp>
 
 namespace swerve_calculator {
 class swerve_calculator : public rclcpp::Node {

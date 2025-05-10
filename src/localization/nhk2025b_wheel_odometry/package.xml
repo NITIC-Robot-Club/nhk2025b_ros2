@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>nhk2025b_wheel_odometory</name>
+  <name>nhk2025b_wheel_odometry</name>
   <version>0.0.1</version>
   <description>ステアオドメトリー</description>
   <maintainer email="kzs321kzs@gmail.com">Kazusa Hashimoto</maintainer>

@@ -1,7 +1,9 @@
+
 cmake_minimum_required(VERSION 3.8)
-project(nhk2025b_wheel_odometory)
+project(nhk2025b_ekf)
 
 find_package(ament_cmake_auto REQUIRED)
+find_package(Eigen3 REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
@@ -13,8 +15,8 @@ target_include_directories(${PROJECT_NAME}
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-    PLUGIN "wheel_odometory::wheel_odometory"
-    EXECUTABLE wheel_odometory
+    PLUGIN "ekf::ekf"
+    EXECUTABLE ekf
 )
 
 ament_auto_package(
