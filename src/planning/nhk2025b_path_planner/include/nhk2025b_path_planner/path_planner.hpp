@@ -22,6 +22,8 @@ class path_planner : public rclcpp::Node {
     double max_z_acceleration_rad_s2;
     double max_z_velocity_rad_s;
 
+    bool is_goal_received;
+
     void current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);

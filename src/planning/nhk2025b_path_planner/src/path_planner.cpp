@@ -22,6 +22,9 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     timer = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 }
 void path_planner::timer_callback () {
+    if(!is_goal_received) {
+        return;
+    }
     nav_msgs::msg::Path   path;
     std_msgs::msg::Header header;
     header.frame_id = "map";
@@ -40,9 +43,12 @@ void path_planner::timer_callback () {
     else if (delta_yaw < -M_PI)
         delta_yaw += 2 * M_PI;
 
+    double initial_speed = hypot (current_vel.twist.linear.x, current_vel.twist.linear.y);
+    double initial_angle = std::atan2 (current_vel.twist.linear.y, current_vel.twist.linear.x);
+
     double x = 0, y = 0;
-    double v_x     = current_vel.twist.linear.x;
-    double v_y     = current_vel.twist.linear.y;
+    double v_x     = initial_speed * std::cos (initial_angle);
+    double v_y     = initial_speed * std::sin (initial_angle);
     path.header    = header;
     double dt      = resolution_ms / 1000.0;
     bool   decel_x = false, decel_y = false;
@@ -106,6 +112,7 @@ void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped:
 
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     goal_pose = *msg;
+    is_goal_received = true;
 }
 
 void path_planner::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
