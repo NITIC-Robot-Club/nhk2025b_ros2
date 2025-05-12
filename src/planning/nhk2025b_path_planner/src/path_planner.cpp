@@ -22,7 +22,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     timer = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 }
 void path_planner::timer_callback () {
-    if(!is_goal_received) {
+    if (!is_goal_received) {
         return;
     }
     nav_msgs::msg::Path   path;
@@ -111,7 +111,7 @@ void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped:
 }
 
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    goal_pose = *msg;
+    goal_pose        = *msg;
     is_goal_received = true;
 }
 
