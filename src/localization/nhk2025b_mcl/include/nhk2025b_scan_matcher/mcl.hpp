@@ -65,25 +65,25 @@ class mcl : public rclcpp::Node {
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr                   scan_sub_;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr                  map_sub_;
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
-    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr                       ekf_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr               ekf_sub_;
 
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr  pose_pub_;
     rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr    particles_pub_;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr     distance_map_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
-    
+
     std::shared_ptr<tf2_ros::Buffer>               tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener>    tf_listener_;
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-    
+
     std::vector<Particle>                   particles_;
     nav_msgs::msg::OccupancyGrid::SharedPtr map_;
     geometry_msgs::msg::Pose                ekf_current_pose_;
     geometry_msgs::msg::Pose                ekf_last_pose_;
     geometry_msgs::msg::PoseStamped         last_estimated_pose_;
-    
+
     rclcpp::TimerBase::SharedPtr timer;
-    std::default_random_engine rng_;
+    std::default_random_engine   rng_;
 
     // パラメータ
     int    num_particles_;

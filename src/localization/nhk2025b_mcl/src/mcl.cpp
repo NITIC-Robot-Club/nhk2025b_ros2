@@ -25,12 +25,11 @@ mcl::mcl (const rclcpp::NodeOptions& options)
         "/localization/ekf/pose", 10, std::bind (&mcl::ekf_callback, this, std::placeholders::_1));
 
     distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 10);
-    pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
-    particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 10);
-    twist_pub_     = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 10);
+    pose_pub_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
+    particles_pub_    = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 10);
+    twist_pub_        = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 10);
 
-    timer = this->create_wall_timer (
-        std::chrono::milliseconds (10), std::bind (&mcl::timer_callback, this));
+    timer = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&mcl::timer_callback, this));
 }
 
 void mcl::create_distance_map () {
@@ -123,7 +122,7 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
     resample_particles ();
 }
 
-void mcl::timer_callback() {
+void mcl::timer_callback () {
     geometry_msgs::msg::PoseStamped estimated;
     estimated.pose            = estimate_pose ();
     estimated.header.frame_id = "map";
@@ -143,7 +142,7 @@ void mcl::timer_callback() {
 
     // publish tf
     geometry_msgs::msg::TransformStamped transform;
-    transform.header.stamp            = this->now();
+    transform.header.stamp            = this->now ();
     transform.header.frame_id         = "map";
     transform.child_frame_id          = "base_link";
     transform.transform.translation.x = estimated.pose.position.x;
@@ -166,7 +165,7 @@ void mcl::timer_callback() {
     if (!last_estimated_pose_.header.stamp.sec) {
         last_estimated_pose_ = estimated;
     } else {
-        double                           dt = (rclcpp::Time (estimated.header.stamp) - rclcpp::Time (last_estimated_pose_.header.stamp)).seconds ();
+        double dt = (rclcpp::Time (estimated.header.stamp) - rclcpp::Time (last_estimated_pose_.header.stamp)).seconds ();
 
         geometry_msgs::msg::TwistStamped twist;
         twist.header.frame_id = "base_link";
