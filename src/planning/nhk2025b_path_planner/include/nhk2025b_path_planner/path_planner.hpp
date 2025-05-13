@@ -26,10 +26,6 @@ class path_planner : public rclcpp::Node {
     int    resolution_ms;
     int    offset_mm;
     int    robot_size_mm;
-    double max_xy_acceleration_m_s2;
-    double max_xy_velocity_m_s;
-    double max_z_acceleration_rad_s2;
-    double max_z_velocity_rad_s;
 
     int    map_width, map_height;
     double map_resolution;
