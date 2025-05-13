@@ -1,0 +1,2 @@
+# nhk2025b_pose_initializer
+RANSACで初期位置を取得
