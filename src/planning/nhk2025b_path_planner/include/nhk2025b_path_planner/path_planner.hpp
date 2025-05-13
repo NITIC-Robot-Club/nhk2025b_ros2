@@ -23,9 +23,9 @@ class path_planner : public rclcpp::Node {
               return priority > other.priority;
         }
     };
-    int    resolution_ms;
-    int    offset_mm;
-    int    robot_size_mm;
+    int resolution_ms;
+    int offset_mm;
+    int robot_size_mm;
 
     int    map_width, map_height;
     double map_resolution;
