@@ -12,7 +12,11 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&pure_pursuit::timer_callback, this));
 
+    this->declare_parameter ("lookahead_p", 1.0);
     this->declare_parameter ("angle_p", 3.0);
+    this->declare_parameter ("max_speed_xy_m_s", 3.0);
+    this->declare_parameter ("max_speed_z_rad_s", 3.14);
+    this->declare_parameter ("max_acceleration_xy_m_s2_", 6.0);
 }
 
 void pure_pursuit::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
@@ -24,7 +28,11 @@ void pure_pursuit::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
 }
 
 void pure_pursuit::timer_callback () {
+    this->get_parameter ("lookahead_p", lookahead_p_);
     this->get_parameter ("angle_p", angle_p_);
+    this->get_parameter ("max_speed_xy_m_s", max_speed_xy_m_s_);
+    this->get_parameter ("max_speed_z_rad_s", max_speed_z_rad_s_);
+    this->get_parameter ("max_acceleration_xy_m_s2_", max_acceleration_xy_m_s2_);
 
     if (path_.poses.empty ()) {
         RCLCPP_WARN (this->get_logger (), "Path is empty");
@@ -62,7 +70,9 @@ void pure_pursuit::timer_callback () {
         }
         lookahead_index = index;
     }
-
+    if (lookahead_index == closest_index) {
+        lookahead_index = closest_index + 1;
+    }
     // calculate the angle to the lookahead point
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
@@ -76,19 +86,34 @@ void pure_pursuit::timer_callback () {
         yaw_diff += 2.0 * M_PI;
     }
 
-    int target_speed_index = closest_index;
+    // calculate the speed
+    // calculate acceleration from the last twist
+    double delta_t_ms   = 50;
+    double last_speed   = std::hypot (last_cmd_vel_.twist.linear.x, last_cmd_vel_.twist.linear.y);
+    double target_speed = std::hypot (
+                              path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x,
+                              path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y) /
+                          (delta_t_ms / 1000.0);
+    double acceleration = (target_speed - last_speed) / (delta_t_ms / 1000.0);
 
-    rclcpp::Time     time0 = path_.poses[target_speed_index].header.stamp;
-    rclcpp::Time     time1 = path_.poses[target_speed_index + 1].header.stamp;
-    rclcpp::Duration dt    = time1 - time0;
-    if (dt.seconds () <= 0.0) {
-        RCLCPP_WARN (this->get_logger (), "dt is zero or negative");
-        return;
+    RCLCPP_INFO (this->get_logger (), "last_speed: %f, target_speed: %f, acceleration: %f", last_speed, target_speed, acceleration);
+
+    if (acceleration > max_acceleration_xy_m_s2_) {
+        acceleration = max_acceleration_xy_m_s2_;
+    } else if (acceleration < -max_acceleration_xy_m_s2_) {
+        acceleration = -max_acceleration_xy_m_s2_;
     }
-    double speed = std::hypot (
-                       path_.poses[target_speed_index + 1].pose.position.x - path_.poses[target_speed_index].pose.position.x,
-                       path_.poses[target_speed_index + 1].pose.position.y - path_.poses[target_speed_index].pose.position.y) /
-                   dt.seconds ();
+
+    double speed = last_speed + acceleration * (delta_t_ms / 1000.0);
+    if (speed > max_speed_xy_m_s_) {
+        speed = max_speed_xy_m_s_;
+    } else if (speed < 0) {
+        speed = 0;
+    }
+
+    lookahead_distance_ = lookahead_p_ * speed;
+
+    RCLCPP_INFO (this->get_logger (), "speed: %f, acceleration: %f, lookahead_distance_: %f", speed, acceleration, lookahead_distance_);
 
     double yaw_speed = angle_p_ * yaw_diff;
 
@@ -105,6 +130,8 @@ void pure_pursuit::timer_callback () {
     lookahead_point.header.frame_id = "map";
     lookahead_point.pose            = path_.poses[lookahead_index].pose;
     lookahead_publisher_->publish (lookahead_point);
+
+    last_cmd_vel_ = cmd_vel;
 }
 
 }  // namespace pure_pursuit

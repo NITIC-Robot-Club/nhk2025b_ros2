@@ -13,9 +13,14 @@ class pure_pursuit : public rclcpp::Node {
     pure_pursuit (const rclcpp::NodeOptions &options);
 
    private:
-    double lookahead_distance_, angle_p_;
+    double lookahead_p_, angle_p_;
+    double max_speed_xy_m_s_;
+    double max_speed_z_rad_s_;
+    double max_acceleration_xy_m_s2_;
+    double lookahead_distance_;
 
     geometry_msgs::msg::PoseStamped current_pose_;
+    geometry_msgs::msg::TwistStamped   last_cmd_vel_;
     nav_msgs::msg::Path             path_;
 
     void timer_callback ();
