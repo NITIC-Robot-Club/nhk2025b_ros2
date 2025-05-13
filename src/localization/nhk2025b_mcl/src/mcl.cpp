@@ -117,7 +117,6 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
     if (!map_ || particles_.empty ()) return;
     
     motion_update (current_pose_, last_pose_);
-    last_pose_ = current_pose_;
     sensor_update (*scan_msg);
     resample_particles ();
     
@@ -126,38 +125,7 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
     estimated.pose            = estimate_pose ();
     estimated.header.frame_id = "map";
     estimated.header.stamp    = this->now ();
-    pose_pub_->publish (estimated);
     
-    if(is_converged()) {
-        if(!last_estimated_pose_.header.stamp.sec) {
-            last_estimated_pose_ = estimated;
-        } else {
-            double dt = (rclcpp::Time(estimated.header.stamp) - rclcpp::Time(last_estimated_pose_.header.stamp)).seconds();
-            geometry_msgs::msg::TwistStamped twist;
-            twist.header.frame_id = "base_link";
-            twist.header.stamp    = this->now ();
-            twist.twist.linear.x  = (estimated.pose.position.x-last_estimated_pose_.pose.position.x)/dt;
-            twist.twist.linear.y  = (estimated.pose.position.y-last_estimated_pose_.pose.position.y)/dt;
-            twist.twist.angular.z = (estimated.pose.orientation.z-last_estimated_pose_.pose.orientation.z)/dt;
-            twist_pub_->publish (twist);
-            last_estimated_pose_ = estimated;
-        }
-    } else {
-        RCLCPP_WARN (this->get_logger (), "Particles not converged");
-    }
-
-    // publish tf
-    geometry_msgs::msg::TransformStamped transform;
-    transform.header.stamp            = this->now ();
-    transform.header.frame_id         = "map";
-    transform.child_frame_id          = "base_link";
-    transform.transform.translation.x = estimated.pose.position.x;
-    transform.transform.translation.y = estimated.pose.position.y;
-    transform.transform.rotation.z    = estimated.pose.orientation.z;
-    transform.transform.rotation.w    = estimated.pose.orientation.w;
-    tf_broadcaster_->sendTransform (transform);
-
-
     geometry_msgs::msg::PoseArray pose_array;
     pose_array.header.frame_id = "map";
     pose_array.header.stamp    = this->now ();
@@ -169,6 +137,43 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
         pose_array.poses.push_back (pose);
     }
     particles_pub_->publish (pose_array);
+    
+    // publish tf
+    geometry_msgs::msg::TransformStamped transform;
+    transform.header.stamp            = this->now ();
+    transform.header.frame_id         = "map";
+    transform.child_frame_id          = "base_link";
+    transform.transform.translation.x = estimated.pose.position.x;
+    transform.transform.translation.y = estimated.pose.position.y;
+    transform.transform.rotation.z    = estimated.pose.orientation.z;
+    transform.transform.rotation.w    = estimated.pose.orientation.w;
+    tf_broadcaster_->sendTransform (transform);
+    
+    if(! is_converged()) {
+        RCLCPP_WARN (this->get_logger (), "Particles not converged");
+        estimated.pose.position.x = last_estimated_pose_.pose.position.x + (current_pose_.position.x - last_pose_.position.x);
+        estimated.pose.position.y = last_estimated_pose_.pose.position.y + (current_pose_.position.y - last_pose_.position.y);
+        estimated.pose.orientation.z = last_estimated_pose_.pose.orientation.z + (current_pose_.orientation.z - last_pose_.orientation.z);
+        estimated.pose.orientation.w = last_estimated_pose_.pose.orientation.w + (current_pose_.orientation.w - last_pose_.orientation.w);
+    }
+    
+    pose_pub_->publish (estimated);
+    
+    if(!last_estimated_pose_.header.stamp.sec) {
+        last_estimated_pose_ = estimated;
+    } else {
+        double dt = (rclcpp::Time(estimated.header.stamp) - rclcpp::Time(last_estimated_pose_.header.stamp)).seconds();
+        geometry_msgs::msg::TwistStamped twist;
+        twist.header.frame_id = "base_link";
+        twist.header.stamp    = this->now ();
+        twist.twist.linear.x  = (estimated.pose.position.x-last_estimated_pose_.pose.position.x)/dt;
+        twist.twist.linear.y  = (estimated.pose.position.y-last_estimated_pose_.pose.position.y)/dt;
+        twist.twist.angular.z = (estimated.pose.orientation.z-last_estimated_pose_.pose.orientation.z)/dt;
+        twist_pub_->publish (twist);
+        last_estimated_pose_ = estimated;
+    }
+    
+    last_pose_ = current_pose_;
 }
 
 void mcl::initialize_particles_gaussian (const geometry_msgs::msg::Pose& initial_pose) {
@@ -239,7 +244,7 @@ void mcl::sensor_update (const sensor_msgs::msg::LaserScan& scan) {
     for (auto& p : particles_) {
         p.weight /= (total_weight + 1e-6);
     }
-    RCLCPP_INFO (this->get_logger (), "Max weight: %d, Min weight: %d, Average weight: %f", score_max, score_min, total_weight / particles_.size ());
+    // RCLCPP_INFO (this->get_logger (), "Max weight: %d, Min weight: %d, Average weight: %f", score_max, score_min, total_weight / particles_.size ());
 }
 
 double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::LaserScan& scan) const {
@@ -384,8 +389,18 @@ bool mcl::is_converged() const {
     var_y /= particles_.size();
     var_theta /= particles_.size();
 
-    constexpr double position_threshold = 0.20 * 0.20;  // 20cm の分散
-    constexpr double angle_threshold = (10.0 * M_PI / 180.0) * (10.0 * M_PI / 180.0);  // 10度の分散
+    double position_threshold = std::pow(motion_noise_linear_ * 4, 2);
+    double angle_threshold = std::pow(motion_noise_angle_ * 4, 2);
+
+    if(var_x > position_threshold) {
+        RCLCPP_WARN (this->get_logger (), "Particle x variance is too high: %f", var_x);
+    }
+    if(var_y > position_threshold) {
+        RCLCPP_WARN (this->get_logger (), "Particle y variance is too high: %f", var_y);
+    }
+    if(var_theta > angle_threshold) {
+        RCLCPP_WARN (this->get_logger (), "Particle theta variance is too high: %f", var_theta);
+    }
 
     return var_x < position_threshold && var_y < position_threshold && var_theta < angle_threshold;
 }

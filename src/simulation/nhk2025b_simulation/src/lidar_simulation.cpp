@@ -12,7 +12,7 @@ lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options) : Node (
     lidar_y         = this->declare_parameter<double> ("lidar_y", 0);
     lidar_z         = this->declare_parameter<double> ("lidar_z", 0);
     lidar_frequency = this->declare_parameter<double> ("lidar_frequency", 12.0);
-    timer           = this->create_wall_timer (std::chrono::milliseconds (1000.0 / lidar_frequency), std::bind (&lidar_simulation::timer_callback, this));
+    timer           = this->create_wall_timer (std::chrono::milliseconds (int(1000 / lidar_frequency)), std::bind (&lidar_simulation::timer_callback, this));
 }
 
 void lidar_simulation::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
@@ -38,8 +38,8 @@ void lidar_simulation::timer_callback () {
     scan.time_increment  = 0.0;
     scan.scan_time       = 1.0 / lidar_frequency;
     scan.range_min       = 0.12;
-    scan.range_max       = 10.0;
-    scan.ranges.resize (360 / scan.angle_increment, 10.0);
+    scan.range_max       = 11.0;
+    scan.ranges.resize (360 / scan.angle_increment, scan.range_max);
     scan.intensities.resize (360 / scan.angle_increment, 1.0);
 
     double yaw     = std::asin (current_pose.pose.orientation.z) * 2;
@@ -47,7 +47,7 @@ void lidar_simulation::timer_callback () {
     double start_y = current_pose.pose.position.y + lidar_x * std::sin (yaw) + lidar_y * std::cos (yaw);
     for (size_t i = 0; i < scan.ranges.size (); ++i) {  // Ensure we iterate within bounds
         double angle = scan.angle_min + i * scan.angle_increment + yaw + lidar_z;
-        for (double r = 0.1; r < scan.range_max; r += 0.01) {
+        for (double r = 0.12; r < scan.range_max; r += 0.01) {
             double x = start_x + r * std::cos (angle);
             double y = start_y + r * std::sin (angle);
 

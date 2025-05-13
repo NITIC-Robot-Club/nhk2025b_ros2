@@ -22,6 +22,9 @@ wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("whe
         current_y = initial_y_blue;
     }
 
+    current_x = 0.0;
+    current_y = 0.0;
+
     current_z = 0.0;
     sum_x     = 0.0;
     sum_y     = 0.0;
