@@ -21,12 +21,15 @@ mcl::mcl (const rclcpp::NodeOptions& options)
         this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 10, std::bind (&mcl::map_callback, this, std::placeholders::_1));
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> (
         "/localization/initialpose", 10, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
-    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
-        "/localization/wheel_odometry", 10, std::bind (&mcl::odom_callback, this, std::placeholders::_1));
-    distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 10);
+    ekf_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
+        "/localization/ekf/pose", 10, std::bind (&mcl::ekf_callback, this, std::placeholders::_1));
 
-    pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
-    particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 10);
+    distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 10);
+    pose_pub_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
+    particles_pub_    = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 10);
+    twist_pub_        = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 10);
+
+    timer = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&mcl::timer_callback, this));
 }
 
 void mcl::create_distance_map () {
@@ -97,46 +100,33 @@ void mcl::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr map_msg) {
 }
 
 void mcl::pose_callback (const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
-    current_pose_ = pose_msg->pose.pose;  // Extract pose from PoseWithCovarianceStamped
-
     this->get_parameter ("num_particles", num_particles_);
     this->get_parameter ("motion_noise_linear", motion_noise_linear_);
     this->get_parameter ("motion_noise_angle", motion_noise_angle_);
     this->get_parameter ("gaussian_stddev_linear", gaussian_stddev_linear_);
     this->get_parameter ("gaussian_stddev_angle", gaussian_stddev_angle_);
     this->get_parameter ("random_particle_map_num", random_particle_map_num_);
-    initialize_particles_gaussian (current_pose_);
+    initialize_particles_gaussian (pose_msg->pose.pose);
 }
 
-void mcl::odom_callback (const nav_msgs::msg::Odometry::SharedPtr odom_msg) {
-    current_pose_ = odom_msg->pose.pose;
+void mcl::ekf_callback (const geometry_msgs::msg::PoseStamped::SharedPtr ekf_msg) {
+    ekf_current_pose_ = ekf_msg->pose;
+    motion_update (ekf_current_pose_, ekf_last_pose_);
+    ekf_last_pose_ = ekf_current_pose_;
 }
 
 void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) {
     if (!map_ || particles_.empty ()) return;
 
-    motion_update (current_pose_, last_pose_);
-    last_pose_ = current_pose_;
     sensor_update (*scan_msg);
     resample_particles ();
+}
 
+void mcl::timer_callback () {
     geometry_msgs::msg::PoseStamped estimated;
     estimated.pose            = estimate_pose ();
     estimated.header.frame_id = "map";
     estimated.header.stamp    = this->now ();
-
-    // publish tf
-    geometry_msgs::msg::TransformStamped transform;
-    transform.header.stamp            = this->now ();
-    transform.header.frame_id         = "map";
-    transform.child_frame_id          = "base_link";
-    transform.transform.translation.x = estimated.pose.position.x;
-    transform.transform.translation.y = estimated.pose.position.y;
-    transform.transform.rotation.z    = estimated.pose.orientation.z;
-    transform.transform.rotation.w    = estimated.pose.orientation.w;
-    tf_broadcaster_->sendTransform (transform);
-
-    pose_pub_->publish (estimated);
 
     geometry_msgs::msg::PoseArray pose_array;
     pose_array.header.frame_id = "map";
@@ -149,6 +139,43 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
         pose_array.poses.push_back (pose);
     }
     particles_pub_->publish (pose_array);
+
+    // publish tf
+    geometry_msgs::msg::TransformStamped transform;
+    transform.header.stamp            = this->now ();
+    transform.header.frame_id         = "map";
+    transform.child_frame_id          = "base_link";
+    transform.transform.translation.x = estimated.pose.position.x;
+    transform.transform.translation.y = estimated.pose.position.y;
+    transform.transform.rotation.z    = estimated.pose.orientation.z;
+    transform.transform.rotation.w    = estimated.pose.orientation.w;
+    tf_broadcaster_->sendTransform (transform);
+
+    if (!is_converged ()) {
+        RCLCPP_WARN (this->get_logger (), "Particles not converged");
+        // estimated.pose.position.x    = last_estimated_pose_.pose.position.x + (current_pose_.position.x - last_pose_.position.x);
+        // estimated.pose.position.y    = last_estimated_pose_.pose.position.y + (current_pose_.position.y - last_pose_.position.y);
+        // estimated.pose.orientation.z = last_estimated_pose_.pose.orientation.z + (current_pose_.orientation.z - last_pose_.orientation.z);
+        // estimated.pose.orientation.w = last_estimated_pose_.pose.orientation.w + (current_pose_.orientation.w - last_pose_.orientation.w);
+        return;
+    }
+
+    pose_pub_->publish (estimated);
+
+    if (!last_estimated_pose_.header.stamp.sec) {
+        last_estimated_pose_ = estimated;
+    } else {
+        double dt = (rclcpp::Time (estimated.header.stamp) - rclcpp::Time (last_estimated_pose_.header.stamp)).seconds ();
+
+        geometry_msgs::msg::TwistStamped twist;
+        twist.header.frame_id = "base_link";
+        twist.header.stamp    = this->now ();
+        twist.twist.linear.x  = (estimated.pose.position.x - last_estimated_pose_.pose.position.x) / dt;
+        twist.twist.linear.y  = (estimated.pose.position.y - last_estimated_pose_.pose.position.y) / dt;
+        twist.twist.angular.z = (estimated.pose.orientation.z - last_estimated_pose_.pose.orientation.z) / dt;
+        twist_pub_->publish (twist);
+        last_estimated_pose_ = estimated;
+    }
 }
 
 void mcl::initialize_particles_gaussian (const geometry_msgs::msg::Pose& initial_pose) {
@@ -203,14 +230,24 @@ void mcl::motion_update (const geometry_msgs::msg::Pose& current, const geometry
 
 void mcl::sensor_update (const sensor_msgs::msg::LaserScan& scan) {
     double total_weight = 0.0;
+    int    score_max    = 0;
+    int    score_min    = 1000;
     for (auto& p : particles_) {
         p.weight = compute_likelihood (p, scan);
         total_weight += p.weight;
+        if (p.weight > score_max) {
+            score_max = p.weight;
+        }
+        if (p.weight < score_min) {
+            score_min = p.weight;
+        }
     }
 
     for (auto& p : particles_) {
         p.weight /= (total_weight + 1e-6);
     }
+    // RCLCPP_INFO (this->get_logger (), "Max weight: %d, Min weight: %d, Average weight: %f", score_max, score_min, total_weight / particles_.size
+    // ());
 }
 
 double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::LaserScan& scan) const {
@@ -242,7 +279,6 @@ double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::Laser
             score += z_rand / max_range;
         }
     }
-
     return score;
 }
 
@@ -268,23 +304,24 @@ void mcl::resample_particles () {
         new_particles.push_back (selected);
     }
 
-    // random_particle_map_num_ = 0;
-    // auto pose = estimate_pose ();
+    random_particle_map_num_ = 0;
+    auto pose                = estimate_pose ();
 
-    // std::uniform_real_distribution<double> dist_map_x (map_->info.origin.position.x, map_->info.origin.position.x +
-    // map_->info.resolution*map_->info.width); std::uniform_real_distribution<double> dist_map_y (map_->info.origin.position.y,
-    // map_->info.origin.position.y + map_->info.resolution*map_->info.height);
+    std::uniform_real_distribution<double> dist_map_x (
+        map_->info.origin.position.x, map_->info.origin.position.x + map_->info.resolution * map_->info.width);
+    std::uniform_real_distribution<double> dist_map_y (
+        map_->info.origin.position.y, map_->info.origin.position.y + map_->info.resolution * map_->info.height);
 
-    // for (int i = 0; i < random_particle_map_num_; ++i) {
-    //     for(int j = 0; j < 4; j++){
-    //         Particle p;
-    //         p.x      = dist_map_x (rng_);
-    //         p.y      = dist_map_y (rng_);
-    //         p.weight  = 0;
-    //         p.theta  = j * M_PI / 2 + std::asin(pose.orientation.z) * 2;
-    //         new_particles.push_back (p);
-    //     }
-    // }
+    for (int i = 0; i < random_particle_map_num_; ++i) {
+        for (int j = 0; j < 4; j++) {
+            Particle p;
+            p.x      = dist_map_x (rng_);
+            p.y      = dist_map_y (rng_);
+            p.weight = 0;
+            p.theta  = j * M_PI / 2 + std::asin (pose.orientation.z) * 2;
+            new_particles.push_back (p);
+        }
+    }
 
     particles_ = std::move (new_particles);
 }
@@ -331,6 +368,45 @@ bool mcl::get_transform (
         RCLCPP_WARN (this->get_logger (), "Transform lookup failed: %s", ex.what ());
         return false;
     }
+}
+
+bool mcl::is_converged () const {
+    if (particles_.empty ()) return false;
+
+    double mean_x = 0, mean_y = 0, mean_theta = 0;
+    for (const auto& p : particles_) {
+        mean_x += p.x;
+        mean_y += p.y;
+        mean_theta += p.theta;
+    }
+    mean_x /= particles_.size ();
+    mean_y /= particles_.size ();
+    mean_theta /= particles_.size ();
+
+    double var_x = 0, var_y = 0, var_theta = 0;
+    for (const auto& p : particles_) {
+        var_x += (p.x - mean_x) * (p.x - mean_x);
+        var_y += (p.y - mean_y) * (p.y - mean_y);
+        var_theta += std::pow (std::atan2 (std::sin (p.theta - mean_theta), std::cos (p.theta - mean_theta)), 2);
+    }
+    var_x /= particles_.size ();
+    var_y /= particles_.size ();
+    var_theta /= particles_.size ();
+
+    double position_threshold = std::pow (motion_noise_linear_ * 4, 2);
+    double angle_threshold    = std::pow (motion_noise_angle_ * 4, 2);
+
+    if (var_x > position_threshold) {
+        RCLCPP_WARN (this->get_logger (), "Particle x variance is too high: %f", var_x);
+    }
+    if (var_y > position_threshold) {
+        RCLCPP_WARN (this->get_logger (), "Particle y variance is too high: %f", var_y);
+    }
+    if (var_theta > angle_threshold) {
+        RCLCPP_WARN (this->get_logger (), "Particle theta variance is too high: %f", var_theta);
+    }
+
+    return var_x < position_threshold && var_y < position_threshold && var_theta < angle_threshold;
 }
 
 }  // namespace mcl
