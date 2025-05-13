@@ -21,13 +21,16 @@ mcl::mcl (const rclcpp::NodeOptions& options)
         this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 10, std::bind (&mcl::map_callback, this, std::placeholders::_1));
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> (
         "/localization/initialpose", 10, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
-    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
-        "/localization/wheel_odometry", 10, std::bind (&mcl::odom_callback, this, std::placeholders::_1));
-    distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 10);
+    ekf_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
+        "/localization/ekf/pose", 10, std::bind (&mcl::ekf_callback, this, std::placeholders::_1));
 
+    distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 10);
     pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
     particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 10);
     twist_pub_     = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 10);
+
+    timer = this->create_wall_timer (
+        std::chrono::milliseconds (10), std::bind (&mcl::timer_callback, this));
 }
 
 void mcl::create_distance_map () {
@@ -98,28 +101,29 @@ void mcl::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr map_msg) {
 }
 
 void mcl::pose_callback (const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg) {
-    current_pose_ = pose_msg->pose.pose;  // Extract pose from PoseWithCovarianceStamped
-
     this->get_parameter ("num_particles", num_particles_);
     this->get_parameter ("motion_noise_linear", motion_noise_linear_);
     this->get_parameter ("motion_noise_angle", motion_noise_angle_);
     this->get_parameter ("gaussian_stddev_linear", gaussian_stddev_linear_);
     this->get_parameter ("gaussian_stddev_angle", gaussian_stddev_angle_);
     this->get_parameter ("random_particle_map_num", random_particle_map_num_);
-    initialize_particles_gaussian (current_pose_);
+    initialize_particles_gaussian (pose_msg->pose.pose);
 }
 
-void mcl::odom_callback (const nav_msgs::msg::Odometry::SharedPtr odom_msg) {
-    current_pose_ = odom_msg->pose.pose;
+void mcl::ekf_callback (const geometry_msgs::msg::PoseStamped::SharedPtr ekf_msg) {
+    ekf_current_pose_ = ekf_msg->pose;
+    motion_update (ekf_current_pose_, ekf_last_pose_);
+    ekf_last_pose_ = ekf_current_pose_;
 }
 
 void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) {
     if (!map_ || particles_.empty ()) return;
 
-    motion_update (current_pose_, last_pose_);
     sensor_update (*scan_msg);
     resample_particles ();
+}
 
+void mcl::timer_callback() {
     geometry_msgs::msg::PoseStamped estimated;
     estimated.pose            = estimate_pose ();
     estimated.header.frame_id = "map";
@@ -139,7 +143,7 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
 
     // publish tf
     geometry_msgs::msg::TransformStamped transform;
-    transform.header.stamp            = this->now ();
+    transform.header.stamp            = this->now();
     transform.header.frame_id         = "map";
     transform.child_frame_id          = "base_link";
     transform.transform.translation.x = estimated.pose.position.x;
@@ -150,10 +154,11 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
 
     if (!is_converged ()) {
         RCLCPP_WARN (this->get_logger (), "Particles not converged");
-        estimated.pose.position.x    = last_estimated_pose_.pose.position.x + (current_pose_.position.x - last_pose_.position.x);
-        estimated.pose.position.y    = last_estimated_pose_.pose.position.y + (current_pose_.position.y - last_pose_.position.y);
-        estimated.pose.orientation.z = last_estimated_pose_.pose.orientation.z + (current_pose_.orientation.z - last_pose_.orientation.z);
-        estimated.pose.orientation.w = last_estimated_pose_.pose.orientation.w + (current_pose_.orientation.w - last_pose_.orientation.w);
+        // estimated.pose.position.x    = last_estimated_pose_.pose.position.x + (current_pose_.position.x - last_pose_.position.x);
+        // estimated.pose.position.y    = last_estimated_pose_.pose.position.y + (current_pose_.position.y - last_pose_.position.y);
+        // estimated.pose.orientation.z = last_estimated_pose_.pose.orientation.z + (current_pose_.orientation.z - last_pose_.orientation.z);
+        // estimated.pose.orientation.w = last_estimated_pose_.pose.orientation.w + (current_pose_.orientation.w - last_pose_.orientation.w);
+        return;
     }
 
     pose_pub_->publish (estimated);
@@ -162,6 +167,7 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
         last_estimated_pose_ = estimated;
     } else {
         double                           dt = (rclcpp::Time (estimated.header.stamp) - rclcpp::Time (last_estimated_pose_.header.stamp)).seconds ();
+
         geometry_msgs::msg::TwistStamped twist;
         twist.header.frame_id = "base_link";
         twist.header.stamp    = this->now ();
@@ -171,8 +177,6 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
         twist_pub_->publish (twist);
         last_estimated_pose_ = estimated;
     }
-
-    last_pose_ = current_pose_;
 }
 
 void mcl::initialize_particles_gaussian (const geometry_msgs::msg::Pose& initial_pose) {

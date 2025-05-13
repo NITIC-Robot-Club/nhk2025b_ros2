@@ -4,7 +4,6 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
         - /Odometry1/Shape1
         - /ekf1/Topic1
         - /LaserScan1/Topic1
@@ -69,7 +68,7 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.699999988079071
+    - Alpha: 1
       Class: rviz_default_plugins/Map
       Color Scheme: map
       Draw Behind: false
@@ -114,17 +113,18 @@ Visualization Manager:
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
+      Enabled: true
       Name: swerve result
       Namespaces:
-        {}
+        swerve: true
+        swerve_angle_text: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /visualization/swerve
-      Value: false
+      Value: true
     - Alpha: 0.5
       Axes Length: 1
       Axes Radius: 0.10000000149011612
@@ -150,7 +150,7 @@ Visualization Manager:
       Angular Color: 204; 204; 51
       Arrow Width: 1
       Class: rviz_default_plugins/TwistStamped
-      Enabled: false
+      Enabled: true
       Hide Small Values: false
       History Length: 1
       Linear Arrow Scale: 1
@@ -163,7 +163,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /cmd_vel
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
@@ -372,7 +372,7 @@ Visualization Manager:
       Angular Color: 204; 204; 51
       Arrow Width: 0.5
       Class: rviz_default_plugins/TwistStamped
-      Enabled: true
+      Enabled: false
       Hide Small Values: false
       History Length: 1
       Linear Arrow Scale: 1
@@ -385,7 +385,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/velocity
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
