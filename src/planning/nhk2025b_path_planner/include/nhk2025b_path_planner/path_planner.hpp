@@ -20,7 +20,7 @@ class path_planner : public rclcpp::Node {
         int    x, y;
         double cost, priority;
         bool   operator> (const astar_node& other) const {
-            return priority > other.priority;
+              return priority > other.priority;
         }
     };
     int    resolution_ms;

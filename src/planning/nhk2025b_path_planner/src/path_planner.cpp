@@ -41,7 +41,7 @@ void path_planner::timer_callback () {
         delta_yaw += 2 * M_PI;
     double delta_t = resolution_ms / 1000.0;
     for (int i = 0; i < path.poses.size (); i++) {
-        double now_yaw          = current_yaw + delta_yaw / (1.0 + std::exp (-7.5 * ((double)i / path.poses.size () - 0.5)));
+        double now_yaw                   = current_yaw + delta_yaw / (1.0 + std::exp (-7.5 * ((double)i / path.poses.size () - 0.5)));
         path.poses[i].pose.orientation.z = std::sin (now_yaw / 2.0);
         path.poses[i].pose.orientation.w = std::cos (now_yaw / 2.0);
         rclcpp::Time time (header.stamp);
