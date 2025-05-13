@@ -120,7 +120,7 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
     std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
     std::queue<std::pair<int, int>> q;
     q.push ({start.first, start.second});
-    visited[start.first][start.first] = true;
+    visited[start.second][start.first] = true;
 
     while (!q.empty ()) {
         auto [x, y] = q.front ();
