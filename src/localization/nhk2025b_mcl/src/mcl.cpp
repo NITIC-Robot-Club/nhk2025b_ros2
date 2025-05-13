@@ -27,6 +27,7 @@ mcl::mcl (const rclcpp::NodeOptions& options)
 
     pose_pub_      = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
     particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 10);
+    twist_pub_      = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 10);
 }
 
 void mcl::create_distance_map () {
@@ -114,16 +115,36 @@ void mcl::odom_callback (const nav_msgs::msg::Odometry::SharedPtr odom_msg) {
 
 void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) {
     if (!map_ || particles_.empty ()) return;
-
+    
     motion_update (current_pose_, last_pose_);
     last_pose_ = current_pose_;
     sensor_update (*scan_msg);
     resample_particles ();
-
+    
+    
     geometry_msgs::msg::PoseStamped estimated;
     estimated.pose            = estimate_pose ();
     estimated.header.frame_id = "map";
     estimated.header.stamp    = this->now ();
+    pose_pub_->publish (estimated);
+    
+    if(is_converged()) {
+        if(!last_estimated_pose_.header.stamp.sec) {
+            last_estimated_pose_ = estimated;
+        } else {
+            double dt = (rclcpp::Time(estimated.header.stamp) - rclcpp::Time(last_estimated_pose_.header.stamp)).seconds();
+            geometry_msgs::msg::TwistStamped twist;
+            twist.header.frame_id = "base_link";
+            twist.header.stamp    = this->now ();
+            twist.twist.linear.x  = (estimated.pose.position.x-last_estimated_pose_.pose.position.x)/dt;
+            twist.twist.linear.y  = (estimated.pose.position.y-last_estimated_pose_.pose.position.y)/dt;
+            twist.twist.angular.z = (estimated.pose.orientation.z-last_estimated_pose_.pose.orientation.z)/dt;
+            twist_pub_->publish (twist);
+            last_estimated_pose_ = estimated;
+        }
+    } else {
+        RCLCPP_WARN (this->get_logger (), "Particles not converged");
+    }
 
     // publish tf
     geometry_msgs::msg::TransformStamped transform;
@@ -136,7 +157,6 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
     transform.transform.rotation.w    = estimated.pose.orientation.w;
     tf_broadcaster_->sendTransform (transform);
 
-    pose_pub_->publish (estimated);
 
     geometry_msgs::msg::PoseArray pose_array;
     pose_array.header.frame_id = "map";
@@ -203,14 +223,23 @@ void mcl::motion_update (const geometry_msgs::msg::Pose& current, const geometry
 
 void mcl::sensor_update (const sensor_msgs::msg::LaserScan& scan) {
     double total_weight = 0.0;
+    int score_max = 0;
+    int score_min = 1000;
     for (auto& p : particles_) {
         p.weight = compute_likelihood (p, scan);
         total_weight += p.weight;
+        if (p.weight > score_max) {
+            score_max = p.weight;
+        }
+        if (p.weight < score_min) {
+            score_min = p.weight;
+        }
     }
 
     for (auto& p : particles_) {
         p.weight /= (total_weight + 1e-6);
     }
+    RCLCPP_INFO (this->get_logger (), "Max weight: %d, Min weight: %d, Average weight: %f", score_max, score_min, total_weight / particles_.size ());
 }
 
 double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::LaserScan& scan) const {
@@ -242,7 +271,6 @@ double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::Laser
             score += z_rand / max_range;
         }
     }
-
     return score;
 }
 
@@ -268,23 +296,23 @@ void mcl::resample_particles () {
         new_particles.push_back (selected);
     }
 
-    // random_particle_map_num_ = 0;
-    // auto pose = estimate_pose ();
+    random_particle_map_num_ = 0;
+    auto pose = estimate_pose ();
 
-    // std::uniform_real_distribution<double> dist_map_x (map_->info.origin.position.x, map_->info.origin.position.x +
-    // map_->info.resolution*map_->info.width); std::uniform_real_distribution<double> dist_map_y (map_->info.origin.position.y,
-    // map_->info.origin.position.y + map_->info.resolution*map_->info.height);
+    std::uniform_real_distribution<double> dist_map_x (map_->info.origin.position.x, map_->info.origin.position.x +
+    map_->info.resolution*map_->info.width); std::uniform_real_distribution<double> dist_map_y (map_->info.origin.position.y,
+    map_->info.origin.position.y + map_->info.resolution*map_->info.height);
 
-    // for (int i = 0; i < random_particle_map_num_; ++i) {
-    //     for(int j = 0; j < 4; j++){
-    //         Particle p;
-    //         p.x      = dist_map_x (rng_);
-    //         p.y      = dist_map_y (rng_);
-    //         p.weight  = 0;
-    //         p.theta  = j * M_PI / 2 + std::asin(pose.orientation.z) * 2;
-    //         new_particles.push_back (p);
-    //     }
-    // }
+    for (int i = 0; i < random_particle_map_num_; ++i) {
+        for(int j = 0; j < 4; j++){
+            Particle p;
+            p.x      = dist_map_x (rng_);
+            p.y      = dist_map_y (rng_);
+            p.weight  = 0;
+            p.theta  = j * M_PI / 2 + std::asin(pose.orientation.z) * 2;
+            new_particles.push_back (p);
+        }
+    }
 
     particles_ = std::move (new_particles);
 }
@@ -332,6 +360,36 @@ bool mcl::get_transform (
         return false;
     }
 }
+
+bool mcl::is_converged() const {
+    if (particles_.empty()) return false;
+
+    double mean_x = 0, mean_y = 0, mean_theta = 0;
+    for (const auto& p : particles_) {
+        mean_x += p.x;
+        mean_y += p.y;
+        mean_theta += p.theta;
+    }
+    mean_x /= particles_.size();
+    mean_y /= particles_.size();
+    mean_theta /= particles_.size();
+
+    double var_x = 0, var_y = 0, var_theta = 0;
+    for (const auto& p : particles_) {
+        var_x += (p.x - mean_x) * (p.x - mean_x);
+        var_y += (p.y - mean_y) * (p.y - mean_y);
+        var_theta += std::pow(std::atan2(std::sin(p.theta - mean_theta), std::cos(p.theta - mean_theta)), 2);
+    }
+    var_x /= particles_.size();
+    var_y /= particles_.size();
+    var_theta /= particles_.size();
+
+    constexpr double position_threshold = 0.20 * 0.20;  // 20cm の分散
+    constexpr double angle_threshold = (10.0 * M_PI / 180.0) * (10.0 * M_PI / 180.0);  // 10度の分散
+
+    return var_x < position_threshold && var_y < position_threshold && var_theta < angle_threshold;
+}
+
 
 }  // namespace mcl
 

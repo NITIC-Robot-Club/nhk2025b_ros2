@@ -6,6 +6,7 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
@@ -49,6 +50,7 @@ class mcl : public rclcpp::Node {
     void sensor_update (const sensor_msgs::msg::LaserScan &scan);
     void resample_particles ();
     void create_distance_map ();
+    bool is_converged () const;
 
     geometry_msgs::msg::Pose estimate_pose () const;
 
@@ -68,6 +70,7 @@ class mcl : public rclcpp::Node {
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
     rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr   particles_pub_;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr    distance_map_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr   twist_pub_;
 
     std::shared_ptr<tf2_ros::Buffer>               tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener>    tf_listener_;
@@ -77,6 +80,7 @@ class mcl : public rclcpp::Node {
     nav_msgs::msg::OccupancyGrid::SharedPtr map_;
     geometry_msgs::msg::Pose                current_pose_;
     geometry_msgs::msg::Pose                last_pose_;
+    geometry_msgs::msg::PoseStamped      last_estimated_pose_;
 
     std::default_random_engine rng_;
 

@@ -8,10 +8,11 @@ lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options) : Node (
     pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
         "/simulation/pose", 10, std::bind (&lidar_simulation::pose_callback, this, std::placeholders::_1));
     laser_publisher = this->create_publisher<sensor_msgs::msg::LaserScan> ("/sensor/scan", rclcpp::SensorDataQoS ());
-    timer           = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&lidar_simulation::timer_callback, this));
     lidar_x         = this->declare_parameter<double> ("lidar_x", 0);
     lidar_y         = this->declare_parameter<double> ("lidar_y", 0);
     lidar_z         = this->declare_parameter<double> ("lidar_z", 0);
+    lidar_frequency = this->declare_parameter<double> ("lidar_frequency", 12.0);
+    timer           = this->create_wall_timer (std::chrono::milliseconds (1000.0 / lidar_frequency), std::bind (&lidar_simulation::timer_callback, this));
 }
 
 void lidar_simulation::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
@@ -33,13 +34,13 @@ void lidar_simulation::timer_callback () {
     scan.header.frame_id = "lidar";
     scan.angle_min       = -1.57;
     scan.angle_max       = 1.57;
-    scan.angle_increment = 0.0174533;  // 1 degree
+    scan.angle_increment = lidar_frequency / 13.953488372093023;
     scan.time_increment  = 0.0;
-    scan.scan_time       = 0.1;
-    scan.range_min       = 0.0;
+    scan.scan_time       = 1.0 / lidar_frequency;
+    scan.range_min       = 0.12;
     scan.range_max       = 10.0;
-    scan.ranges.resize (360, 10.0);
-    scan.intensities.resize (360, 1.0);
+    scan.ranges.resize (360 / scan.angle_increment, 10.0);
+    scan.intensities.resize (360 / scan.angle_increment, 1.0);
 
     double yaw     = std::asin (current_pose.pose.orientation.z) * 2;
     double start_x = current_pose.pose.position.x + lidar_x * std::cos (yaw) - lidar_y * std::sin (yaw);

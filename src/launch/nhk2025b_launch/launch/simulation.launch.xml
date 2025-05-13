@@ -5,7 +5,9 @@
       <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
       <param name="is_red" value="$(var is_red)"/>
     </composable_node>
-    <composable_node pkg="nhk2025b_simulation" plugin="lidar_simulation::lidar_simulation" name="lidar_simulation"/>
+    <composable_node pkg="nhk2025b_simulation" plugin="lidar_simulation::lidar_simulation" name="lidar_simulation">
+      <param from="$(find-pkg-share nhk2025b_launch)/param/lidar_simulation.yaml"/>
+    </composable_node>
     <composable_node pkg="nhk2025b_swerve_calculator" plugin="swerve_calculator::swerve_calculator" name="swerve_calculator"/>
   </node_container>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/rviz2.launch.xml"/>

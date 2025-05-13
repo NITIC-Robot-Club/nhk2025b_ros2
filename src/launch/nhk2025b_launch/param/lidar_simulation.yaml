@@ -1,0 +1,3 @@
+lidar_simulation:
+  ros__parameters:
+    lidar_frequency: 12.0
