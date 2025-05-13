@@ -217,7 +217,7 @@ Visualization Manager:
         Alpha: 0.10000000149011612
         Axes Length: 1
         Axes Radius: 0.10000000149011612
-        Color: 0; 0; 0
+        Color: 255; 190; 111
         Head Length: 0.30000001192092896
         Head Radius: 0.10000000149011612
         Shaft Length: 1
@@ -305,12 +305,12 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Alpha: 1
+    - Alpha: 0.5
       Arrow Length: 0.30000001192092896
       Axes Length: 0.30000001192092896
       Axes Radius: 0.009999999776482582
       Class: rviz_default_plugins/PoseArray
-      Color: 0; 0; 0
+      Color: 38; 162; 105
       Enabled: true
       Head Length: 0.07000000029802322
       Head Radius: 0.029999999329447746
@@ -366,6 +366,25 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /localization/distance_map_updates
       Use Timestamp: false
+      Value: true
+    - Alpha: 1
+      Angular Arrow Scale: 1
+      Angular Color: 204; 204; 51
+      Arrow Width: 0.5
+      Class: rviz_default_plugins/TwistStamped
+      Enabled: true
+      Hide Small Values: false
+      History Length: 1
+      Linear Arrow Scale: 1
+      Linear Color: 204; 51; 51
+      Name: TwistStamped
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /localization/velocity
       Value: true
   Enabled: true
   Global Options:
