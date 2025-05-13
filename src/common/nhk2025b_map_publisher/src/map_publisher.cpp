@@ -63,9 +63,6 @@ void map_publisher::publish_map () {
                     map.data[y + x * map.info.width] = 100;
                 }
             }
-            if (y > 3.0 / resolution_ && y < 4.0 / resolution_ && x > 3.0 / resolution_ && x < 4.0 / resolution_) {
-                map.data[y + x * map.info.width] = 100;
-            }
         }
     }
 
