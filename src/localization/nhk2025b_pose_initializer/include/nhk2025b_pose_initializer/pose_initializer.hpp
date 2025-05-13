@@ -26,15 +26,16 @@ namespace pose_initializer {
             std::vector<Point>& inliers_out);
 
         std::optional<Point> compute_intersection(
-            const std::tuple<float, float, float>& line1,
-            const std::tuple<float, float, float>& line2);
+            const std::tuple<double, double, double>& line1,
+            const std::tuple<double, double, double>& line2);
 
-        std::tuple<float, float, float> compute_yaw_and_position(
-            const std::tuple<float, float, float>& line1,
-            const std::tuple<float, float, float>& line2,
+        std::tuple<double, double, double> compute_yaw_and_position(
+            const std::tuple<double, double, double>& line1,
+            const std::tuple<double, double, double>& line2,
             const Point& intersection);
 
         double point_line_distance(const Point& pt, double a, double b, double c);
+        bool is_horizontal(const std::tuple<double, double, double>& line);
 
         rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr lidar_subscriber;
         rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_publisher;

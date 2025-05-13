@@ -5,7 +5,7 @@ namespace pose_initializer {
 pose_initializer::pose_initializer(const rclcpp::NodeOptions & options)
 : Node("pose_initializer", options) {
     // パラメータ宣言
-    this->declare_parameter<double>("ransac_distance_threshold", 0.05);
+    this->declare_parameter<double>("ransac_distance_threshold", 0.1);
     this->declare_parameter<int>("ransac_max_iterations", 100);
 
     lidar_subscriber = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -13,6 +13,7 @@ pose_initializer::pose_initializer(const rclcpp::NodeOptions & options)
 
     pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
         "/localization/initialpose", 10);
+
 }
 
 
@@ -21,49 +22,57 @@ double pose_initializer::point_line_distance(const Point& pt, double a, double b
 }
 
 std::optional<pose_initializer::Point> pose_initializer::compute_intersection(
-    const std::tuple<float, float, float>& l1,
-    const std::tuple<float, float, float>& l2)
+    const std::tuple<double, double, double>& l1,
+    const std::tuple<double, double, double>& l2)
 {
     auto [a1, b1, c1] = l1;
     auto [a2, b2, c2] = l2;
 
-    float det = a1 * b2 - a2 * b1;
+    double det = a1 * b2 - a2 * b1;
     if (std::fabs(det) < 1e-6) {
         return std::nullopt;  // 平行、交点なし
     }
 
-    float x = (b1 * c2 - b2 * c1) / det;
-    float y = (a2 * c1 - a1 * c2) / det;
+    double x = (b1 * c2 - b2 * c1) / det;
+    double y = (a2 * c1 - a1 * c2) / det;
     return std::make_pair(x, y);
 }
 
-std::tuple<float, float, float> pose_initializer::compute_yaw_and_position(
-    const std::tuple<float, float, float>& line1,
-    const std::tuple<float, float, float>& line2,
+bool pose_initializer::is_horizontal(const std::tuple<double, double, double>& line) {
+    double a = std::get<0>(line);
+    double b = std::get<1>(line);
+    double angle = std::atan(-a/b);  // 傾きtanθ = -a/b
+    double deg = angle * 180.0 / M_PI;
+    RCLCPP_INFO(this->get_logger(),"line1's yaw : %f", deg);
+    return abs(deg) < 45.0;
+};
+
+
+std::tuple<double, double, double> pose_initializer::compute_yaw_and_position(
+    const std::tuple<double, double, double>& line1,
+    const std::tuple<double, double, double>& line2,
     const Point& intersection)
 {
-    auto is_horizontal = [](const std::tuple<float, float, float>& line) {
-        float a = std::get<0>(line);
-        float b = std::get<1>(line);
-        float angle = std::atan2(-a, b);  // 傾きtanθ = -a/b
-        float deg = angle * 180.0 / M_PI;
-        return deg > 45.0f;  // 90度に近ければ横向き
-    };
 
     const auto& horizontal = is_horizontal(line1) ? line1 : line2;
-
-    float a = std::get<0>(horizontal);
-    float b = std::get<1>(horizontal);
-    float yaw = std::atan2(-a, b);  // 横向き線の角度（ラジアン）
-    yaw += M_PI;  // 反対向きにする（ロボットの向き）
-
-    // 正規化 [-π, π]
-    while (yaw > M_PI) yaw -= 2 * M_PI;
-    while (yaw < -M_PI) yaw += 2 * M_PI;
+    double a = std::get<0>(horizontal);
+    double b = std::get<1>(horizontal);
+    double yaw = -std::atan(-a/b);  // 横向き線の角度（ラジアン）
 
     // 交点の反対がロボットの位置
-    float x = -intersection.first;
-    float y = -intersection.second;
+    double x = -intersection.first * std::cos(yaw) + intersection.second * std::sin(yaw);
+    double y = -intersection.first * std::sin(yaw)  - intersection.second * std::cos(yaw);
+
+    x += 0.15;
+
+    if(intersection.second > 0) {
+        // red
+        y+=5.4;
+        y -= 0.15;
+    } else {
+        y += 0.15;
+    }
+    
 
     return {x, y, yaw};
 }
@@ -141,14 +150,29 @@ void pose_initializer::lidar_callback(const sensor_msgs::msg::LaserScan::SharedP
     RCLCPP_INFO(this->get_logger(), "Line 1: %.2fx + %.2fy + %.2f = 0", std::get<0>(line1), std::get<1>(line1), std::get<2>(line1));
     RCLCPP_INFO(this->get_logger(), "Line 2: %.2fx + %.2fy + %.2f = 0", std::get<0>(line2), std::get<1>(line2), std::get<2>(line2));
 
+
     auto maybe_intersection = compute_intersection(line1, line2);
     if (!maybe_intersection) {
         RCLCPP_WARN(this->get_logger(), "Lines are parallel, no intersection found");
         return;
     }
+    RCLCPP_INFO(this->get_logger(),"交点のy: %f",maybe_intersection->second);
     auto [x, y, yaw] = compute_yaw_and_position(line1, line2, *maybe_intersection);
     
     RCLCPP_INFO(this->get_logger(), "Estimated position: x=%.2f, y=%.2f, yaw=%.2f deg", x, y, yaw * 180.0 / M_PI);
+
+    geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
+    pose_msg.header.stamp = this->now();
+    pose_msg.header.frame_id = "map";
+    pose_msg.pose.pose.position.x = x;
+    pose_msg.pose.pose.position.y = y;
+    pose_msg.pose.pose.position.z = 0.0;
+    pose_msg.pose.pose.orientation.z = std::sin(yaw / 2);
+    pose_msg.pose.pose.orientation.w = std::cos(yaw / 2);
+    pose_publisher->publish(pose_msg);
+
+    // 終わり
+    lidar_subscriber.reset();
 }
 
 }  // namespace pose_initializer
