@@ -17,7 +17,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
         "/cmd_vel", 10, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
     timer = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 
-    inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/infla/map", 10);
+    inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 10);
 }
 void path_planner::timer_callback () {
     if (original_map.header.stamp.sec == 0) return;
@@ -113,14 +113,14 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
         { 1, -1},
         {-1,  1}
     };
-    std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
-    std::queue<std::pair<int, int>> q;
-    q.push ({start.first, start.second});
-    visited[start.second][start.first] = true;
+    std::vector<std::vector<bool>>  visited_start (map_height, std::vector<bool> (map_width, false));
+    std::queue<std::pair<int, int>> q_start;
+    q_start.push ({start.first, start.second});
+    visited_start[start.second][start.first] = true;
 
-    while (!q.empty ()) {
-        auto [x, y] = q.front ();
-        q.pop ();
+    while (!q_start.empty ()) {
+        auto [x, y] = q_start.front ();
+        q_start.pop ();
         if (inflated_map.data[y * map_width + x] == 0) {
             start.first  = x;
             start.second = y;
@@ -130,9 +130,33 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
         for (auto [dx, dy] : directions) {
             int nx = x + dx;
             int ny = y + dy;
-            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited[ny][nx]) {
-                visited[ny][nx] = true;
-                q.push ({nx, ny});
+            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited_start[ny][nx]) {
+                visited_start[ny][nx] = true;
+                q_start.push ({nx, ny});
+            }
+        }
+    }
+
+    std::vector<std::vector<bool>>  visited_goal (map_height, std::vector<bool> (map_width, false));
+    std::queue<std::pair<int, int>> q_goal;
+    q_goal.push ({goal.first, goal.second});
+    visited_goal[goal.second][goal.first] = true;
+
+    while (!q_goal.empty ()) {
+        auto [x, y] = q_goal.front ();
+        q_goal.pop ();
+        if (inflated_map.data[y * map_width + x] == 0) {
+            goal.first  = x;
+            goal.second = y;
+            break;
+        }
+
+        for (auto [dx, dy] : directions) {
+            int nx = x + dx;
+            int ny = y + dy;
+            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited_goal[ny][nx]) {
+                visited_goal[ny][nx] = true;
+                q_goal.push ({nx, ny});
             }
         }
     }
