@@ -12,7 +12,6 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&pure_pursuit::timer_callback, this));
 
-    this->declare_parameter ("lookahead_distance", 1.0);
     this->declare_parameter ("angle_p", 3.0);
 }
 
@@ -25,7 +24,6 @@ void pure_pursuit::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
 }
 
 void pure_pursuit::timer_callback () {
-    this->get_parameter ("lookahead_distance", lookahead_distance_);
     this->get_parameter ("angle_p", angle_p_);
 
     if (path_.poses.empty ()) {
