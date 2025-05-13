@@ -19,9 +19,9 @@ class pure_pursuit : public rclcpp::Node {
     double max_acceleration_xy_m_s2_;
     double lookahead_distance_;
 
-    geometry_msgs::msg::PoseStamped current_pose_;
-    geometry_msgs::msg::TwistStamped   last_cmd_vel_;
-    nav_msgs::msg::Path             path_;
+    geometry_msgs::msg::PoseStamped  current_pose_;
+    geometry_msgs::msg::TwistStamped last_cmd_vel_;
+    nav_msgs::msg::Path              path_;
 
     void timer_callback ();
     void pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
