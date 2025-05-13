@@ -123,9 +123,6 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
     std::unordered_map<int, double>                                                    cost_so_far;
 
-    open.push ({start.first, start.second, 0.0, 0.0});
-    cost_so_far[to_index (start.first, start.second)] = 0.0;
-
     std::vector<std::pair<int, int>> directions = {
         { 1,  0},
         {-1,  0},
@@ -136,7 +133,32 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
         { 1, -1},
         {-1,  1}
     };
+    std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
+    std::queue<std::pair<int, int>> q;
+    q.push ({start.first, start.second});
+    visited[start.first][start.first] = true;
 
+    while (!q.empty ()) {
+        auto [x, y] = q.front ();
+        q.pop ();
+        if (inflated_map.data[y * map_width + x] == 0) {
+            start.first  = x;
+            start.second = y;
+            break;
+        }
+
+        for (auto [dx, dy] : directions) {
+            int nx = x + dx;
+            int ny = y + dy;
+            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited[ny][nx]) {
+                visited[ny][nx] = true;
+                q.push ({nx, ny});
+            }
+        }
+    }
+
+    open.push ({start.first, start.second, 0.0, 0.0});
+    cost_so_far[to_index (start.first, start.second)] = 0.0;
     while (!open.empty ()) {
         astar_node current = open.top ();
         open.pop ();
