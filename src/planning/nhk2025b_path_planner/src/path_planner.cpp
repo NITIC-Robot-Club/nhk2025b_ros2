@@ -29,42 +29,26 @@ void path_planner::timer_callback () {
     std_msgs::msg::Header header;
     header.frame_id = "map";
     header.stamp    = this->now ();
-    double x = 1, y = 1;
-    double z    = 0;
-    double v    = 0;
-    path.header = header;
+    path.header     = header;
     astar (path);
+
+    double current_yaw = 2.0 * std::asin (current_pose.pose.orientation.z);
+    double goal_yaw    = 2.0 * std::asin (goal_pose.pose.orientation.z);
+    double delta_yaw   = goal_yaw - current_yaw;
+    if (delta_yaw > M_PI)
+        delta_yaw -= 2 * M_PI;
+    else if (delta_yaw < -M_PI)
+        delta_yaw += 2 * M_PI;
     double delta_t = resolution_ms / 1000.0;
     for (int i = 0; i < path.poses.size (); i++) {
+        double now_yaw          = current_yaw + delta_yaw / (1.0 + std::exp (-7.5 * ((double)i / path.poses.size () - 0.5)));
+        path.poses[i].pose.orientation.z = std::sin (now_yaw / 2.0);
+        path.poses[i].pose.orientation.w = std::cos (now_yaw / 2.0);
         rclcpp::Time time (header.stamp);
         rclcpp::Time new_time = time + rclcpp::Duration::from_seconds (delta_t);
-
-        header.stamp         = new_time;
-        path.poses[i].header = header;
+        header.stamp          = new_time;
+        path.poses[i].header  = header;
     }
-    /*
-    for (double t = 0; t < 5; t += delta_t) {
-        if (t < 2) {
-            v += 1 * delta_t;
-        } else if (t > 5 - 2) {
-            v -= 1 * delta_t;
-        }
-        x += v * delta_t;
-        y += 0.1 * delta_t;
-        z += 0.1 * delta_t;
-        geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x    = x;
-        pose.pose.position.y    = y;
-        pose.pose.orientation.z = sin (z / 2);
-        pose.pose.orientation.w = cos (z / 2);
-        rclcpp::Time time (header.stamp);
-        rclcpp::Time new_time = time + rclcpp::Duration::from_seconds (delta_t);
-
-        header.stamp = new_time;
-        pose.header  = header;
-        path.poses.push_back (pose);
-    }
-    */
     path_publisher->publish (path);
 }
 
