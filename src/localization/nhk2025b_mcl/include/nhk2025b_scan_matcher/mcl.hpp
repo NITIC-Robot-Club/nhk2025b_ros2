@@ -67,10 +67,10 @@ class mcl : public rclcpp::Node {
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr                       odom_sub_;
 
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr   particles_pub_;
-    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr    distance_map_pub_;
-    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr   twist_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr  pose_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr    particles_pub_;
+    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr     distance_map_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
 
     std::shared_ptr<tf2_ros::Buffer>               tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener>    tf_listener_;
@@ -80,7 +80,7 @@ class mcl : public rclcpp::Node {
     nav_msgs::msg::OccupancyGrid::SharedPtr map_;
     geometry_msgs::msg::Pose                current_pose_;
     geometry_msgs::msg::Pose                last_pose_;
-    geometry_msgs::msg::PoseStamped      last_estimated_pose_;
+    geometry_msgs::msg::PoseStamped         last_estimated_pose_;
 
     std::default_random_engine rng_;
 

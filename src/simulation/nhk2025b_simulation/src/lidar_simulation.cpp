@@ -12,7 +12,7 @@ lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options) : Node (
     lidar_y         = this->declare_parameter<double> ("lidar_y", 0);
     lidar_z         = this->declare_parameter<double> ("lidar_z", 0);
     lidar_frequency = this->declare_parameter<double> ("lidar_frequency", 12.0);
-    timer           = this->create_wall_timer (std::chrono::milliseconds (int(1000 / lidar_frequency)), std::bind (&lidar_simulation::timer_callback, this));
+    timer = this->create_wall_timer (std::chrono::milliseconds (int (1000 / lidar_frequency)), std::bind (&lidar_simulation::timer_callback, this));
 }
 
 void lidar_simulation::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
