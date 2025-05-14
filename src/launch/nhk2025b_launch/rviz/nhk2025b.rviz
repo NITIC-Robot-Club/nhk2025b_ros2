@@ -504,10 +504,10 @@ Visualization Manager:
       Name: Current View
       Near Clip Distance: 0.009999999776482582
       Scale: 70
-      Target Frame: <Fixed Frame>
+      Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 5
-      Y: 2.5
+      X: 0
+      Y: 0
     Saved: ~
 Window Geometry:
   Displays:
