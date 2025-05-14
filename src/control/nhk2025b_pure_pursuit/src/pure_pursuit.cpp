@@ -116,7 +116,6 @@ void pure_pursuit::timer_callback () {
     if (a * b * c > 1e-6) {
         curvature = 4.0 * area / (a * b * c);
     }
-    if (area < 1e-6) curvature = 0.0;
 
     double curvature_speed = target_speed / (std::abs (curvature * curvature_decceleration_p_) + 1e-6);
     // RCLCPP_INFO(this->get_logger (), "target speed: %f, curvature speed: %f", target_speed, curvature_speed);
