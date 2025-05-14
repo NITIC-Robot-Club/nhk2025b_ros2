@@ -112,7 +112,10 @@ void pure_pursuit::timer_callback () {
         path_.poses[p1].pose.position.x - path_.poses[p3].pose.position.x, path_.poses[p1].pose.position.y - path_.poses[p3].pose.position.y);
     double s         = (a + b + c) / 2.0;
     double area      = std::sqrt (s * (s - a) * (s - b) * (s - c));
-    double curvature = 4.0 * area / (a * b * c);
+    double curvature = 0.0;
+    if (a * b * c > 1e-6) {
+        curvature = 4.0 * area / (a * b * c);
+    }
     if (area < 1e-6) curvature = 0.0;
 
     double curvature_speed = target_speed / (std::abs (curvature * curvature_decceleration_p_) + 1e-6);
