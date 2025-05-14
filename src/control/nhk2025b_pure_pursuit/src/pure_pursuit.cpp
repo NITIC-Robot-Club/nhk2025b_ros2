@@ -84,24 +84,24 @@ void pure_pursuit::timer_callback () {
 
     double current_yaw = std::asin (current_pose_.pose.orientation.z) * 2;
     double angle_diff  = std::atan2 (dy, dx) - current_yaw;
-    
+
     // 加速度制限付き速度推定
     double delta_t      = 0.05;  // 50ms
     double last_speed   = std::hypot (last_cmd_vel_.twist.linear.x, last_cmd_vel_.twist.linear.y);
     double target_speed = std::hypot (dx, dy) / delta_t;
-    
+
     // ゴール付近での減速
     constexpr double goal_tolerance_distance = 0.5;  // [m]
     if (goal_distance < goal_tolerance_distance) {
         target_speed *= goal_distance / goal_tolerance_distance;
         if (goal_distance < 0.05) target_speed = 0.0;
     }
-    
+
     // 曲率に応じた速度制限
     int p1 = closest_index;
     int p2 = (lookahead_index + closest_index) / 2;
     int p3 = lookahead_index;
-    
+
     double a = std::hypot (
         path_.poses[p1].pose.position.x - path_.poses[p2].pose.position.x, path_.poses[p1].pose.position.y - path_.poses[p2].pose.position.y);
     double b = std::hypot (
@@ -137,11 +137,11 @@ void pure_pursuit::timer_callback () {
         angle_lookahead_index = i;
     }
     if (angle_lookahead_index == closest_index) angle_lookahead_index = path_.poses.size () - 1;
-    double yaw_diff    = std::asin (path_.poses[angle_lookahead_index].pose.orientation.z) * 2 - current_yaw;
+    double yaw_diff = std::asin (path_.poses[angle_lookahead_index].pose.orientation.z) * 2 - current_yaw;
     while (yaw_diff > M_PI) yaw_diff -= 2.0 * M_PI;
     while (yaw_diff < -M_PI) yaw_diff += 2.0 * M_PI;
-    double yaw_speed    = angle_p_ * yaw_diff;
-    yaw_speed           = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
+    double yaw_speed = angle_p_ * yaw_diff;
+    yaw_speed        = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
 
     // Twist 発行
     geometry_msgs::msg::TwistStamped cmd_vel;

@@ -18,7 +18,7 @@ class pure_pursuit : public rclcpp::Node {
     double lookahead_time_;            // 速度スケーリング用の時間 [s]
     double min_lookahead_distance_;    // 最小lookahead距離 [m]
     double max_lookahead_distance_;    // 最大lookahead距離 [m]
-    double angle_lookahead_distance_;    // 角度スケーリング用の距離 [m]
+    double angle_lookahead_distance_;  // 角度スケーリング用の距離 [m]
     double angle_p_;                   // 角度ゲイン
     double max_speed_xy_m_s_;          // 最大並進速度
     double max_speed_z_rad_s_;         // 最大回転速度
