@@ -4,9 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Odometry1/Shape1
-        - /ekf1/Topic1
-        - /LaserScan1/Topic1
+        - /ホイールオドメトリ1/Shape1
+        - /EKFポーズ1/Topic1
+        - /ライダー1/Topic1
       Splitter Ratio: 0.6000000238418579
     Tree Height: 818
   - Class: rviz_common/Selection
@@ -26,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ライダー
   - Class: rviz_common/Displays
     Help Height: 70
     Name: Displays
@@ -71,9 +71,9 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz_default_plugins/Map
       Color Scheme: map
-      Draw Behind: false
+      Draw Behind: true
       Enabled: true
-      Name: Map
+      Name: 地図
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -113,27 +113,26 @@ Visualization Manager:
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
-      Name: swerve result
+      Enabled: false
+      Name: 独ステ可視化
       Namespaces:
-        swerve: true
-        swerve_angle_text: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /visualization/swerve
-      Value: true
+      Value: false
     - Alpha: 0.5
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: simulation pose
+      Name: 真の自己位置
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -144,18 +143,18 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /simulation/pose
-      Value: true
+      Value: false
     - Alpha: 1
       Angular Arrow Scale: 1
       Angular Color: 204; 204; 51
       Arrow Width: 1
       Class: rviz_default_plugins/TwistStamped
-      Enabled: true
+      Enabled: false
       Hide Small Values: false
       History Length: 1
       Linear Arrow Scale: 1
       Linear Color: 204; 51; 51
-      Name: cmd_vel
+      Name: 出力速度
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -163,7 +162,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /cmd_vel
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
@@ -174,7 +173,7 @@ Visualization Manager:
       Length: 0.5
       Line Style: Billboards
       Line Width: 0.10000000149011612
-      Name: Path
+      Name: 経路
       Offset:
         X: 0
         Y: 0
@@ -209,9 +208,9 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: false
-      Enabled: true
+      Enabled: false
       Keep: 30
-      Name: Odometry
+      Name: ホイールオドメトリ
       Position Tolerance: 0.009999999776482582
       Shape:
         Alpha: 0.10000000149011612
@@ -230,7 +229,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/wheel_odometry
-      Value: true
+      Value: false
     - Alpha: 0.699999988079071
       Axes Length: 1
       Axes Radius: 0.10000000149011612
@@ -239,7 +238,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: lookahead
+      Name: 注視点
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -259,7 +258,7 @@ Visualization Manager:
       Enabled: false
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: ekf
+      Name: EKFポーズ
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -289,7 +288,7 @@ Visualization Manager:
       Max Intensity: 1
       Min Color: 0; 0; 0
       Min Intensity: 1
-      Name: LaserScan
+      Name: ライダー
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
@@ -311,10 +310,10 @@ Visualization Manager:
       Axes Radius: 0.009999999776482582
       Class: rviz_default_plugins/PoseArray
       Color: 38; 162; 105
-      Enabled: true
+      Enabled: false
       Head Length: 0.07000000029802322
       Head Radius: 0.029999999329447746
-      Name: mcl particle
+      Name: 自己位置パーティクル
       Shaft Length: 0.23000000417232513
       Shaft Radius: 0.009999999776482582
       Shape: Arrow (Flat)
@@ -325,7 +324,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/mcl_particles
-      Value: true
+      Value: false
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.10000000149011612
@@ -334,7 +333,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: current mcl pose
+      Name: 自己位置
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -346,12 +345,12 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /localization/current_pose
       Value: true
-    - Alpha: 0.4000000059604645
+    - Alpha: 0.30000001192092896
       Class: rviz_default_plugins/Map
       Color Scheme: costmap
       Draw Behind: false
       Enabled: true
-      Name: Map
+      Name: 距離地図
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -377,7 +376,7 @@ Visualization Manager:
       History Length: 1
       Linear Arrow Scale: 1
       Linear Color: 204; 51; 51
-      Name: TwistStamped
+      Name: 推定速度
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -406,10 +405,10 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: true
+      Enabled: false
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: PoseWithCovariance
+      Name: 初期位置
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -420,7 +419,48 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/initialpose
+      Value: false
+    - Alpha: 0.6000000238418579
+      Class: rviz_default_plugins/Map
+      Color Scheme: costmap
+      Draw Behind: false
+      Enabled: true
+      Name: コストマップ
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /planning/costmap
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /planning/costmap_updates
+      Use Timestamp: false
       Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 198; 70; 0
+      Enabled: false
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: 曲率計算位置
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /control/lookahead_pose2
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
