@@ -6,6 +6,7 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/path.hpp>
+#include <sensor_msgs/msg/laser_scan.hpp>
 
 namespace pure_pursuit {
 
@@ -27,19 +28,23 @@ class pure_pursuit : public rclcpp::Node {
     // 入力データ
     geometry_msgs::msg::PoseStamped  current_pose_;
     geometry_msgs::msg::TwistStamped last_cmd_vel_;
+    geometry_msgs::msg::TwistStamped potential_cmd_vel_;
     nav_msgs::msg::Path              path_;
 
     // コールバック
     void timer_callback ();
     void pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void path_callback (const nav_msgs::msg::Path::SharedPtr msg);
+    void scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr msg);
 
     // ROS2通信
     rclcpp::TimerBase::SharedPtr                                     timer_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr   cmd_vel_publisher_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    lookahead_publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr   potential_publisher_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subscriber_;
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr             path_subscriber_;
+    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr     scan_subscriber_;
 };
 
 }  // namespace pure_pursuit

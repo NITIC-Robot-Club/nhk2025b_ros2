@@ -5,10 +5,13 @@ namespace pure_pursuit {
 pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pursuit", options) {
     cmd_vel_publisher_   = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 10);
     lookahead_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_pose", 10);
+    potential_publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/control/potential_cmd_vel", 10);
     pose_subscriber_     = this->create_subscription<geometry_msgs::msg::PoseStamped> (
         "/localization/current_pose", 10, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
     path_subscriber_ =
         this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 10, std::bind (&pure_pursuit::path_callback, this, std::placeholders::_1));
+    scan_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan> (
+        "/sensor/scan", rclcpp::SensorDataQoS(), std::bind (&pure_pursuit::scan_callback, this, std::placeholders::_1));
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&pure_pursuit::timer_callback, this));
 
@@ -28,6 +31,34 @@ void pure_pursuit::pose_callback (const geometry_msgs::msg::PoseStamped::SharedP
 void pure_pursuit::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
     path_ = *msg;
 }
+
+
+void pure_pursuit::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr msg) {
+    potential_cmd_vel_.twist.linear.x = 0.0;
+    potential_cmd_vel_.twist.linear.y = 0.0;
+    for(int i = 0;  i < msg->ranges.size(); i++) {
+        double angle = msg->angle_min + i * msg->angle_increment;
+        double range = msg->ranges[i];
+        if (range < msg->range_min || range > msg->range_max) continue;
+
+        double x = range * std::cos(angle);
+        double y = range * std::sin(angle);
+        
+        // 障害物からの力を計算
+        double robot_size = 0.5;
+        if (std::abs(x - last_cmd_vel_.twist.linear.x) > robot_size) continue;
+        if (std::abs(y - last_cmd_vel_.twist.linear.y) > robot_size) continue;
+        double distance = std::hypot(x, y);
+        potential_cmd_vel_.twist.linear.x -= x / (distance * distance);
+        potential_cmd_vel_.twist.linear.y -= y / (distance * distance);
+    }
+    potential_cmd_vel_.twist.linear.x /= 50;
+    potential_cmd_vel_.twist.linear.y /= 50;
+    potential_cmd_vel_.header.stamp    = this->now ();
+    potential_cmd_vel_.header.frame_id = "base_link";
+    potential_publisher_->publish (potential_cmd_vel_);
+}
+
 
 void pure_pursuit::timer_callback () {
     // パラメータ取得
@@ -91,11 +122,6 @@ void pure_pursuit::timer_callback () {
     acceleration        = std::clamp (acceleration, -max_acceleration_xy_m_s2_, max_acceleration_xy_m_s2_);
     double speed        = last_speed + acceleration * delta_t;
 
-    // 曲率ベースの速度制限
-    double curvature               = 2.0 * std::sin (angle_diff) / std::max (lookahead_distance_, 0.01);
-    double curvature_limited_speed = std::sqrt (max_acceleration_xy_m_s2_ / std::max (std::abs (curvature), 1e-3));
-    speed                          = std::min (speed, curvature_limited_speed);
-
     // ゴール付近での減速
     constexpr double goal_tolerance_distance = 0.5;  // [m]
     if (goal_distance < goal_tolerance_distance) {
@@ -115,8 +141,8 @@ void pure_pursuit::timer_callback () {
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.header.stamp    = this->now ();
     cmd_vel.header.frame_id = "base_link";
-    cmd_vel.twist.linear.x  = speed * std::cos (angle_diff);
-    cmd_vel.twist.linear.y  = speed * std::sin (angle_diff);
+    cmd_vel.twist.linear.x  = speed * std::cos (angle_diff) + potential_cmd_vel_.twist.linear.x;
+    cmd_vel.twist.linear.y  = speed * std::sin (angle_diff) + potential_cmd_vel_.twist.linear.y;
     cmd_vel.twist.angular.z = yaw_speed;
     cmd_vel_publisher_->publish (cmd_vel);
 

@@ -21,6 +21,8 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
 }
 void path_planner::timer_callback () {
     if (original_map.header.stamp.sec == 0) return;
+    if (current_pose.header.stamp.sec == 0) return;
+    if (goal_pose.header.stamp.sec == 0) return;
     nav_msgs::msg::Path   path;
     std_msgs::msg::Header header;
     header.frame_id = "map";
@@ -40,9 +42,6 @@ void path_planner::timer_callback () {
         double now_yaw                   = current_yaw + delta_yaw / (1.0 + std::exp (-7.5 * ((double)i / path.poses.size () - 0.5)));
         path.poses[i].pose.orientation.z = std::sin (now_yaw / 2.0);
         path.poses[i].pose.orientation.w = std::cos (now_yaw / 2.0);
-        rclcpp::Time time (header.stamp);
-        rclcpp::Time new_time = time + rclcpp::Duration::from_seconds (delta_t);
-        header.stamp          = new_time;
         path.poses[i].header  = header;
     }
     path_publisher->publish (path);
@@ -193,7 +192,6 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
         if (!came_from.count (idx)) return;
         curr = came_from[idx];
     }
-    path.poses.push_back (current_pose);
     std::reverse (path.poses.begin (), path.poses.end ());
 }
 
