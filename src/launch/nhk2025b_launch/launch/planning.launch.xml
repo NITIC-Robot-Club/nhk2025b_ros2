@@ -1,6 +1,10 @@
 <launch>
-  <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_planning_container" namespace="">
-    <composable_node pkg="nhk2025b_path_planner" plugin="path_planner::path_planner" name="path_planner"/>
-    <composable_node pkg="nhk2025b_pure_pursuit" plugin="pure_pursuit::pure_pursuit" name="pure_pursuit"/>
+  <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_planning_control_container" namespace="">
+    <composable_node pkg="nhk2025b_path_planner" plugin="path_planner::path_planner" name="path_planner">
+      <param from="$(find-pkg-share nhk2025b_launch)/param/planning.yaml"/>
+    </composable_node>
+    <composable_node pkg="nhk2025b_pure_pursuit" plugin="pure_pursuit::pure_pursuit" name="pure_pursuit">
+      <param from="$(find-pkg-share nhk2025b_launch)/param/control.yaml"/>
+    </composable_node>
   </node_container>
 </launch>

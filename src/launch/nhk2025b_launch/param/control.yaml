@@ -1,0 +1,4 @@
+pure_pursuit:
+  ros__parameters:
+    angle_p: 4.0
+    lookahead_time: 0.5
