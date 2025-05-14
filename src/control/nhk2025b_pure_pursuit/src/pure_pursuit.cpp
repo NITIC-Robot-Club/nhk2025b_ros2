@@ -17,6 +17,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->declare_parameter ("min_lookahead_distance", 0.3);
     this->declare_parameter ("max_lookahead_distance", 3.0);
     this->declare_parameter ("angle_lookahead_distance", 1.0);
+    this->declare_parameter ("curvature_decceleration_p", 10.0);
     this->declare_parameter ("angle_p", 2.0);
     this->declare_parameter ("max_speed_xy_m_s", 3.0);
     this->declare_parameter ("max_speed_z_rad_s", 3.14);
@@ -37,6 +38,7 @@ void pure_pursuit::timer_callback () {
     this->get_parameter ("min_lookahead_distance", min_lookahead_distance_);
     this->get_parameter ("max_lookahead_distance", max_lookahead_distance_);
     this->get_parameter ("angle_lookahead_distance", angle_lookahead_distance_);
+    this->get_parameter ("curvature_decceleration_p", curvature_decceleration_p_);
     this->get_parameter ("angle_p", angle_p_);
     this->get_parameter ("max_speed_xy_m_s", max_speed_xy_m_s_);
     this->get_parameter ("max_speed_z_rad_s", max_speed_z_rad_s_);
@@ -113,7 +115,7 @@ void pure_pursuit::timer_callback () {
     double curvature = 4.0 * area / (a * b * c);
     if (area < 1e-6) curvature = 0.0;
 
-    double curvature_speed = target_speed / (std::abs (curvature * 10) + 1e-6);
+    double curvature_speed = target_speed / (std::abs (curvature * curvature_decceleration_p_) + 1e-6);
     // RCLCPP_INFO(this->get_logger (), "target speed: %f, curvature speed: %f", target_speed, curvature_speed);
     target_speed = std::min (target_speed, curvature_speed);
 
