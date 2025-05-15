@@ -6,6 +6,11 @@ on:
       - 104-feat-readme-mkdocs-deploy 
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pages: write
+  deployments: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
