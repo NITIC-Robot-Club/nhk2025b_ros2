@@ -9,18 +9,14 @@ ros2のwsです
     - Windowsの場合、WSLでUbuntu22.04をインストール後humbleインストール
     - Dockerが利用可能な場合、VSCodeのDevContainerを使って環境構築可能
 2. リポジトリをクローン
-    - もしNHK2025Bを作成していない場合
     ```bash
-    mkdir ~/NHK2025B
-    ```
-    ```bash
-    cd ~/NHK2025B
+    cd ~
     git clone git@github.com:NITIC-Robot-Club/nhk2025b_ros2.git
     ```
 3. ビルド手順
     ```bash
-    cd ~/NHK2025B/nhk2025b_ros2
-    colcon build
+    cd ~/nhk2025b_ros2
+    colcon build --symlink-install
     ```
 
 ## 開発
@@ -43,7 +39,7 @@ ros2のwsです
     - この操作により、リモートリポジトリに新しいブランチが作成されます
     - 表示されたコマンドをローカルで実行して、新しいブランチをチェックアウトしてください
         ```bash
-        git fetch origin
+        git fetch origin --prune
         git checkout ブランチ名
         ```
 4. 変更を加える
@@ -63,6 +59,16 @@ ros2のwsです
     - kazu-321 にコードレビューを割り当てる
     - 時間のあるときにコードの検証等を行うのでマージされるまで待つ
     - 3日経ってもマージされない場合はdiscordで連絡
+7. ローカルブランチを削除
+    - マージ済みのブランチは残り続けてしまうため以下のコマンドで削除する
+   ```bash
+   git fetch origin --prune
+   git branch -a
+   ```
+   ```bash
+   git branch -d 削除対象ブランチ名
+   ```
+   - もし削除できない場合は mainブランチにチェックアウトして、-Dオプションで削除してみてください
 
 ## ROS 2 テンプレ
 ### package.xml
