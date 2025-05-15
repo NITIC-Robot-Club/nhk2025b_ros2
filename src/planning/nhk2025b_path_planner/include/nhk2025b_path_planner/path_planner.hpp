@@ -38,6 +38,7 @@ class path_planner : public rclcpp::Node {
     int    robot_size_mm;
     int    tolerance_xy;
     double tolerance_z;
+    double sigmoid_gain;
 
     int    map_width, map_height;
     double map_resolution;
@@ -47,12 +48,14 @@ class path_planner : public rclcpp::Node {
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void find_freespace (std::pair<int, int>& point);
+    void timer_callback ();
 
     void inflate_map ();
     void astar (nav_msgs::msg::Path& path);
 
     geometry_msgs::msg::PoseStamped                                   current_pose;
     geometry_msgs::msg::PoseStamped                                   goal_pose;
+    geometry_msgs::msg::PoseStamped                                   safe_goal_pose;
     nav_msgs::msg::OccupancyGrid                                      original_map;
     nav_msgs::msg::OccupancyGrid                                      inflated_map;
     geometry_msgs::msg::TwistStamped                                  current_vel;
@@ -62,6 +65,7 @@ class path_planner : public rclcpp::Node {
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr     map_subscriber;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_subscriber;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr        inflate_map_publisher;
+    rclcpp::TimerBase::SharedPtr                                      timer_;
 };
 }  // namespace path_planner
 

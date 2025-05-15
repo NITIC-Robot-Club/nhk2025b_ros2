@@ -5,8 +5,9 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     resolution_ms = this->declare_parameter<int> ("resolution_ms", 100);
     offset_mm     = this->declare_parameter<int> ("offset_mm", 50);
     robot_size_mm = this->declare_parameter<int> ("robot_size_mm", 1414);
-    tolerance_xy  = this->declare_parameter<int> ("tolerance_xy", 10);
-    tolerance_z   = this->declare_parameter<double> ("tolerance_z", 0.1);
+    tolerance_xy  = this->declare_parameter<int> ("tolerance_xy", 50);
+    tolerance_z   = this->declare_parameter<double> ("tolerance_z", 0.23);
+    sigmoid_gain  = this->declare_parameter<double> ("sigmoid_gain", 7.5);
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 10);
     current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
@@ -17,8 +18,28 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
         "/behavior/map", 10, std::bind (&path_planner::map_callback, this, std::placeholders::_1));
     vel_subscriber = this->create_subscription<geometry_msgs::msg::TwistStamped> (
         "/cmd_vel", 10, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
+    timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 
     inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 10);
+}
+
+void path_planner::timer_callback () {
+    nav_msgs::msg::Path path;
+    path.header.frame_id = "map";
+    path.header.stamp    = this->now ();
+    double diff_x        = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
+    double diff_y        = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
+    double distance      = std::hypot (diff_x, diff_y);
+    double current_yaw = 2.0 * std::asin (current_pose.pose.orientation.z);
+    double goal_yaw    = 2.0 * std::asin (safe_goal_pose.pose.orientation.z);
+    double delta_yaw   = goal_yaw - current_yaw;
+    if (delta_yaw > M_PI)
+        delta_yaw -= 2 * M_PI;
+    else if (delta_yaw < -M_PI)
+        delta_yaw += 2 * M_PI;
+    if (distance < tolerance_xy / 1000.0 && std::abs (delta_yaw) < tolerance_z) {
+        path_publisher->publish (path);
+    }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     goal_pose = *msg;
@@ -32,14 +53,8 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     header.stamp    = this->now ();
     path.header     = header;
 
-    double diff_x   = goal_pose.pose.position.x - current_pose.pose.position.x;
-    double diff_y   = goal_pose.pose.position.y - current_pose.pose.position.y;
-    double distance = std::hypot (diff_x, diff_y);
-    if (distance < tolerance_xy / 1000.0) {
-        path_publisher->publish (path);
-        return;
-    }
     astar (path);
+    safe_goal_pose = path.poses.back ();
 
     double current_yaw = 2.0 * std::asin (current_pose.pose.orientation.z);
     double goal_yaw    = 2.0 * std::asin (goal_pose.pose.orientation.z);
@@ -50,7 +65,7 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
         delta_yaw += 2 * M_PI;
     double delta_t = resolution_ms / 1000.0;
     for (int i = 0; i < path.poses.size (); i++) {
-        double now_yaw                   = current_yaw + delta_yaw / (1.0 + std::exp (-7.5 * ((double)i / path.poses.size () - 0.5)));
+        double now_yaw                   = current_yaw + delta_yaw / (1.0 + std::exp (-sigmoid_gain * ((double)i / path.poses.size () - 0.5)));
         path.poses[i].pose.orientation.z = std::sin (now_yaw / 2.0);
         path.poses[i].pose.orientation.w = std::cos (now_yaw / 2.0);
         path.poses[i].header             = header;
