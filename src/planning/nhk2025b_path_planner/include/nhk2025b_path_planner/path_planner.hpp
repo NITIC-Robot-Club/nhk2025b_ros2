@@ -16,11 +16,21 @@ class path_planner : public rclcpp::Node {
     path_planner (const rclcpp::NodeOptions& options);
 
    private:
+    const std::vector<std::pair<int, int>> directions = {
+        { 1,  0},
+        {-1,  0},
+        { 0,  1},
+        { 0, -1},
+        { 1,  1},
+        {-1, -1},
+        { 1, -1},
+        {-1,  1}
+    };
     struct astar_node {
         int    x, y;
         double cost, priority;
         bool   operator> (const astar_node& other) const {
-              return priority > other.priority;
+            return priority > other.priority;
         }
     };
     int    resolution_ms;
@@ -36,7 +46,7 @@ class path_planner : public rclcpp::Node {
     void goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
-    void timer_callback ();
+    void find_freespace (std::pair<int, int>& point);
 
     void inflate_map ();
     void astar (nav_msgs::msg::Path& path);
@@ -52,7 +62,6 @@ class path_planner : public rclcpp::Node {
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr     map_subscriber;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_subscriber;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr        inflate_map_publisher;
-    rclcpp::TimerBase::SharedPtr                                      timer;
 };
 }  // namespace path_planner
 

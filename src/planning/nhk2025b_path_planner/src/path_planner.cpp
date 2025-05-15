@@ -17,11 +17,12 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
         "/behavior/map", 10, std::bind (&path_planner::map_callback, this, std::placeholders::_1));
     vel_subscriber = this->create_subscription<geometry_msgs::msg::TwistStamped> (
         "/cmd_vel", 10, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
-    timer = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 
     inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 10);
 }
-void path_planner::timer_callback () {
+void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+    goal_pose = *msg;
+
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
     if (goal_pose.header.stamp.sec == 0) return;
@@ -112,63 +113,8 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
     std::unordered_map<int, double>                                                    cost_so_far;
 
-    std::vector<std::pair<int, int>> directions = {
-        { 1,  0},
-        {-1,  0},
-        { 0,  1},
-        { 0, -1},
-        { 1,  1},
-        {-1, -1},
-        { 1, -1},
-        {-1,  1}
-    };
-    std::vector<std::vector<bool>>  visited_start (map_height, std::vector<bool> (map_width, false));
-    std::queue<std::pair<int, int>> q_start;
-    q_start.push ({start.first, start.second});
-    visited_start[start.second][start.first] = true;
-
-    while (!q_start.empty ()) {
-        auto [x, y] = q_start.front ();
-        q_start.pop ();
-        if (inflated_map.data[y * map_width + x] == 0) {
-            start.first  = x;
-            start.second = y;
-            break;
-        }
-
-        for (auto [dx, dy] : directions) {
-            int nx = x + dx;
-            int ny = y + dy;
-            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited_start[ny][nx]) {
-                visited_start[ny][nx] = true;
-                q_start.push ({nx, ny});
-            }
-        }
-    }
-
-    std::vector<std::vector<bool>>  visited_goal (map_height, std::vector<bool> (map_width, false));
-    std::queue<std::pair<int, int>> q_goal;
-    q_goal.push ({goal.first, goal.second});
-    visited_goal[goal.second][goal.first] = true;
-
-    while (!q_goal.empty ()) {
-        auto [x, y] = q_goal.front ();
-        q_goal.pop ();
-        if (inflated_map.data[y * map_width + x] == 0) {
-            goal.first  = x;
-            goal.second = y;
-            break;
-        }
-
-        for (auto [dx, dy] : directions) {
-            int nx = x + dx;
-            int ny = y + dy;
-            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited_goal[ny][nx]) {
-                visited_goal[ny][nx] = true;
-                q_goal.push ({nx, ny});
-            }
-        }
-    }
+    find_freespace (start);
+    find_freespace (goal);
 
     open.push ({start.first, start.second, 0.0, 0.0});
     cost_so_far[to_index (start.first, start.second)] = 0.0;
@@ -205,12 +151,33 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
     std::reverse (path.poses.begin (), path.poses.end ());
 }
 
+void path_planner::find_freespace (std::pair<int, int> &point) {
+    std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
+    std::queue<std::pair<int, int>> q;
+    q.push ({point.first, point.second});
+    visited[point.second][point.first] = true;
+
+    while (!q.empty ()) {
+        auto [x, y] = q.front ();
+        q.pop ();
+        if (inflated_map.data[y * map_width + x] == 0) {
+            point.first  = x;
+            point.second = y;
+            break;
+        }
+
+        for (auto [dx, dy] : directions) {
+            int nx = x + dx;
+            int ny = y + dy;
+            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited[ny][nx]) {
+                visited[ny][nx] = true;
+                q.push ({nx, ny});
+            }
+        }
+    }
+}
 void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     current_pose = *msg;
-}
-
-void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    goal_pose = *msg;
 }
 
 void path_planner::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
