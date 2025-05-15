@@ -461,6 +461,18 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /control/lookahead_pose2
       Value: false
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: 当たり判定
+      Namespaces:
+        robot_footprint: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /visualization/robot_footprint
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
