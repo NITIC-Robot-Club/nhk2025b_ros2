@@ -7,7 +7,7 @@ on:
     paths:
       - '**/*.md'
       - '**/*.yaml'
-      - '**/*.yml
+      - '**/*.yml'
       - '**/*.pages'
   workflow_dispatch:
 
