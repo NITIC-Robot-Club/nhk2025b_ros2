@@ -1,0 +1,4 @@
+nav:
+    - index.md
+    - pure pursuit: nhk2025b_pure_pursuit
+    - swerve calculator: nhk2025b_swerve_calculator

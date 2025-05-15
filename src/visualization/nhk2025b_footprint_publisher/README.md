@@ -1,0 +1,1 @@
+# nhk2025b_footprint_publisher
