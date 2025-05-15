@@ -7,7 +7,7 @@
       <param name="is_red" value="$(var is_red)"/>
     </composable_node>
     <composable_node pkg="nhk2025b_mcl" plugin="mcl::mcl" name="mcl">
-      <param from="$(find-pkg-share nhk2025b_launch)/param/mcl.yaml"/>
+      <param from="$(find-pkg-share nhk2025b_launch)/param/localization.yaml"/>
     </composable_node>
     <composable_node pkg="nhk2025b_pose_initializer" plugin="pose_initializer::pose_initializer" name="pose_initializer"/>
   </node_container>

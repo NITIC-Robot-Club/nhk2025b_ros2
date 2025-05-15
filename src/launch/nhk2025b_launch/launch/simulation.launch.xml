@@ -6,7 +6,7 @@
       <param name="is_red" value="$(var is_red)"/>
     </composable_node>
     <composable_node pkg="nhk2025b_simulation" plugin="lidar_simulation::lidar_simulation" name="lidar_simulation">
-      <param from="$(find-pkg-share nhk2025b_launch)/param/lidar_simulation.yaml"/>
+      <param from="$(find-pkg-share nhk2025b_launch)/param/simulation.yaml"/>
     </composable_node>
     <composable_node pkg="nhk2025b_swerve_calculator" plugin="swerve_calculator::swerve_calculator" name="swerve_calculator"/>
   </node_container>
@@ -15,5 +15,5 @@
     <arg name="is_red" value="$(var is_red)"/>
   </include>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/localization.launch.xml"/>
-  <!-- <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/> -->
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/>
 </launch>
