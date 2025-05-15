@@ -6,7 +6,7 @@ wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("whe
         "/swerve/result", 10, std::bind (&wheel_odometry::swerve_callback, this, std::placeholders::_1));
     odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 10);
     timer          = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&wheel_odometry::timer_callback, this));
-    wheel_radius   = this->declare_parameter ("wheel_radius", 0.031);
+    wheel_radius   = this->declare_parameter ("wheel_radius", 0.0325);
     wheel_position = this->declare_parameter ("wheel_position", 0.62);
 
     bool   is_red         = this->declare_parameter<bool> ("is_red", false);
