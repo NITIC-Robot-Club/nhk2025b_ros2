@@ -5,7 +5,9 @@ on:
     branches:
       - 104-feat-readme-mkdocs-deploy 
     paths:
-      - '*.md'
+      - "*.md"
+      - "*.yaml"
+      - "*.yml"
   workflow_dispatch:
 
 permissions:
