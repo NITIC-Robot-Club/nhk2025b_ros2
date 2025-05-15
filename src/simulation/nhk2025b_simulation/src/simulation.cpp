@@ -11,7 +11,7 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
     imu_publisher_        = this->create_publisher<sensor_msgs::msg::Imu> ("/sensor/imu", 10);
     timer_                = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
     wheel_position        = this->declare_parameter<double> ("wheel_position", 0.62);
-    wheel_radius          = this->declare_parameter<double> ("wheel_radius", 0.031);
+    wheel_radius          = this->declare_parameter<double> ("wheel_radius", 0.0325);
     bool   is_red         = this->declare_parameter<bool> ("is_red", false);
     double initial_x_blue = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
     double initial_y_blue = this->declare_parameter<double> ("initial_positions.blue.y", 1.0);

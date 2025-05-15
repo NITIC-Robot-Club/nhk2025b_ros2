@@ -1,0 +1,8 @@
+<launch>
+    <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_visualization_container" namespace="">
+        <composable_node pkg="nhk2025b_visualize_swerve" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
+        <composable_node pkg="nhk2025b_footprint_publisher" plugin="footprint_publisher::footprint_publisher" name="footprint_publisher">
+            <param from="$(find-pkg-share nhk2025b_launch)/param/visualization.yaml"/>
+        </composable_node>
+    </node_container>
+</launch>

@@ -5,7 +5,6 @@
       <param name="is_red" value="$(var is_red)"/>
       <param from="$(find-pkg-share nhk2025b_launch)/param/common.yaml"/>
     </composable_node>
-    <composable_node pkg="nhk2025b_visualize_swerve" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
   </node_container>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/tf.launch.xml"/>
 </launch>
