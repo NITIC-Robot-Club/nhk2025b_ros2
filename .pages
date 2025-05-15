@@ -1,5 +1,11 @@
 nav:
-    - index.md
-    - test.md
-    - Behavior: behavior
-    - test: behavior/test.md
+  - Home: index.md
+  - behavior: behavior
+  - common: common
+  - control: control
+  - launch: launch
+  - localization: localization
+  - message: message
+  - planning: planning
+  - simulation: simulation
+  - visualization: visualization

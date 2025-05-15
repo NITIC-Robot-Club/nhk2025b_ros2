@@ -78,7 +78,7 @@ jobs:
               touch "$(dirname "$dest_file")/.pages"
               echo "Created $(dirname "$dest_file")/.pages"
               echo "nav:" > "$(dirname "$dest_file")/.pages"
-              echo "    - index.md" >> "$(dirname "$dest_file")/.pages"
+              echo "  - index.md" >> "$(dirname "$dest_file")/.pages"
             fi
           done
 
