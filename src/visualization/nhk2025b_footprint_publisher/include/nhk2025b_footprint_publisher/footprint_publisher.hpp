@@ -20,7 +20,7 @@ class footprint_publisher : public rclcpp::Node {
     nav_msgs::msg::OccupancyGrid                map;
 
     double robot_width, robot_length;
-    int history;
+    int    history;
     void   pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     bool   is_hit (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
