@@ -5,6 +5,8 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     resolution_ms = this->declare_parameter<int> ("resolution_ms", 100);
     offset_mm     = this->declare_parameter<int> ("offset_mm", 50);
     robot_size_mm = this->declare_parameter<int> ("robot_size_mm", 1414);
+    tolerance_xy = this->declare_parameter<int> ("tolerance_xy", 10);
+    tolerance_z = this->declare_parameter<double> ("tolerance_z", 0.1);
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 10);
     current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
@@ -28,6 +30,14 @@ void path_planner::timer_callback () {
     header.frame_id = "map";
     header.stamp    = this->now ();
     path.header     = header;
+
+    double dx = goal_pose.pose.position.x - current_pose.pose.position.x;
+    double dy = goal_pose.pose.position.y - current_pose.pose.position.y;
+    double distance = std::hypot (dx, dy);
+    if(distance < tolerance_xy) {
+        path_publisher->publish (path);
+        return;
+    }
     astar (path);
 
     double current_yaw = 2.0 * std::asin (current_pose.pose.orientation.z);
