@@ -30,9 +30,9 @@ void path_planner::timer_callback () {
     double diff_x        = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
     double diff_y        = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
     double distance      = std::hypot (diff_x, diff_y);
-    double current_yaw = 2.0 * std::asin (current_pose.pose.orientation.z);
-    double goal_yaw    = 2.0 * std::asin (safe_goal_pose.pose.orientation.z);
-    double delta_yaw   = goal_yaw - current_yaw;
+    double current_yaw   = 2.0 * std::asin (current_pose.pose.orientation.z);
+    double goal_yaw      = 2.0 * std::asin (safe_goal_pose.pose.orientation.z);
+    double delta_yaw     = goal_yaw - current_yaw;
     if (delta_yaw > M_PI)
         delta_yaw -= 2 * M_PI;
     else if (delta_yaw < -M_PI)
