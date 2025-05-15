@@ -59,6 +59,18 @@ jobs:
             cp "$filepath" "$dest_file"
 
             echo "Copied $filepath to $dest_file"
+
+            # もし同じ場所に .pages があればコピー
+            if [[ -f "$(dirname "$filepath")/.pages" ]]; then
+              cp "$(dirname "$filepath")/.pages" "$(dirname "$dest_file")/.pages"
+              echo "Copied $(dirname "$filepath")/.pages to $(dirname "$dest_file")/.pages"
+            else
+              # 作成
+              touch "$(dirname "$dest_file")/.pages"
+              echo "Created $(dirname "$dest_file")/.pages"
+              echo "nav:" > "$(dirname "$dest_file")/.pages"
+              echo "    - index.md" >> "$(dirname "$dest_file")/.pages"
+            fi
           done
 
       - name: Deploy to GitHub Pages
