@@ -34,15 +34,15 @@ theme:
 
 nav:
   - Home: index.md
-  - behavior: src/behavior
-  - common: src/common
-  - control: src/control
-  - launch: src/launch
-  - localization: src/localization
-  - message: src/message
-  - planning: src/planning
-  - simulation: src/simulation
-  - visualization: src/visualization
+  - behavior
+  - common
+  - control
+  - launch
+  - localization
+  - message
+  - planning
+  - simulation
+  - visualization
 
 # README.md をトップページとして使う場合
 docs_dir: docs
