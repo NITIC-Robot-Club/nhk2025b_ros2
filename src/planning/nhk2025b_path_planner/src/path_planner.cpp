@@ -32,10 +32,10 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     header.stamp    = this->now ();
     path.header     = header;
 
-    double dx       = goal_pose.pose.position.x - current_pose.pose.position.x;
-    double dy       = goal_pose.pose.position.y - current_pose.pose.position.y;
-    double distance = std::hypot (dx, dy);
-    if (distance < tolerance_xy) {
+    double diff_x   = goal_pose.pose.position.x - current_pose.pose.position.x;
+    double diff_y   = goal_pose.pose.position.y - current_pose.pose.position.y;
+    double distance = std::hypot (diff_x, diff_y);
+    if (distance < tolerance_xy / 1000.0) {
         path_publisher->publish (path);
         return;
     }
@@ -65,14 +65,15 @@ void path_planner::inflate_map () {
     std::vector<int8_t> cost_lookup (inflation_radius + 1);
     for (int r = 0; r <= inflation_radius; ++r) {
         double dist = r * map_resolution;
-        if (dist > inflation_radius) {
-            cost_lookup[r] = 0;
+        if (dist < robot_size_mm / 2000.0) {
+            cost_lookup[r] = 100;
+        } else if (dist < robot_size_mm / 2000.0 + offset_mm / 1000.0) {
+            cost_lookup[r] = 50;
         } else {
-            // 距離に応じて指数的に減衰（例：100 → 1）
-            double factor  = (inflation_radius - dist) / inflation_radius;
-            cost_lookup[r] = static_cast<int8_t> (std::round (100 * factor));
+            cost_lookup[r] = 0;
         }
     }
+
     // マップ全体を走査
     for (int y = 0; y < map_height; ++y) {
         for (int x = 0; x < map_width; ++x) {
