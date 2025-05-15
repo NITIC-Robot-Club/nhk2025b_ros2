@@ -12,12 +12,15 @@ footprint_publisher::footprint_publisher (const rclcpp::NodeOptions &options) : 
     // Robot dimensions (in meters)
     declare_parameter ("robot_width", 1.0);
     declare_parameter ("robot_length", 1.0);
+    declare_parameter ("history", 300);
 }
 
 void footprint_publisher::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     // パラメータ取得
     robot_width  = get_parameter ("robot_width").as_double ();
     robot_length = get_parameter ("robot_length").as_double ();
+    history      = get_parameter ("history").as_int ();
+    if (history < 1) history = 1;
 
     // Marker作成
     visualization_msgs::msg::Marker marker;
@@ -47,7 +50,7 @@ void footprint_publisher::pose_callback (const geometry_msgs::msg::PoseStamped::
 
     // 履歴追加
     marker_history.push_back (marker);
-    if (marker_history.size () > 100) {
+    if (marker_history.size () > history) {
         marker_history.pop_front ();
     }
 
