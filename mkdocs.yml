@@ -34,6 +34,31 @@ theme:
 
 nav:
   - Home: index.md
+  - src:
+      - behavior:
+          - behavior: src/behavior/nhk2025b_behavior
+      - common:
+          - canable: src/common/nhk2025b_canable
+          - map_publisher: src/common/nhk2025b_map_publisher
+      - control:
+          - pure_pursuit: src/control/nhk2025b_pure_pursuit
+          - swerve_calculator: src/control/nhk2025b_swerve_calculator
+      - launch:
+          - launch: src/launch/nhk2025b_launch
+      - localization:
+          - ekf: src/localization/nhk2025b_ekf
+          - mcl: src/localization/nhk2025b_mcl
+          - pose_initializer: src/localization/nhk2025b_pose_initializer
+          - wheel_odometry: src/localization/nhk2025b_wheel_odometry
+      - message:
+          - msgs: src/message/nhk2025b_msgs
+      - planning:
+          - path_planner: src/planning/nhk2025b_path_planner
+      - simulation:
+          - simulation: src/simulation/nhk2025b_simulation
+      - visualization:
+          - footprint_publisher: src/visualization/nhk2025b_footprint_publisher
+          - visualize_swerve: src/visualization/nhk2025b_visualize_swerve
 
 # README.md をトップページとして使う場合
 docs_dir: docs
