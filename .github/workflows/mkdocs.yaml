@@ -27,10 +27,11 @@ jobs:
         run: |
           pip install mkdocs mkdocs-material pymdown-extensions
 
-      - name: Prepare README as index.md
+      - name: Prepare markdown
         run: |
           mkdir -p docs
           cp README.md docs/index.md
+          rsync -av --include='./src' --include='*.md' --exclude='*' ./ ./docs/
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
