@@ -31,6 +31,8 @@ jobs:
         run: |
           mkdir -p docs
 
+          cp README.md docs/index.md
+
           # src以下のすべてのmdファイルを探す
           find src -name "*.md" | while read -r filepath; do
             # 例: filepath=src/test/my_package_test/README.md
