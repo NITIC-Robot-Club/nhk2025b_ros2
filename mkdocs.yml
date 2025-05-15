@@ -32,6 +32,18 @@ theme:
         icon: material/weather-night
         name: ダークモードに切り替え
 
+nav:
+  - Home: index.md
+  - behavior: src/behavior
+  - common: src/common
+  - control: src/control
+  - launch: src/launch
+  - localization: src/localization
+  - message: src/message
+  - planning: src/planning
+  - simulation: src/simulation
+  - visualization: src/visualization
+
 # README.md をトップページとして使う場合
 docs_dir: docs
 
