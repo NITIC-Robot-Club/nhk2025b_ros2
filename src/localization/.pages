@@ -1,2 +1,6 @@
 nav:
     - index.md
+    - ekf: nhk2025b_ekf
+    - mcl: nhk2025b_mcl
+    - pose initializer: nhk2025b_pose_initializer
+    - wheel odometry: nhk2025b_wheel_odometry

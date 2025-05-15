@@ -1,2 +1,4 @@
 nav:
     - index.md
+    - footprint publisher: nhk2025b_footprint_publisher
+    - visualize swerve: nhk2025b_visualize_swerve
