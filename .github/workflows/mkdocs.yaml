@@ -3,7 +3,12 @@ name: Deploy MkDocs
 on:
   push:
     branches:
-      - 104-feat-readme-mkdocs-deploy 
+      - main
+    paths:
+      - '**/*.md'
+      - '**/*.yaml'
+      - '**/*.yml
+      - '**/*.pages'
   workflow_dispatch:
 
 permissions:
@@ -17,14 +22,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: set up git
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git checkout 104-feat-readme-mkdocs-deploy 
-          git branch mkdocs-deploy
-          git checkout mkdocs-deploy
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -84,10 +81,3 @@ jobs:
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
-
-      - name: Debug
-        run: |
-          cat docs/behavior/nhk2025b_behavior/.pages
-          git add .
-          git commit -m "update .pages"
-          git push origin mkdocs-deploy -f
