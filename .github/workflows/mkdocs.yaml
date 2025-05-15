@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - 104-feat-readme-mkdocs-deploy 
-    paths:
-      - "*.md"
-      - "*.yaml"
-      - "*.yml"
   workflow_dispatch:
 
 permissions:
