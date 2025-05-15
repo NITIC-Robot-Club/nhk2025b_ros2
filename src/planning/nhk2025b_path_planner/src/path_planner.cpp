@@ -5,8 +5,8 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     resolution_ms = this->declare_parameter<int> ("resolution_ms", 100);
     offset_mm     = this->declare_parameter<int> ("offset_mm", 50);
     robot_size_mm = this->declare_parameter<int> ("robot_size_mm", 1414);
-    tolerance_xy  = this->declare_parameter<int> ("tolerance_xy", 50);
-    tolerance_z   = this->declare_parameter<double> ("tolerance_z", 0.23);
+    tolerance_xy_mm  = this->declare_parameter<int> ("tolerance_xy_mm", 30);
+    tolerance_z_rad   = this->declare_parameter<double> ("tolerance_z_rad", 0.03);
     sigmoid_gain  = this->declare_parameter<double> ("sigmoid_gain", 7.5);
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 10);
@@ -37,12 +37,26 @@ void path_planner::timer_callback () {
         delta_yaw -= 2 * M_PI;
     else if (delta_yaw < -M_PI)
         delta_yaw += 2 * M_PI;
-    if (distance < tolerance_xy / 1000.0 && std::abs (delta_yaw) < tolerance_z) {
+    if (distance < tolerance_xy_mm / 1000.0 && std::abs (delta_yaw) < tolerance_z_rad) {
         path_publisher->publish (path);
+        RCLCPP_INFO(this->get_logger(), "xy: %f,to%f, z: %f,to%f", distance, tolerance_xy_mm / 1000.0, delta_yaw, tolerance_z_rad);
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+    if(msg->pose.position.x < 0.0){
+        msg->pose.position.x = 0.01;
+    }
+    if(msg->pose.position.y < 0.0){
+        msg->pose.position.y = 0.01;
+    }
+    if(msg->pose.position.x > original_map.info.width * original_map.info.resolution){
+        msg->pose.position.x = original_map.info.width * original_map.info.resolution - 0.01;
+    }
+    if(msg->pose.position.y > original_map.info.height * original_map.info.resolution){
+        msg->pose.position.y = original_map.info.height * original_map.info.resolution - 0.01;
+    }
     goal_pose = *msg;
+    
 
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
@@ -54,7 +68,6 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     path.header     = header;
 
     astar (path);
-    safe_goal_pose = path.poses.back ();
 
     double current_yaw = 2.0 * std::asin (current_pose.pose.orientation.z);
     double goal_yaw    = 2.0 * std::asin (goal_pose.pose.orientation.z);
@@ -64,12 +77,16 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     else if (delta_yaw < -M_PI)
         delta_yaw += 2 * M_PI;
     double delta_t = resolution_ms / 1000.0;
-    for (int i = 0; i < path.poses.size (); i++) {
+    for (int i = 0; i < path.poses.size () - 1; i++) {
         double now_yaw                   = current_yaw + delta_yaw / (1.0 + std::exp (-sigmoid_gain * ((double)i / path.poses.size () - 0.5)));
         path.poses[i].pose.orientation.z = std::sin (now_yaw / 2.0);
         path.poses[i].pose.orientation.w = std::cos (now_yaw / 2.0);
         path.poses[i].header             = header;
     }
+    path.poses[path.poses.size () - 1].pose.orientation.z = goal_pose.pose.orientation.z;
+    path.poses[path.poses.size () - 1].pose.orientation.w = goal_pose.pose.orientation.w;
+    path.poses[path.poses.size () - 1].header             = header;
+    safe_goal_pose = path.poses[path.poses.size () - 1];
     path_publisher->publish (path);
 }
 
@@ -83,7 +100,7 @@ void path_planner::inflate_map () {
         if (dist < robot_size_mm / 2000.0) {
             cost_lookup[r] = 100;
         } else if (dist < robot_size_mm / 2000.0 + offset_mm / 1000.0) {
-            cost_lookup[r] = 50;
+            cost_lookup[r] = 60;
         } else {
             cost_lookup[r] = 0;
         }
