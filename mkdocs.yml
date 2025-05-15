@@ -6,4 +6,4 @@ nav:
   - Home: README.md
 
 # README.md をトップページとして使う場合
-docs_dir: .
+docs_dir: docs
