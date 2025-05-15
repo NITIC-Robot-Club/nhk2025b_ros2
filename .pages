@@ -1,2 +1,4 @@
 nav:
     - index.md
+    - Behavior: behavior
+    - test: behavior/test.md
