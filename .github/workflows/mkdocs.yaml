@@ -37,19 +37,13 @@ jobs:
           find src -name "*.md" | while read -r filepath; do
             # 例: filepath=src/test/my_package_test/README.md
 
-            # ベースディレクトリを除いた相対パスを作る
-            relative_path="${filepath#src/test/}"  # 例: my_package_test/README.md
-
-            # ディレクトリ名だけ取得
-            dir_name=$(dirname "$relative_path")  # 例: my_package_test
-
             # 変換ルール
             if [[ $(basename "$filepath") == "README.md" ]]; then
               # README.mdならindex.mdに名前変更
-              dest_file="docs/${dir_name}/index.md"
+              dest_file="docs/${filepath}/index.md"
             else
               # それ以外は同じ名前でコピー
-              dest_file="docs/${relative_path}"
+              dest_file="docs/${filepath}"
             fi
 
             # コピー先のディレクトリを作成
