@@ -3,7 +3,8 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/install/nhk2025b_msgs/include/**",
                 "/opt/ros/humble/include/**"
             ],
             "defines": [],
