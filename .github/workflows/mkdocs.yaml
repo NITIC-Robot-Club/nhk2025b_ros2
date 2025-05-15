@@ -75,3 +75,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
+
+      - name: Debug
+        run: |
+          echo "docs/behavior/nhk2025b_behavior/.pages"
