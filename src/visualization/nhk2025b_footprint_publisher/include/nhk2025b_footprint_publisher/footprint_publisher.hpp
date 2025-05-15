@@ -7,8 +7,8 @@
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
-#include <vector>
 #include <deque>
+#include <vector>
 
 namespace footprint_publisher {
 class footprint_publisher : public rclcpp::Node {
