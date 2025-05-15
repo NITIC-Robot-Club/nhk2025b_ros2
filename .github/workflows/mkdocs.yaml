@@ -25,7 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install mkdocs mkdocs-material pymdown-extensions mkdocs-awesome-pages-plugin
+          pip install mkdocs mkdocs-material pymdown-extensions mkdocs-awesome-pages-plugin mkdocs-same-dir
 
       - name: Prepare markdown
         run: |
