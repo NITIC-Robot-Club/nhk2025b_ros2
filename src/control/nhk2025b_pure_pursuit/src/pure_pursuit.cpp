@@ -45,7 +45,7 @@ void pure_pursuit::timer_callback () {
     this->get_parameter ("max_acceleration_xy_m_s2_", max_acceleration_xy_m_s2_);
 
     if (path_.poses.empty ()) {
-        RCLCPP_WARN (this->get_logger (), "Path is empty");
+        // RCLCPP_WARN (this->get_logger (), "Path is empty");
         return;
     }
 

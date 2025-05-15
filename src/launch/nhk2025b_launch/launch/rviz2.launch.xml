@@ -3,4 +3,5 @@
         pkg="rviz2"
         exec="rviz2"
         args="-d $(find-pkg-share nhk2025b_launch)/rviz/nhk2025b.rviz"/>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/visualization.launch.xml"/>
 </launch>

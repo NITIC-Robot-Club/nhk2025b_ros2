@@ -1,4 +1,4 @@
 path_planner:
   ros__parameters:
-    offset_mm: 200
-    robot_size_mm: 1600
+    offset_mm: 100
+    robot_size_mm: 1500
