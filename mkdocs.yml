@@ -47,6 +47,13 @@ nav:
 # README.md をトップページとして使う場合
 docs_dir: docs
 
+
+plugins:
+  - awesome-pages
+  - macros
+  - same-dir
+  - search
+
 markdown_extensions:
   - admonition             # !!! note などでアラートブロック
   - codehilite             # コードハイライト
