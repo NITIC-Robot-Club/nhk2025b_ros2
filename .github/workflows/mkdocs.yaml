@@ -31,7 +31,11 @@ jobs:
         run: |
           mkdir -p docs
           cp README.md docs/index.md
-          rsync -av --include='./src' --include='*.md' --exclude='*' ./ ./docs/
+          rsync -av \
+            --include='src/**' \
+            --include='*.md' \
+            --exclude='*' \
+            ./ ./docs/
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
