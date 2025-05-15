@@ -22,10 +22,5 @@ jobs:
         run: |
           pip install mkdocs mkdocs-material
 
-      - name: Prepare README as index.md
-        run: |
-          mkdir -p docs
-          cp README.md docs/index.md
-
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
