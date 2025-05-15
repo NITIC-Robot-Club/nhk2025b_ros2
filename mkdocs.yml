@@ -50,7 +50,6 @@ docs_dir: docs
 
 plugins:
   - awesome-pages
-  - macros
   - same-dir
   - search
 
