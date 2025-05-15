@@ -18,12 +18,19 @@ theme:
     - content.tabs.link
   language: ja
   palette:
-    scheme: default
-    toggle:
-      icon: material/toggle-switch
-      name: Switch to dark mode
-      name_solid: Switch to light mode
-      aria_label: Switch color scheme
+    - scheme: slate  # ダークテーマ
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: ライトモードに切り替え
+
+    - scheme: default  # ライトテーマ
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: ダークモードに切り替え
 
 nav:
   - Home: index.md
