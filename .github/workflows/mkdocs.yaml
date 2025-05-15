@@ -30,12 +30,34 @@ jobs:
       - name: Prepare markdown
         run: |
           mkdir -p docs
-          cp README.md docs/index.md
-          rsync -av \
-            --include='src/**' \
-            --include='*.md' \
-            --exclude='*' \
-            ./ ./docs/
+
+          # src以下のすべてのmdファイルを探す
+          find src -name "*.md" | while read -r filepath; do
+            # 例: filepath=src/test/my_package_test/README.md
+
+            # ベースディレクトリを除いた相対パスを作る
+            relative_path="${filepath#src/test/}"  # 例: my_package_test/README.md
+
+            # ディレクトリ名だけ取得
+            dir_name=$(dirname "$relative_path")  # 例: my_package_test
+
+            # 変換ルール
+            if [[ $(basename "$filepath") == "README.md" ]]; then
+              # README.mdならindex.mdに名前変更
+              dest_file="docs/${dir_name}/index.md"
+            else
+              # それ以外は同じ名前でコピー
+              dest_file="docs/${relative_path}"
+            fi
+
+            # コピー先のディレクトリを作成
+            mkdir -p "$(dirname "$dest_file")"
+
+            # コピー実行
+            cp "$filepath" "$dest_file"
+
+            echo "Copied $filepath to $dest_file"
+          done
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
