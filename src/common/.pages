@@ -1,2 +1,4 @@
 nav:
     - index.md
+    - canable: nhk2025b_canable
+    - map_publisher: nhk2025b_map_publisher
