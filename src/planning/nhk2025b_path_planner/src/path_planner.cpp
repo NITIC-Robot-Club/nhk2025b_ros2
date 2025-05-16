@@ -39,7 +39,6 @@ void path_planner::timer_callback () {
         delta_yaw += 2 * M_PI;
     if (distance < tolerance_xy_mm / 1000.0 && std::abs (delta_yaw) < tolerance_z_rad) {
         path_publisher->publish (path);
-        RCLCPP_INFO (this->get_logger (), "xy: %f,to%f, z: %f,to%f", distance, tolerance_xy_mm / 1000.0, delta_yaw, tolerance_z_rad);
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
