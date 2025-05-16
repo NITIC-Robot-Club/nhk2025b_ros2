@@ -1,2 +1,12 @@
 # nhk2025b_swerve_calculator
-twist_stamped から swerve を計算する
+独ステの角度、速度を計算します
+
+## Input
+| topic名 | 型 | 説明 |
+| - | - | - |
+| /cmd_vel | TwistStamped | 移動方向のベクトル入力 |
+
+## Output
+| topic名 | 型 | 説明 |
+| - | - | - |
+| /swerve/cmd | Swerve | 計算された値 |
