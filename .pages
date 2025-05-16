@@ -1,0 +1,11 @@
+nav:
+  - Home: index.md
+  - behavior: behavior
+  - common: common
+  - control: control
+  - launch: launch
+  - localization: localization
+  - message: message
+  - planning: planning
+  - simulation: simulation
+  - visualization: visualization

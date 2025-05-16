@@ -12,6 +12,7 @@ jobs:
   auto_fix:
     permissions:
       contents: write
+      checks: write
 
     strategy:
       matrix:
