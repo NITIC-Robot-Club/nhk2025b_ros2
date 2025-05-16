@@ -6,7 +6,7 @@ on:
 jobs:
   auto-fix-and-build:
     container:
-      image: ghcr.io/nitic-robot-club/nhk2025b_ros2:${{ github.ref_name || 'main' }}
+      image: ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
     runs-on: ubuntu-latest
 
     steps:
