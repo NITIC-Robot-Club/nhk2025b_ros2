@@ -33,7 +33,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./docker
+          context: .
           push: true
           tags: |
             ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
