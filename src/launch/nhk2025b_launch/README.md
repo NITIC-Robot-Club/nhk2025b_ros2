@@ -1,4 +1,14 @@
 # nhk2025b_launch
 launchファイルやパラメーターなどをまとめたパッケージです。
 
-基本的に `ros2 launch nhk2025b_launch xxxx` ですべて完結するようになっています
+## How to use
+### Simulation
+```bash
+ros2 launch nhk2025b_launch simulation.launch.xml
+```
+
+赤ゾーンのシミュレーションは
+
+```bash
+ros2 launch nhk2025b_launch simulation.launch.xml is_red:=true
+```
