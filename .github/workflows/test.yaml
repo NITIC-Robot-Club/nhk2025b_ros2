@@ -30,7 +30,7 @@ jobs:
 
       - name: Commit and push changes
         working-directory: nhk2025b_ros2
-        run : |
+        run: |
           git add .
           if git diff --cached --quiet; then
             echo "No changes to commit."
