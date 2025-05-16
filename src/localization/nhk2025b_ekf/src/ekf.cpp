@@ -79,7 +79,7 @@ void ekf::predict (const nav_msgs::msg::Odometry& odom, const sensor_msgs::msg::
 void ekf::update (const geometry_msgs::msg::PoseStamped& pose_msg) {
     Eigen::VectorXd z (3);
     z << pose_msg.pose.position.x, pose_msg.pose.position.y,
-        std::asin (pose_msg.pose.orientation.z) * 2.0;  // yaw
+        get_yaw_2d (pose_msg.pose.orientation);  // 観測値（位置と角度）
 
     Eigen::VectorXd h = x_.head (3);  // 状態ベクトルの位置と角度
 

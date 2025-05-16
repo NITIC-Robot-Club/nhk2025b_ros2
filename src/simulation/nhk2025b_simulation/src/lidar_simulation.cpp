@@ -42,7 +42,7 @@ void lidar_simulation::timer_callback () {
     scan.ranges.resize (360 / scan.angle_increment, scan.range_max);
     scan.intensities.resize (360 / scan.angle_increment, 1.0);
 
-    double yaw     = std::asin (current_pose.pose.orientation.z) * 2;
+    double yaw     = get_yaw_2d (current_pose.pose.orientation);
     double start_x = current_pose.pose.position.x + lidar_x * std::cos (yaw) - lidar_y * std::sin (yaw);
     double start_y = current_pose.pose.position.y + lidar_x * std::sin (yaw) + lidar_y * std::cos (yaw);
     for (size_t i = 0; i < scan.ranges.size (); ++i) {  // Ensure we iterate within bounds
