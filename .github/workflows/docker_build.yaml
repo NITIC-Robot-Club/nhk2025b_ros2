@@ -36,7 +36,7 @@ jobs:
           context: ./docker
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/nhk2025b_ros2:latest
+            ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
           labels: |
             org.opencontainers.image.title=nhk2025b_ros2
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
