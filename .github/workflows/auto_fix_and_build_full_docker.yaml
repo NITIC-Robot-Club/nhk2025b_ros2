@@ -3,12 +3,12 @@ on:
   push:
   workflow_dispatch:
 
-permissions:
-  packages: read
-  contents: write
 
 jobs:
   auto-fix-and-build:
+    permissions:
+      contents: write
+    
     container:
       image: ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
     runs-on: ubuntu-latest
