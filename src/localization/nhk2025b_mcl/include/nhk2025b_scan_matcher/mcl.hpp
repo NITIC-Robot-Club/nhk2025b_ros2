@@ -60,7 +60,7 @@ class mcl : public rclcpp::Node {
     bool   get_transform (
           const std::string &target_frame, const std::string &source_frame, const rclcpp::Time &time,
           geometry_msgs::msg::TransformStamped &transform_out) const;
-    
+
     double get_yaw_2d (const geometry_msgs::msg::Quaternion &orientation) {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
     }

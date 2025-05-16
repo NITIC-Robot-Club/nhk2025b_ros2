@@ -24,7 +24,7 @@ class ekf : public rclcpp::Node {
     void odom_callback (const nav_msgs::msg::Odometry::SharedPtr msg);
     void lidar_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
-    double get_yaw_2d (const geometry_msgs::msg::Quaternion &orientation) {
+    double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
     }
 
