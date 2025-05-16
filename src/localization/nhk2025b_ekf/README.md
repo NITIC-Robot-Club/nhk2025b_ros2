@@ -1,4 +1,4 @@
-# nhk2025b_ekf_localizer
+# nhk2025b_ekf
 足回りのオドメトリとIMUを合成し、低ノイズなオドメトリを計算
 
 ## Input
