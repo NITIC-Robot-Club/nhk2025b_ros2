@@ -24,5 +24,5 @@ RUN git clone https://github.com/NITIC-Robot-Club/nhk2025b_ros2.git
 WORKDIR /home/nitic-robot-club/nhk2025b_ros2
 
 RUN rosdep install -y --from-paths src --ignore-src && \
-    source /opt/ros/humble/setup.bash && \
+    . /opt/ros/humble/setup.bash && \
     colcon build --symlink-install
