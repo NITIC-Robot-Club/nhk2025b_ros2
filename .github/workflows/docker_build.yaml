@@ -2,14 +2,12 @@ name: Build and Push nhk2025b_ros2 to GHCR
 
 on:
   push:
-    branches:
-      - 113-feat-actions-add-docker
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'  # 毎日0時（UTC）
 
 permissions:
-  contents: read
+  contents: write
   packages: write  # GHCR への Push に必要
 
 jobs:
@@ -36,7 +34,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
+            ghcr.io/nitic-robot-club/nhk2025b_ros2:${GITHUB_REF#refs/heads/}
           labels: |
             org.opencontainers.image.title=nhk2025b_ros2
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.source=https://github.com/${ github.repository }

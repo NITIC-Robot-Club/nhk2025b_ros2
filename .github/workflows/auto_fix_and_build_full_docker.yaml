@@ -1,20 +1,21 @@
-name: docker test
+name: auto fix and build full docker
 on:
   push:
+  pull_request:
+    types: 
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review 
   workflow_dispatch:
 
 jobs:
-  docker_test:
+  auto-fix-and-build:
     container:
-      image: ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
+      image: ghcr.io/nitic-robot-club/nhk2025b_ros2:${GITHUB_REF#refs/heads/}
     runs-on: ubuntu-latest
 
     steps:
-      - name: test
-        run: |
-          ls -la
-          ls /home/nitic-robot-club/nhk2025b_ros2 -la
-      
       - name: Fetch origin
         working-directory: /home/nitic-robot-club/nhk2025b_ros2
         run: | 
