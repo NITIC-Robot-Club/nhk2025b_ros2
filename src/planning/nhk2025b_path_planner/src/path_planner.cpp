@@ -30,8 +30,8 @@ void path_planner::timer_callback () {
     double diff_x        = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
     double diff_y        = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
     double distance      = std::hypot (diff_x, diff_y);
-    double current_yaw   = 2.0 * std::asin (current_pose.pose.orientation.z);
-    double goal_yaw      = 2.0 * std::asin (safe_goal_pose.pose.orientation.z);
+    double current_yaw   = get_yaw_2d (current_pose.pose.orientation);
+    double goal_yaw      = get_yaw_2d (safe_goal_pose.pose.orientation);
     double delta_yaw     = goal_yaw - current_yaw;
     if (delta_yaw > M_PI)
         delta_yaw -= 2 * M_PI;
@@ -67,8 +67,8 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
 
     astar (path);
 
-    double current_yaw = 2.0 * std::asin (current_pose.pose.orientation.z);
-    double goal_yaw    = 2.0 * std::asin (goal_pose.pose.orientation.z);
+    double current_yaw = get_yaw_2d (current_pose.pose.orientation);
+    double goal_yaw    = get_yaw_2d (goal_pose.pose.orientation);
     double delta_yaw   = goal_yaw - current_yaw;
     if (delta_yaw > M_PI)
         delta_yaw -= 2 * M_PI;

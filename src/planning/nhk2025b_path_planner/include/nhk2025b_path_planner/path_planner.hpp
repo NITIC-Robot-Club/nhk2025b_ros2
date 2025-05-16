@@ -53,6 +53,10 @@ class path_planner : public rclcpp::Node {
     void inflate_map ();
     void astar (nav_msgs::msg::Path& path);
 
+    double get_yaw_2d (const geometry_msgs::msg::Quaternion &orientation) {
+        return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
+    }
+
     geometry_msgs::msg::PoseStamped                                   current_pose;
     geometry_msgs::msg::PoseStamped                                   goal_pose;
     geometry_msgs::msg::PoseStamped                                   safe_goal_pose;
