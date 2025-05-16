@@ -2,6 +2,8 @@ name: build docker image
 
 on:
   push:
+    branches:
+      - main
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'  # 毎日0時（UTC）
