@@ -8,7 +8,7 @@ jobs:
   auto-fix-and-build:
     permissions:
       contents: write
-      package: read
+      packages: read
     
     container:
       image: ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
