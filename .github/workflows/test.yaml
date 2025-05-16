@@ -6,14 +6,13 @@ on:
 jobs:
   docker_test:
     container:
-      image: ghcr.io/nitic-robot-club/ros2image:latest
+      image: ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-        with:
-          path: nhk2025b_ros2
+      - name: test
+        run: |
+          ls -la
       
       - name: Fetch origin
         working-directory: nhk2025b_ros2
