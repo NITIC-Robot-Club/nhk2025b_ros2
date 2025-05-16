@@ -8,6 +8,7 @@ jobs:
   auto-fix-and-build:
     permissions:
       contents: write
+      package: read
     
     container:
       image: ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
@@ -35,7 +36,7 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "Auto-fix: applied clang-format and clang-tidy"
-            git push
+            git push origin ${{ github.ref_name }}
           fi
 
       - name: Build tests
