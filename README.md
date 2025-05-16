@@ -1,5 +1,5 @@
 # nhk2025b_ros2
-[![colcon build all packages](https://github.com/NITIC-Robot-Club/nhk2025b_ros2/actions/workflows/build_full.yaml/badge.svg?branch=main)](https://github.com/NITIC-Robot-Club/nhk2025b_ros2/actions/workflows/build_full.yaml)
+[![auto fix and build full docker](https://github.com/NITIC-Robot-Club/nhk2025b_ros2/actions/workflows/auto_fix_and_build_full_docker.yaml/badge.svg)](https://github.com/NITIC-Robot-Club/nhk2025b_ros2/actions/workflows/auto_fix_and_build_full_docker.yaml)
 
 ros2のwsです
 
