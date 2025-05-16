@@ -13,9 +13,10 @@ jobs:
       - name: test
         run: |
           ls -la
+          ls /home/nitic-robot-club/nhk2025b_ros2 -la
       
       - name: Fetch origin
-        working-directory: nhk2025b_ros2
+        working-directory: /home/nitic-robot-club/nhk2025b_ros2
         run: | 
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
@@ -23,12 +24,12 @@ jobs:
           git checkout ${{ github.head_ref }}
 
       - name: Run clang-format (auto-fix)
-        working-directory: nhk2025b_ros2
+        working-directory: /home/nitic-robot-club/nhk2025b_ros2
         run: |
           find src -regex '.*\.\(cpp\|hpp\|h\)' -exec clang-format -i {} +
 
       - name: Commit and push changes
-        working-directory: nhk2025b_ros2
+        working-directory: /home/nitic-robot-club/nhk2025b_ros2
         run: |
           git add .
           if git diff --cached --quiet; then
@@ -40,7 +41,7 @@ jobs:
 
       - name: Build tests
         id: build_test
-        working-directory: nhk2025b_ros2
+        working-directory: /home/nitic-robot-club/nhk2025b_ros2
         run: |
           . /opt/ros/humble/setup.sh && 
           colcon build
