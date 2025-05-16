@@ -24,6 +24,10 @@ class lidar_simulation : public rclcpp::Node {
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
+    double get_yaw_2d (const geometry_msgs::msg::Quaternion &orientation) {
+        return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
+    }
+
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr    map_subscriber;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subscriber;
     rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr        laser_publisher;
