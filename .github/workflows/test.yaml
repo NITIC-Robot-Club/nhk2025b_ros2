@@ -43,7 +43,7 @@ jobs:
         id: build_test
         working-directory: nhk2025b_ros2
         run: |
-          . /opt/ros/${{ matrix.rosdistro }}/setup.sh && 
+          . /opt/ros/humble/setup.sh && 
           colcon build
         continue-on-error: true
     
