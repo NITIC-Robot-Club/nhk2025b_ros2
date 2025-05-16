@@ -2,9 +2,12 @@
 
 namespace path_planner {
 path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_planner", options) {
-    resolution_ms = this->declare_parameter<int> ("resolution_ms", 100);
-    offset_mm     = this->declare_parameter<int> ("offset_mm", 50);
-    robot_size_mm = this->declare_parameter<int> ("robot_size_mm", 1414);
+    resolution_ms   = this->declare_parameter<int> ("resolution_ms", 100);
+    offset_mm       = this->declare_parameter<int> ("offset_mm", 50);
+    robot_size_mm   = this->declare_parameter<int> ("robot_size_mm", 1414);
+    tolerance_xy_mm = this->declare_parameter<int> ("tolerance_xy_mm", 30);
+    tolerance_z_rad = this->declare_parameter<double> ("tolerance_z_rad", 0.03);
+    sigmoid_gain    = this->declare_parameter<double> ("sigmoid_gain", 7.5);
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 10);
     current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
@@ -15,11 +18,44 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
         "/behavior/map", 10, std::bind (&path_planner::map_callback, this, std::placeholders::_1));
     vel_subscriber = this->create_subscription<geometry_msgs::msg::TwistStamped> (
         "/cmd_vel", 10, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
-    timer = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
+    timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 
     inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 10);
 }
+
 void path_planner::timer_callback () {
+    nav_msgs::msg::Path path;
+    path.header.frame_id = "map";
+    path.header.stamp    = this->now ();
+    double diff_x        = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
+    double diff_y        = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
+    double distance      = std::hypot (diff_x, diff_y);
+    double current_yaw   = 2.0 * std::asin (current_pose.pose.orientation.z);
+    double goal_yaw      = 2.0 * std::asin (safe_goal_pose.pose.orientation.z);
+    double delta_yaw     = goal_yaw - current_yaw;
+    if (delta_yaw > M_PI)
+        delta_yaw -= 2 * M_PI;
+    else if (delta_yaw < -M_PI)
+        delta_yaw += 2 * M_PI;
+    if (distance < tolerance_xy_mm / 1000.0 && std::abs (delta_yaw) < tolerance_z_rad) {
+        path_publisher->publish (path);
+    }
+}
+void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+    if (msg->pose.position.x < 0.0) {
+        msg->pose.position.x = 0.01;
+    }
+    if (msg->pose.position.y < 0.0) {
+        msg->pose.position.y = 0.01;
+    }
+    if (msg->pose.position.x > original_map.info.width * original_map.info.resolution) {
+        msg->pose.position.x = original_map.info.width * original_map.info.resolution - 0.01;
+    }
+    if (msg->pose.position.y > original_map.info.height * original_map.info.resolution) {
+        msg->pose.position.y = original_map.info.height * original_map.info.resolution - 0.01;
+    }
+    goal_pose = *msg;
+
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
     if (goal_pose.header.stamp.sec == 0) return;
@@ -28,6 +64,7 @@ void path_planner::timer_callback () {
     header.frame_id = "map";
     header.stamp    = this->now ();
     path.header     = header;
+
     astar (path);
 
     double current_yaw = 2.0 * std::asin (current_pose.pose.orientation.z);
@@ -38,12 +75,16 @@ void path_planner::timer_callback () {
     else if (delta_yaw < -M_PI)
         delta_yaw += 2 * M_PI;
     double delta_t = resolution_ms / 1000.0;
-    for (int i = 0; i < path.poses.size (); i++) {
-        double now_yaw                   = current_yaw + delta_yaw / (1.0 + std::exp (-7.5 * ((double)i / path.poses.size () - 0.5)));
+    for (int i = 0; i < path.poses.size () - 1; i++) {
+        double now_yaw                   = current_yaw + delta_yaw / (1.0 + std::exp (-sigmoid_gain * ((double)i / path.poses.size () - 0.5)));
         path.poses[i].pose.orientation.z = std::sin (now_yaw / 2.0);
         path.poses[i].pose.orientation.w = std::cos (now_yaw / 2.0);
         path.poses[i].header             = header;
     }
+    path.poses[path.poses.size () - 1].pose.orientation.z = goal_pose.pose.orientation.z;
+    path.poses[path.poses.size () - 1].pose.orientation.w = goal_pose.pose.orientation.w;
+    path.poses[path.poses.size () - 1].header             = header;
+    safe_goal_pose                                        = path.poses[path.poses.size () - 1];
     path_publisher->publish (path);
 }
 
@@ -54,14 +95,15 @@ void path_planner::inflate_map () {
     std::vector<int8_t> cost_lookup (inflation_radius + 1);
     for (int r = 0; r <= inflation_radius; ++r) {
         double dist = r * map_resolution;
-        if (dist > inflation_radius) {
-            cost_lookup[r] = 0;
+        if (dist < robot_size_mm / 2000.0) {
+            cost_lookup[r] = 100;
+        } else if (dist < robot_size_mm / 2000.0 + offset_mm / 1000.0) {
+            cost_lookup[r] = 60;
         } else {
-            // 距離に応じて指数的に減衰（例：100 → 1）
-            double factor  = (inflation_radius - dist) / inflation_radius;
-            cost_lookup[r] = static_cast<int8_t> (std::round (100 * factor));
+            cost_lookup[r] = 0;
         }
     }
+
     // マップ全体を走査
     for (int y = 0; y < map_height; ++y) {
         for (int x = 0; x < map_width; ++x) {
@@ -102,63 +144,8 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
     std::unordered_map<int, double>                                                    cost_so_far;
 
-    std::vector<std::pair<int, int>> directions = {
-        { 1,  0},
-        {-1,  0},
-        { 0,  1},
-        { 0, -1},
-        { 1,  1},
-        {-1, -1},
-        { 1, -1},
-        {-1,  1}
-    };
-    std::vector<std::vector<bool>>  visited_start (map_height, std::vector<bool> (map_width, false));
-    std::queue<std::pair<int, int>> q_start;
-    q_start.push ({start.first, start.second});
-    visited_start[start.second][start.first] = true;
-
-    while (!q_start.empty ()) {
-        auto [x, y] = q_start.front ();
-        q_start.pop ();
-        if (inflated_map.data[y * map_width + x] == 0) {
-            start.first  = x;
-            start.second = y;
-            break;
-        }
-
-        for (auto [dx, dy] : directions) {
-            int nx = x + dx;
-            int ny = y + dy;
-            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited_start[ny][nx]) {
-                visited_start[ny][nx] = true;
-                q_start.push ({nx, ny});
-            }
-        }
-    }
-
-    std::vector<std::vector<bool>>  visited_goal (map_height, std::vector<bool> (map_width, false));
-    std::queue<std::pair<int, int>> q_goal;
-    q_goal.push ({goal.first, goal.second});
-    visited_goal[goal.second][goal.first] = true;
-
-    while (!q_goal.empty ()) {
-        auto [x, y] = q_goal.front ();
-        q_goal.pop ();
-        if (inflated_map.data[y * map_width + x] == 0) {
-            goal.first  = x;
-            goal.second = y;
-            break;
-        }
-
-        for (auto [dx, dy] : directions) {
-            int nx = x + dx;
-            int ny = y + dy;
-            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited_goal[ny][nx]) {
-                visited_goal[ny][nx] = true;
-                q_goal.push ({nx, ny});
-            }
-        }
-    }
+    find_freespace (start);
+    find_freespace (goal);
 
     open.push ({start.first, start.second, 0.0, 0.0});
     cost_so_far[to_index (start.first, start.second)] = 0.0;
@@ -195,12 +182,33 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
     std::reverse (path.poses.begin (), path.poses.end ());
 }
 
+void path_planner::find_freespace (std::pair<int, int> &point) {
+    std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
+    std::queue<std::pair<int, int>> q;
+    q.push ({point.first, point.second});
+    visited[point.second][point.first] = true;
+
+    while (!q.empty ()) {
+        auto [x, y] = q.front ();
+        q.pop ();
+        if (inflated_map.data[y * map_width + x] == 0) {
+            point.first  = x;
+            point.second = y;
+            break;
+        }
+
+        for (auto [dx, dy] : directions) {
+            int nx = x + dx;
+            int ny = y + dy;
+            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited[ny][nx]) {
+                visited[ny][nx] = true;
+                q.push ({nx, ny});
+            }
+        }
+    }
+}
 void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     current_pose = *msg;
-}
-
-void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    goal_pose = *msg;
 }
 
 void path_planner::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
