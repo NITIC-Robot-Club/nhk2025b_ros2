@@ -8,7 +8,6 @@ on:
       - reopened
       - labeled
   workflow_call:
-  push:
 
 jobs:
   colcon_build_differential:
