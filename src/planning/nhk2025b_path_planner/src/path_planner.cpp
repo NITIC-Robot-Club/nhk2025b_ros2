@@ -42,16 +42,16 @@ void path_planner::timer_callback () {
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    if (msg->pose.position.x < 0.0) {
+    if (msg->pose.position.x < 0.01) {
         msg->pose.position.x = 0.01;
     }
-    if (msg->pose.position.y < 0.0) {
+    if (msg->pose.position.y < 0.01) {
         msg->pose.position.y = 0.01;
     }
-    if (msg->pose.position.x > original_map.info.width * original_map.info.resolution) {
+    if (msg->pose.position.x > original_map.info.width * original_map.info.resolution - 0.01) {
         msg->pose.position.x = original_map.info.width * original_map.info.resolution - 0.01;
     }
-    if (msg->pose.position.y > original_map.info.height * original_map.info.resolution) {
+    if (msg->pose.position.y > original_map.info.height * original_map.info.resolution - 0.01) {
         msg->pose.position.y = original_map.info.height * original_map.info.resolution - 0.01;
     }
     goal_pose = *msg;
@@ -65,7 +65,9 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     header.stamp    = this->now ();
     path.header     = header;
 
+    RCLCPP_INFO (this->get_logger (), "astar");
     astar (path);
+    RCLCPP_INFO (this->get_logger (), "astar end");
 
     double current_yaw = get_yaw_2d (current_pose.pose.orientation);
     double goal_yaw    = get_yaw_2d (goal_pose.pose.orientation);
@@ -85,6 +87,7 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     path.poses[path.poses.size () - 1].pose.orientation.w = goal_pose.pose.orientation.w;
     path.poses[path.poses.size () - 1].header             = header;
     safe_goal_pose                                        = path.poses[path.poses.size () - 1];
+    RCLCPP_INFO (this->get_logger (), "ready path");
     path_publisher->publish (path);
 }
 
@@ -180,6 +183,12 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
         curr = came_from[idx];
     }
     std::reverse (path.poses.begin (), path.poses.end ());
+    if (path.poses.size () == 0) {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.pose.position.x = goal.first * map_resolution + inflated_map.info.origin.position.x + map_resolution / 2;
+        pose.pose.position.y = goal.second * map_resolution + inflated_map.info.origin.position.y + map_resolution / 2;
+        path.poses.push_back (pose);
+    }
 }
 
 void path_planner::find_freespace (std::pair<int, int> &point) {
