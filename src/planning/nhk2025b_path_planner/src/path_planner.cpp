@@ -42,19 +42,16 @@ void path_planner::timer_callback () {
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    if (msg->pose.position.x < 0.01) {
-        msg->pose.position.x = 0.01;
-    }
-    if (msg->pose.position.y < 0.01) {
-        msg->pose.position.y = 0.01;
-    }
-    if (msg->pose.position.x > original_map.info.width * original_map.info.resolution - 0.01) {
-        msg->pose.position.x = original_map.info.width * original_map.info.resolution - 0.01;
-    }
-    if (msg->pose.position.y > original_map.info.height * original_map.info.resolution - 0.01) {
-        msg->pose.position.y = original_map.info.height * original_map.info.resolution - 0.01;
-    }
+    msg->pose.position.x = std::clamp (msg->pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
+    msg->pose.position.y = std::clamp (msg->pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
     goal_pose = *msg;
+
+    double clamped_current_x = std::clamp (current_pose.pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
+    double clamped_current_y = std::clamp (current_pose.pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
+    if (current_pose.pose.position.x != clamped_current_x || current_pose.pose.position.y != clamped_current_y) {
+        RCLCPP_WARN (this->get_logger (), "current pose is out of map");
+        return;
+    }
 
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
@@ -65,9 +62,7 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     header.stamp    = this->now ();
     path.header     = header;
 
-    RCLCPP_INFO (this->get_logger (), "astar");
     astar (path);
-    RCLCPP_INFO (this->get_logger (), "astar end");
 
     double current_yaw = get_yaw_2d (current_pose.pose.orientation);
     double goal_yaw    = get_yaw_2d (goal_pose.pose.orientation);
@@ -87,7 +82,6 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     path.poses[path.poses.size () - 1].pose.orientation.w = goal_pose.pose.orientation.w;
     path.poses[path.poses.size () - 1].header             = header;
     safe_goal_pose                                        = path.poses[path.poses.size () - 1];
-    RCLCPP_INFO (this->get_logger (), "ready path");
     path_publisher->publish (path);
 }
 
