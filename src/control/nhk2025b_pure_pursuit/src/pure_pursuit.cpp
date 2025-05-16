@@ -84,7 +84,7 @@ void pure_pursuit::timer_callback () {
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
 
-    double current_yaw = get_yaw_2d(current_pose_.pose.orientation);
+    double current_yaw = get_yaw_2d (current_pose_.pose.orientation);
     double angle_diff  = std::atan2 (dy, dx) - current_yaw;
 
     // 加速度制限付き速度推定
@@ -141,7 +141,7 @@ void pure_pursuit::timer_callback () {
         angle_lookahead_index = i;
     }
     if (angle_lookahead_index == closest_index) angle_lookahead_index = path_.poses.size () - 1;
-    double yaw_diff = get_yaw_2d(path_.poses[angle_lookahead_index].pose.orientation) - current_yaw;
+    double yaw_diff = get_yaw_2d (path_.poses[angle_lookahead_index].pose.orientation) - current_yaw;
     while (yaw_diff > +M_PI) yaw_diff -= 2.0 * M_PI;
     while (yaw_diff < -M_PI) yaw_diff += 2.0 * M_PI;
     double yaw_speed = angle_p_ * yaw_diff;
