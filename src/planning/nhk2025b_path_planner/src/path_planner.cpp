@@ -42,19 +42,16 @@ void path_planner::timer_callback () {
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    if (msg->pose.position.x < 0.0) {
-        msg->pose.position.x = 0.01;
+    msg->pose.position.x = std::clamp (msg->pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
+    msg->pose.position.y = std::clamp (msg->pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
+    goal_pose            = *msg;
+
+    double clamped_current_x = std::clamp (current_pose.pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
+    double clamped_current_y = std::clamp (current_pose.pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
+    if (current_pose.pose.position.x != clamped_current_x || current_pose.pose.position.y != clamped_current_y) {
+        RCLCPP_WARN (this->get_logger (), "current pose is out of map");
+        return;
     }
-    if (msg->pose.position.y < 0.0) {
-        msg->pose.position.y = 0.01;
-    }
-    if (msg->pose.position.x > original_map.info.width * original_map.info.resolution) {
-        msg->pose.position.x = original_map.info.width * original_map.info.resolution - 0.01;
-    }
-    if (msg->pose.position.y > original_map.info.height * original_map.info.resolution) {
-        msg->pose.position.y = original_map.info.height * original_map.info.resolution - 0.01;
-    }
-    goal_pose = *msg;
 
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
@@ -180,6 +177,12 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
         curr = came_from[idx];
     }
     std::reverse (path.poses.begin (), path.poses.end ());
+    if (path.poses.size () == 0) {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.pose.position.x = goal.first * map_resolution + inflated_map.info.origin.position.x + map_resolution / 2;
+        pose.pose.position.y = goal.second * map_resolution + inflated_map.info.origin.position.y + map_resolution / 2;
+        path.poses.push_back (pose);
+    }
 }
 
 void path_planner::find_freespace (std::pair<int, int> &point) {
