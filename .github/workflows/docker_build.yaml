@@ -1,4 +1,4 @@
-name: Build and Push nhk2025b_ros2 to GHCR
+name: build docker image
 
 on:
   push:
@@ -34,7 +34,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/nitic-robot-club/nhk2025b_ros2:${GITHUB_REF#refs/heads/}
+            ghcr.io/nitic-robot-club/nhk2025b_ros2:${{ github.ref_name }}
           labels: |
             org.opencontainers.image.title=nhk2025b_ros2
             org.opencontainers.image.source=https://github.com/${ github.repository }
