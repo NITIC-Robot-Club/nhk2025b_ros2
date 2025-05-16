@@ -44,7 +44,7 @@ void path_planner::timer_callback () {
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     msg->pose.position.x = std::clamp (msg->pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
     msg->pose.position.y = std::clamp (msg->pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
-    goal_pose = *msg;
+    goal_pose            = *msg;
 
     double clamped_current_x = std::clamp (current_pose.pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
     double clamped_current_y = std::clamp (current_pose.pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
