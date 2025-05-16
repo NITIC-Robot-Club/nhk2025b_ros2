@@ -17,10 +17,13 @@ jobs:
     steps:
       - name: Fetch origin
         working-directory: /home/nitic-robot-club/nhk2025b_ros2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: | 
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}          
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git
           git fetch origin
           git checkout ${{ github.ref_name }}
 
