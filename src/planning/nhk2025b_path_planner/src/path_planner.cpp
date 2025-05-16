@@ -68,7 +68,7 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     astar (path);
 
     double current_yaw = get_yaw_2d (current_pose.pose.orientation);
-    double goal_yaw    = get_yaw_2d(goal_pose.pose.orientation);
+    double goal_yaw    = get_yaw_2d (goal_pose.pose.orientation);
     double delta_yaw   = goal_yaw - current_yaw;
     if (delta_yaw > M_PI)
         delta_yaw -= 2 * M_PI;
