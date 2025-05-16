@@ -6,4 +6,5 @@
 ## Output
 
 | topic名 | 型 | 説明 |
+| - | - | - |
 | /behavior/map | OccupancyGrid | 現在のフィールド |
