@@ -4,8 +4,8 @@ namespace pose_initializer {
 
 pose_initializer::pose_initializer (const rclcpp::NodeOptions& options) : Node ("pose_initializer", options) {
     // パラメータ宣言
-    this->declare_parameter<double> ("ransac_distance_threshold", 0.1);
-    this->declare_parameter<int> ("ransac_max_iterations", 100);
+    this->declare_parameter<double> ("distance_threshold", 0.1);
+    this->declare_parameter<int> ("max_iterations", 100);
 
     lidar_subscriber = this->create_subscription<sensor_msgs::msg::LaserScan> (
         "/sensor/scan", rclcpp::SensorDataQoS (), std::bind (&pose_initializer::lidar_callback, this, std::placeholders::_1));
@@ -66,8 +66,8 @@ std::tuple<double, double, double> pose_initializer::compute_yaw_and_position (
 }
 
 std::tuple<double, double, double> pose_initializer::ransac_line_fit (const std::vector<Point>& points, std::vector<Point>& inliers_out) {
-    double threshold = this->get_parameter ("ransac_distance_threshold").as_double ();
-    int    max_iter  = this->get_parameter ("ransac_max_iterations").as_int ();
+    double threshold = this->get_parameter ("distance_threshold").as_double ();
+    int    max_iter  = this->get_parameter ("max_iterations").as_int ();
 
     std::tuple<double, double, double> best_line         = {0, 0, 0};  // a, b, c in ax + by + c = 0
     size_t                             best_inlier_count = 0;

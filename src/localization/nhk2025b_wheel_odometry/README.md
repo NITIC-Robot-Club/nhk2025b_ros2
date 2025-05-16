@@ -10,3 +10,9 @@ CANを受信して足回りのオドメトリを計算
 | topic名 | 型 | 説明 |
 | - | - | - |
 | /localization/wheel_odometry | Odometry | 計算されたオドメトリ |
+
+## Parameter
+| パラメーター名 | 型 | 説明 | デフォルト値 |
+| - | - | - | - |
+| wheel_rasius | double | タイヤ半径 | 0.0325
+| is_red | bool | 赤ゾーンかどうか | false |
