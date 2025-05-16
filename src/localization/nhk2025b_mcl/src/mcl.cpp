@@ -396,15 +396,15 @@ bool mcl::is_converged () const {
     double position_threshold = std::pow (motion_noise_linear_ * 4, 2);
     double angle_threshold    = std::pow (motion_noise_angle_ * 4, 2);
 
-    if (var_x > position_threshold) {
-        RCLCPP_WARN (this->get_logger (), "Particle x variance is too high: %f", var_x);
-    }
-    if (var_y > position_threshold) {
-        RCLCPP_WARN (this->get_logger (), "Particle y variance is too high: %f", var_y);
-    }
-    if (var_theta > angle_threshold) {
-        RCLCPP_WARN (this->get_logger (), "Particle theta variance is too high: %f", var_theta);
-    }
+    // if (var_x > position_threshold) {
+    //     RCLCPP_WARN (this->get_logger (), "Particle x variance is too high: %f", var_x);
+    // }
+    // if (var_y > position_threshold) {
+    //     RCLCPP_WARN (this->get_logger (), "Particle y variance is too high: %f", var_y);
+    // }
+    // if (var_theta > angle_threshold) {
+    //     RCLCPP_WARN (this->get_logger (), "Particle theta variance is too high: %f", var_theta);
+    // }
 
     return var_x < position_threshold && var_y < position_threshold && var_theta < angle_threshold;
 }

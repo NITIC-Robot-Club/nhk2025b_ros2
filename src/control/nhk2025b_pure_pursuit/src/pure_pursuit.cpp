@@ -84,7 +84,7 @@ void pure_pursuit::timer_callback () {
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
 
-    double current_yaw = std::asin (current_pose_.pose.orientation.z) * 2;
+    double current_yaw = get_yaw_2d (current_pose_.pose.orientation);
     double angle_diff  = std::atan2 (dy, dx) - current_yaw;
 
     // 加速度制限付き速度推定
@@ -93,7 +93,7 @@ void pure_pursuit::timer_callback () {
     double target_speed = std::hypot (dx, dy) / delta_t;
 
     // ゴール付近での減速
-    constexpr double goal_tolerance_distance = 0.5;  // [m]
+    constexpr double goal_tolerance_distance = 1;  // [m]
     if (goal_distance < goal_tolerance_distance) {
         target_speed *= goal_distance / goal_tolerance_distance;
         if (goal_distance < 0.05) target_speed = 0.0;
@@ -141,8 +141,8 @@ void pure_pursuit::timer_callback () {
         angle_lookahead_index = i;
     }
     if (angle_lookahead_index == closest_index) angle_lookahead_index = path_.poses.size () - 1;
-    double yaw_diff = std::asin (path_.poses[angle_lookahead_index].pose.orientation.z) * 2 - current_yaw;
-    while (yaw_diff > M_PI) yaw_diff -= 2.0 * M_PI;
+    double yaw_diff = get_yaw_2d (path_.poses[angle_lookahead_index].pose.orientation) - current_yaw;
+    while (yaw_diff > +M_PI) yaw_diff -= 2.0 * M_PI;
     while (yaw_diff < -M_PI) yaw_diff += 2.0 * M_PI;
     double yaw_speed = angle_p_ * yaw_diff;
     yaw_speed        = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
@@ -151,8 +151,8 @@ void pure_pursuit::timer_callback () {
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.header.stamp    = this->now ();
     cmd_vel.header.frame_id = "base_link";
-    cmd_vel.twist.linear.x  = speed * std::cos (angle_diff);
-    cmd_vel.twist.linear.y  = speed * std::sin (angle_diff);
+    cmd_vel.twist.linear.x  = speed * std::cos (angle_diff - yaw_speed * delta_t * 3);
+    cmd_vel.twist.linear.y  = speed * std::sin (angle_diff - yaw_speed * delta_t * 3);
     cmd_vel.twist.angular.z = yaw_speed;
     cmd_vel_publisher_->publish (cmd_vel);
 
