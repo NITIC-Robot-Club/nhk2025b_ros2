@@ -95,7 +95,7 @@ bool footprint_publisher::is_hit (const geometry_msgs::msg::PoseStamped::SharedP
     const int    height     = map.info.height;
 
     // yaw角度の取得（2D平面想定）
-    double yaw = std::asin (msg->pose.orientation.z) * 2;
+    double yaw = get_yaw_2d (msg->pose.orientation);
 
     // ロボットの四隅の点（ロボット中心が基準）
     std::vector<std::pair<double, double>> corners;
