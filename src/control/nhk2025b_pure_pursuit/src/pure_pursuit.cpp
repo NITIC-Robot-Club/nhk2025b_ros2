@@ -46,6 +46,13 @@ void pure_pursuit::timer_callback () {
 
     if (path_.poses.empty ()) {
         // RCLCPP_WARN (this->get_logger (), "Path is empty");
+        geometry_msgs::msg::TwistStamped cmd_vel;
+        cmd_vel.header.stamp    = this->now ();
+        cmd_vel.header.frame_id = "base_link";
+        cmd_vel.twist.linear.x  = 0.0;
+        cmd_vel.twist.linear.y  = 0.0;
+        cmd_vel.twist.angular.z = 0.0;
+        cmd_vel_publisher_->publish (cmd_vel);
         return;
     }
 
