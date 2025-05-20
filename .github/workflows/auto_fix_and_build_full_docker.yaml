@@ -12,7 +12,7 @@ jobs:
     
     container:
       image: ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
 
     steps:
       - name: Fetch origin
