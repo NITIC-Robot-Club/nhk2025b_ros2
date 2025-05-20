@@ -6,7 +6,7 @@ on:
       - main
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *'  # 毎日0時（UTC）
+    - cron: '0 15,3 * * *'
 
 permissions:
   contents: write
