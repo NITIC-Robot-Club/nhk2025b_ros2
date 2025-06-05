@@ -146,10 +146,9 @@ class nhk2025b_behavior(Node):
         if self.current_state in self.state_to_pose:
             x, y, yaw = self.state_to_pose[self.current_state]
             self.set_position(x, y, yaw)
-            if self.current_pose is not None:
-                if self.is_pose_close(self.current_pose, x, y, yaw):
-                    self.get_logger().info(f'ゴール({self.current_state})に到達したため次へ進みます')
-                    advanced = True
+            if self.current_pose is not None and self.is_pose_close(self.current_pose, x, y, yaw):
+                self.get_logger().info(f'ゴール({self.current_state})に到達したため次へ進みます')
+                advanced = True
         else:
             advanced = True
 
@@ -158,20 +157,20 @@ class nhk2025b_behavior(Node):
             "check_ready": self.check_ready
         }
 
-        for src, dst, cond in self.transitions:
-            if src == self.current_state:
-                if cond is None or cond.lower() == 'else':
-                    if advanced:
+        if advanced:
+            for src, dst, cond in self.transitions:
+                if src == self.current_state:
+                    if cond is None or cond.lower() == 'else':
                         next_state = dst
                         break
-                else:
-                    try:
-                        if eval(cond, {}, cond_env):
-                            next_state = dst
-                            break
-                    except Exception as e:
-                        self.get_logger().warn(f"条件式eval失敗: {cond} ({e})")
-                        continue
+                    else:
+                        try:
+                            if eval(cond, {}, cond_env):
+                                next_state = dst
+                                break
+                        except Exception as e:
+                            self.get_logger().warn(f"条件式eval失敗: {cond} ({e})")
+                            continue
 
         if next_state and next_state not in ('[*]', '[*] '):
             self.get_logger().info(f'自動遷移: {self.current_state} -> {next_state}')
@@ -209,7 +208,7 @@ class nhk2025b_behavior(Node):
         yaw = math.atan2(2.0*(q.w*q.z + q.x*q.y), 1.0 - 2.0*(q.y*q.y + q.z*q.z))
         dyaw = abs((yaw - math.radians(goal_yaw) + math.pi) % (2*math.pi) - math.pi)
         deg = math.degrees(dyaw)
-        return dist < 0.1 and deg < 10.0
+        return dist < 0.10 and deg < 7.0
 
     def check_ready(self):
         return self.command.automate_ready
