@@ -5,7 +5,6 @@ from geometry_msgs.msg import PoseStamped
 from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command
 import math
 import re
-import sys
 
 def parse_labels_and_positions(md_path):
     with open(md_path, encoding="utf-8") as f:
@@ -36,7 +35,6 @@ def parse_labels_and_positions(md_path):
             raw_args = m_pos.group(2).split(",")
             args = [float(a.strip()) for a in raw_args]
             state_to_pose[state] = args
-        # 遷移抽出:  source --> dest : cond
         m_tr = re.match(r'\s*([a-zA-Z0-9_\[\]\*]+)\s*-->\s*([a-zA-Z0-9_\[\]\*]+)\s*(?::\s*(.+))?', line)
         if m_tr:
             src, dst, cond = m_tr.groups()
@@ -44,9 +42,14 @@ def parse_labels_and_positions(md_path):
 
     return label_to_state, state_to_pose, state_id_map, transitions
 
-class BehaviorManagerNode(Node):
-    def __init__(self, state_graph_path):
+class nhk2025b_behavior(Node):
+    def __init__(self):
         super().__init__('behavior_manager')
+
+        # パラメータ宣言と取得
+        self.declare_parameter('state_graph_path', 'state_graph.md')
+        state_graph_path = self.get_parameter('state_graph_path').get_parameter_value().string_value
+
         self.label_to_state, self.state_to_pose, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
         self.id_to_label = {v: k for k, v in self.label_to_state.items()}
         self.id_to_state = {v: s for s, v in self.state_id_map.items()}
@@ -61,7 +64,7 @@ class BehaviorManagerNode(Node):
         self.create_subscription(Command, '/command', self.command_callback, 10)
 
         self.state_array = self.build_state_array()
-        self.current_state = '[*]' # 初期状態
+        self.current_state = '[*]'  # 初期状態
         self.last_result = None
 
         self.current_pose = None
@@ -73,9 +76,9 @@ class BehaviorManagerNode(Node):
         self.finished = False  # 完了フラグ
 
         self.state_array_timer = self.create_timer(2.0, self.publish_state_array)
-        self.automaton_timer = self.create_timer(0.5, self.automaton_step)  # 0.5秒ごとに状態遷移
+        self.automaton_timer = self.create_timer(0.5, self.automaton_step)
 
-        self.get_logger().info('BehaviorManagerNode started')
+        self.get_logger().info(f'nhk2025b_behavior started with state_graph_path: {state_graph_path}')
 
     def build_state_array(self):
         msg = StateArray()
@@ -94,7 +97,6 @@ class BehaviorManagerNode(Node):
         self.command = msg
 
     def publish_state(self, finished=False):
-        # 現在の状態をpub
         if finished:
             msg = State()
             msg.name = "終了"
@@ -113,7 +115,6 @@ class BehaviorManagerNode(Node):
         self.state_pub.publish(msg)
 
     def set_status_num_callback(self, msg):
-        # 状態番号で強制遷移
         target_id = msg.data
         found = None
         for s in self.state_array.state:
@@ -138,22 +139,19 @@ class BehaviorManagerNode(Node):
 
     def automaton_step(self):
         if self.finished:
-            # すでに完了していたら「終了」stateだけをpublish
             self.publish_state(finished=True)
             return
 
-        # まず現在の状態に対応するset_positionがあれば、それを目標として出す
         advanced = False
         if self.current_state in self.state_to_pose:
             x, y, yaw = self.state_to_pose[self.current_state]
             self.set_position(x, y, yaw)
-            # ゴールに近ければ「次の状態」へ進む
             if self.current_pose is not None:
                 if self.is_pose_close(self.current_pose, x, y, yaw):
                     self.get_logger().info(f'ゴール({self.current_state})に到達したため次へ進みます')
                     advanced = True
         else:
-            advanced = True  # set_positionがなければすぐ進む
+            advanced = True
 
         next_state = None
         cond_env = {
@@ -168,7 +166,6 @@ class BehaviorManagerNode(Node):
                         break
                 else:
                     try:
-                        # 条件式を評価
                         if eval(cond, {}, cond_env):
                             next_state = dst
                             break
@@ -205,26 +202,21 @@ class BehaviorManagerNode(Node):
         self.goal_pose = pose
 
     def is_pose_close(self, pose: PoseStamped, goal_x, goal_y, goal_yaw):
-        # 平面距離
         dx = pose.pose.position.x - goal_x
         dy = pose.pose.position.y - goal_y
         dist = math.hypot(dx, dy)
-        # 角度（クォータニオン→ヨー）
         q = pose.pose.orientation
         yaw = math.atan2(2.0*(q.w*q.z + q.x*q.y), 1.0 - 2.0*(q.y*q.y + q.z*q.z))
-        # 角度差
         dyaw = abs((yaw - math.radians(goal_yaw) + math.pi) % (2*math.pi) - math.pi)
         deg = math.degrees(dyaw)
         return dist < 0.1 and deg < 10.0
 
-    # 必要に応じて実装
     def check_ready(self):
         return self.command.automate_ready
 
 def main(args=None):
     rclpy.init(args=args)
-    state_graph_path = sys.argv[1] if len(sys.argv) > 1 else 'state_graph.md'
-    node = BehaviorManagerNode(state_graph_path)
+    node = nhk2025b_behavior()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
