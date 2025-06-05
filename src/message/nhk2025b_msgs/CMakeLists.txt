@@ -7,6 +7,9 @@ ament_auto_find_build_dependencies()
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Swerve.msg"
   "msg/RobotStatus.msg"
+  "msg/Command.msg"
+  "msg/State.msg"
+  "msg/StateArray.msg"
   DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )
 
