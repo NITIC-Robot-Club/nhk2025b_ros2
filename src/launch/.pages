@@ -1,4 +1,0 @@
-nav:
-    - index.md
-    - launch: nhk2025b_launch
-    - behavior: nhk2025b_launch/state_graph/blue
