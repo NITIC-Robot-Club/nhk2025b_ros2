@@ -54,9 +54,9 @@ class nhk2025b_behavior(Node):
         self.id_to_label = {v: k for k, v in self.label_to_state.items()}
         self.id_to_state = {v: s for s, v in self.state_id_map.items()}
 
-        self.state_array_pub = self.create_publisher(StateArray, '/behavior/state_array', 10)
+        self.state_array_pub = self.create_publisher(StateArray, '/behavior/avaiable_state_array', 10)
         self.pose_pub = self.create_publisher(PoseStamped, '/behavior/goal_pose', 10)
-        self.state_pub = self.create_publisher(State, '/behavior/state', 10)
+        self.state_pub = self.create_publisher(State, '/behavior/state_now', 10)
 
         self.create_subscription(PoseStamped, '/localization/current_pose', self.current_pose_callback, 10)
         self.create_subscription(RobotStatus, '/robot_status', self.robot_status_callback, 10)
@@ -75,8 +75,11 @@ class nhk2025b_behavior(Node):
 
         self.finished = False  # 完了フラグ
 
-        self.state_array_timer = self.create_timer(2.0, self.publish_state_array)
-        self.automaton_timer = self.create_timer(0.5, self.automaton_step)
+        self.state_array_timer = self.create_timer(0.5, self.publish_state_array)
+        self.automaton_timer = self.create_timer(0.05, self.automaton_step)
+
+        self.last_state_name = None  # 直前のstate name
+        self.last_state_id = None    # 直前のstate id
 
         self.get_logger().info(f'nhk2025b_behavior started with state_graph_path: {state_graph_path}')
 
@@ -109,9 +112,16 @@ class nhk2025b_behavior(Node):
             if state == self.current_state:
                 current_label = label
                 break
-        msg = State()
-        msg.name = current_label if current_label else self.current_state
-        msg.id = self.state_id_map[self.current_state] if self.current_state in self.state_id_map else -1
+        if current_label:
+            msg = State()
+            msg.name = current_label
+            msg.id = self.state_id_map[self.current_state] if self.current_state in self.state_id_map else -1
+            self.last_state_name = msg.name
+            self.last_state_id = msg.id
+        else:
+            msg = State()
+            msg.name = self.last_state_name if self.last_state_name is not None else self.current_state
+            msg.id = self.last_state_id if self.last_state_id is not None else -1
         self.state_pub.publish(msg)
 
     def set_status_num_callback(self, msg):
@@ -147,7 +157,7 @@ class nhk2025b_behavior(Node):
             x, y, yaw = self.state_to_pose[self.current_state]
             self.set_position(x, y, yaw)
             if self.current_pose is not None and self.is_pose_close(self.current_pose, x, y, yaw):
-                self.get_logger().info(f'ゴール({self.current_state})に到達したため次へ進みます')
+                # self.get_logger().info(f'ゴール({self.current_state})に到達したため次へ進みます')
                 advanced = True
         else:
             advanced = True
@@ -173,7 +183,7 @@ class nhk2025b_behavior(Node):
                             continue
 
         if next_state and next_state not in ('[*]', '[*] '):
-            self.get_logger().info(f'自動遷移: {self.current_state} -> {next_state}')
+            # self.get_logger().info(f'自動遷移: {self.current_state} -> {next_state}')
             self.current_state = next_state
             self.waiting_for_goal = False
             self.finished = False
