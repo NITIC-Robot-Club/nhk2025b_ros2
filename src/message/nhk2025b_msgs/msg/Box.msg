@@ -1,0 +1,3 @@
+nhk2025b_msgs/BoxInfo info
+nhk2025b_msgs/BoxSize size
+geometry_msgs/PoseStamped pose
