@@ -3,7 +3,7 @@
 namespace visualize_box {
 
 visualize_box::visualize_box (const rclcpp::NodeOptions &options) : Node ("visualize_box", options) {
-    marker_publisher_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/box_array", 10);
+    marker_publisher_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/box", 10);
 
     box_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::BoxArray> (
         "/box_state", 10, std::bind (&visualize_box::box_callback, this, std::placeholders::_1));
