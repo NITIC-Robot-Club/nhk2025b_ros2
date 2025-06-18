@@ -6,12 +6,12 @@ ekf::ekf (const rclcpp::NodeOptions& options) : Node ("ekf", options), tf_buffer
     x_ = Eigen::VectorXd::Zero (6);         // [x, y, yaw, vx, vy, wz]
     P_ = Eigen::MatrixXd::Identity (6, 6);  // 共分散
 
-    fused_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/ekf/pose", 10);
+    fused_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/ekf/pose", 1);
 
-    imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 10, std::bind (&ekf::imu_callback, this, std::placeholders::_1));
+    imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 1, std::bind (&ekf::imu_callback, this, std::placeholders::_1));
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
-        "/localization/wheel_odometry", 10, std::bind (&ekf::odom_callback, this, std::placeholders::_1));
+        "/localization/wheel_odometry", 1, std::bind (&ekf::odom_callback, this, std::placeholders::_1));
 
     last_time_ = this->get_clock ()->now ();
 }

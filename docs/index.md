@@ -151,9 +151,9 @@ namespace ネームスペース名 {
 namespace ネームスペース名 {
     クラス名::クラス名(const rclcpp::NodeOptions & options)
         : Node("ノード名",options) {
-            // パブリッシャー = this->create_publisher<test_msgs::msg::MyMessage>("topic名", 10);
+            // パブリッシャー = this->create_publisher<test_msgs::msg::MyMessage>("topic名", 1);
             // サブスクライバー = this->create_subscription<test_msgs::msg::MyMessage>
-            //    ("topic名", 10, std::bind(&クラス名::受信時に呼び出す関数名, this, std::placeholders::_1));
+            //    ("topic名", 1, std::bind(&クラス名::受信時に呼び出す関数名, this, std::placeholders::_1));
             // タイマー = this->create_wall_timer(std::chrono::milliseconds(周期), 
             //    std::bind(&クラス名::タイマーで呼び出す関数名, this));
         }

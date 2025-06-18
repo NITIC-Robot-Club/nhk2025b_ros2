@@ -3,7 +3,7 @@
 
 namespace map_publisher {
 map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_publisher", options) {
-    publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 10);
+    publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1);
     timer_     = this->create_wall_timer (std::chrono::milliseconds (1000), std::bind (&map_publisher::publish_map, this));
     this->declare_parameter<double> ("resolution", 0.05);  // 5cm
     this->declare_parameter<bool> ("is_red", false);

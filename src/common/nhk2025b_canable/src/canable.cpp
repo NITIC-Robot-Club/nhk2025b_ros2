@@ -15,10 +15,10 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
     }
 
     // Create publishers and subscribers
-    robot_status_pub_ = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 10);
-    swerve_pub_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 10);
+    robot_status_pub_ = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 1);
+    swerve_pub_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 1);
     swerve_sub_ =
-        this->create_subscription<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 10, std::bind (&canable::swerve_callback, this, std::placeholders::_1));
+        this->create_subscription<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1, std::bind (&canable::swerve_callback, this, std::placeholders::_1));
 
     // Start CAN read loop
     std::thread ([this] () { this->read_can_socket (); }).detach ();

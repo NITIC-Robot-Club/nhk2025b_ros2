@@ -10,7 +10,7 @@ pose_initializer::pose_initializer (const rclcpp::NodeOptions& options) : Node (
     lidar_subscriber = this->create_subscription<sensor_msgs::msg::LaserScan> (
         "/sensor/scan", rclcpp::SensorDataQoS (), std::bind (&pose_initializer::lidar_callback, this, std::placeholders::_1));
 
-    pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/initialpose", 10);
+    pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/initialpose", 1);
 }
 
 double pose_initializer::point_line_distance (const Point& pt, double a, double b, double c) {
