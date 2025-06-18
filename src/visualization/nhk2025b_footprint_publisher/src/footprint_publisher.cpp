@@ -4,10 +4,10 @@ namespace footprint_publisher {
 
 footprint_publisher::footprint_publisher (const rclcpp::NodeOptions &options) : Node ("footprint_publisher", options) {
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/localization/current_pose", 10, std::bind (&footprint_publisher::pose_callback, this, std::placeholders::_1));
+        "/localization/current_pose", 1, std::bind (&footprint_publisher::pose_callback, this, std::placeholders::_1));
     map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
-        "/behavior/map", 10, std::bind (&footprint_publisher::map_callback, this, std::placeholders::_1));
-    marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/robot_footprint", 10);
+        "/behavior/map", 1, std::bind (&footprint_publisher::map_callback, this, std::placeholders::_1));
+    marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/robot_footprint", 1);
 
     // Robot dimensions (in meters)
     declare_parameter ("robot_width", 1.0);

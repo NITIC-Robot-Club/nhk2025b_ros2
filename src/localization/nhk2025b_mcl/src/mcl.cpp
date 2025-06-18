@@ -18,16 +18,16 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan> (
         "/sensor/scan", rclcpp::SensorDataQoS (), std::bind (&mcl::scan_callback, this, std::placeholders::_1));
     map_sub_ =
-        this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 10, std::bind (&mcl::map_callback, this, std::placeholders::_1));
+        this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&mcl::map_callback, this, std::placeholders::_1));
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> (
-        "/localization/initialpose", 10, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
+        "/localization/initialpose", 1, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
     ekf_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/localization/ekf/pose", 10, std::bind (&mcl::ekf_callback, this, std::placeholders::_1));
+        "/localization/ekf/pose", 1, std::bind (&mcl::ekf_callback, this, std::placeholders::_1));
 
-    distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 10);
-    pose_pub_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 10);
-    particles_pub_    = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 10);
-    twist_pub_        = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 10);
+    distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 1);
+    pose_pub_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1);
+    particles_pub_    = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 1);
+    twist_pub_        = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 1);
 
     timer = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&mcl::timer_callback, this));
 }

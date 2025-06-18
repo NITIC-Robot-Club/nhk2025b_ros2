@@ -3,8 +3,8 @@
 namespace wheel_odometry {
 wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("wheel_odometry", options) {
     swerve_subscriber = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
-        "/swerve/result", 10, std::bind (&wheel_odometry::swerve_callback, this, std::placeholders::_1));
-    odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 10);
+        "/swerve/result", 1, std::bind (&wheel_odometry::swerve_callback, this, std::placeholders::_1));
+    odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 1);
     timer          = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&wheel_odometry::timer_callback, this));
     wheel_radius   = this->declare_parameter ("wheel_radius", 0.0325);
     wheel_position = this->declare_parameter ("wheel_position", 0.62);

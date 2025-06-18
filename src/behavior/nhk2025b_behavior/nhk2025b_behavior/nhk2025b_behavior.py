@@ -54,14 +54,14 @@ class nhk2025b_behavior(Node):
         self.id_to_label = {v: k for k, v in self.label_to_state.items()}
         self.id_to_state = {v: s for s, v in self.state_id_map.items()}
 
-        self.state_array_pub = self.create_publisher(StateArray, '/behavior/avaiable_state_array', 10)
-        self.pose_pub = self.create_publisher(PoseStamped, '/behavior/goal_pose', 10)
-        self.state_pub = self.create_publisher(State, '/behavior/state_now', 10)
+        self.state_array_pub = self.create_publisher(StateArray, '/behavior/avaiable_state_array', 1)
+        self.pose_pub = self.create_publisher(PoseStamped, '/behavior/goal_pose', 1)
+        self.state_pub = self.create_publisher(State, '/behavior/state_now', 1)
 
-        self.create_subscription(PoseStamped, '/localization/current_pose', self.current_pose_callback, 10)
-        self.create_subscription(RobotStatus, '/robot_status', self.robot_status_callback, 10)
-        self.create_subscription(Int32, '/behavior/set_status_num', self.set_status_num_callback, 10)
-        self.create_subscription(Command, '/command', self.command_callback, 10)
+        self.create_subscription(PoseStamped, '/localization/current_pose', self.current_pose_callback, 1)
+        self.create_subscription(RobotStatus, '/robot_status', self.robot_status_callback, 1)
+        self.create_subscription(Int32, '/behavior/set_status_num', self.set_status_num_callback, 1)
+        self.create_subscription(Command, '/command', self.command_callback, 1)
 
         self.state_array = self.build_state_array()
         self.current_state = '[*]'  # 初期状態
