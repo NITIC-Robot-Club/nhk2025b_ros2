@@ -1,3 +1,3 @@
 nhk2025b_msgs/BoxInfo info
-nhk2025b_msgs/BoxSize size
-geometry_msgs/PoseStamped pose
+geometry_msgs/Vector3 size
+geometry_msgs/Pose pose

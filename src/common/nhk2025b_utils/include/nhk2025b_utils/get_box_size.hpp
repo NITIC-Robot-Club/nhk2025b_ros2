@@ -2,7 +2,6 @@
 #define __nhk2025b_utils_get_box_size_hpp__
 
 #include "nhk2025b_msgs/BoxInfo.hpp"
-#include "nhk2025b_msgs/BoxSize.hpp"
 
 namespace nhk2025b_utils {
 /**
@@ -11,9 +10,9 @@ namespace nhk2025b_utils {
  * @param box_info The BoxInfo object containing the dimensions of the box.
  * @return The BoxSize object representing the size of the box.
  */
-nhk2025b_msgs::BoxSize get_box_size (const nhk2025b_msgs::BoxInfo& box_info) {
+geometry_msgs::msg::Vector3 get_box_size (const nhk2025b_msgs::BoxInfo& box_info) {
     using nhk2025b_msgs::msg::BoxInfo;
-    nhk2025b_msgs::msg::BoxSize box_size;
+    geometry_msgs::msg::Vector3 box_size;
     switch (box_info.type) {
         case BoxInfo::A:
             box_size.x = 0.3;

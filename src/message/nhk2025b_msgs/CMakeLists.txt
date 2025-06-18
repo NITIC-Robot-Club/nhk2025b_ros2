@@ -10,7 +10,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Command.msg"
   "msg/State.msg"
   "msg/StateArray.msg"
-  "msg/BoxSize.msg"
   "msg/BoxInfo.msg"
   "msg/Box.msg"
   "msg/BoxArray.msg"
