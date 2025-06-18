@@ -16,7 +16,7 @@ class swerve_calculator : public rclcpp::Node {
     void twist_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
 
     double wheel_radius;
-    double wheel_position;
+    double robot_width, robot_length;
 
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr          swerve_pub_;

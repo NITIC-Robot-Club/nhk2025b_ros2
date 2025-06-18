@@ -10,7 +10,8 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
         "/swerve/cmd", 1, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
     imu_publisher_        = this->create_publisher<sensor_msgs::msg::Imu> ("/sensor/imu", 1);
     timer_                = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
-    wheel_position        = this->declare_parameter<double> ("wheel_position", 0.62);
+    robot_length        = this->declare_parameter<double> ("robot_length", 0.6);
+    robot_width         = this->declare_parameter<double> ("robot_width", 0.8);
     wheel_radius          = this->declare_parameter<double> ("wheel_radius", 0.0325);
     bool   is_red         = this->declare_parameter<bool> ("is_red", false);
     double initial_x_blue = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
@@ -100,10 +101,10 @@ void simulation::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr ms
     swerve_publisher_->publish (*msg);
 
     double wheel_positions[4][2] = {
-        {+wheel_position, +wheel_position},
-        {-wheel_position, +wheel_position},
-        {-wheel_position, -wheel_position},
-        {+wheel_position, -wheel_position}
+        {+robot_width / 2.0, +robot_length / 2.0},   // Front Right
+        {-robot_width / 2.0, +robot_length / 2.0},  // Front Left
+        {-robot_width / 2.0, -robot_length / 2.0}, // Back Left
+        {+robot_width / 2.0, -robot_length / 2.0}   // Back Right
     };
 
     double ATA[3][3] = {};  // A^T * A
@@ -115,8 +116,8 @@ void simulation::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr ms
 
         double dir_x = std::cos (theta);
         double dir_y = std::sin (theta);
-        double rx    = wheel_positions[i][0];
-        double ry    = wheel_positions[i][1];
+        double rx    = wheel_positions[i][1];
+        double ry    = wheel_positions[i][0];
 
         double ax[3] = {1.0f, 0.0f, -ry};
         double ay[3] = {0.0f, 1.0f, +rx};

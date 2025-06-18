@@ -12,7 +12,7 @@ class wheel_odometry : public rclcpp::Node {
     wheel_odometry (const rclcpp::NodeOptions &options);
 
    private:
-    double wheel_position, wheel_radius, current_x, current_y, current_z, sum_x, sum_y, sum_z;
+    double robot_width, robot_length, wheel_radius, current_x, current_y, current_z, sum_x, sum_y, sum_z;
     int    count;
 
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);

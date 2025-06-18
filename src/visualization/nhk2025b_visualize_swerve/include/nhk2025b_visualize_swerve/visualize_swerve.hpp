@@ -12,7 +12,7 @@ class visualize_swerve : public rclcpp::Node {
     visualize_swerve (const rclcpp::NodeOptions& options);
 
    private:
-    double wheel_position;
+    double robot_length, robot_width;
     double wheel_radius;
     double last_angle[4];
     void   swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);

@@ -1,3 +1,5 @@
 lidar_simulation:
   ros__parameters:
+    robot_width: 0.8
+    robot_length: 0.6
     lidar_frequency: 12.0

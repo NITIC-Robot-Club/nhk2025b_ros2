@@ -18,7 +18,7 @@ class simulation : public rclcpp::Node {
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
 
     double wheel_radius;
-    double wheel_position;
+    double robot_width, robot_length;
     double x_sum_, y_sum_, z_sum_;
     double x_vec_, y_vec_;
     int    count_;

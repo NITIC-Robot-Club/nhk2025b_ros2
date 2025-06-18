@@ -7,7 +7,8 @@ wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("whe
     odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 1);
     timer          = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&wheel_odometry::timer_callback, this));
     wheel_radius   = this->declare_parameter ("wheel_radius", 0.0325);
-    wheel_position = this->declare_parameter ("wheel_position", 0.62);
+    robot_width    = this->declare_parameter ("robot_width", 0.8);
+    robot_length   = this->declare_parameter ("robot_length", 0.6);
 
     bool   is_red         = this->declare_parameter<bool> ("is_red", false);
     double initial_x_blue = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
@@ -34,11 +35,12 @@ wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("whe
 
 void wheel_odometry::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
     double wheel_positions[4][2] = {
-        {+wheel_position, +wheel_position},
-        {-wheel_position, +wheel_position},
-        {-wheel_position, -wheel_position},
-        {+wheel_position, -wheel_position}
+        {+robot_width / 2.0, +robot_length / 2.0},   // Front Right
+        {-robot_width / 2.0, +robot_length / 2.0},  // Front Left
+        {-robot_width / 2.0, -robot_length / 2.0}, // Back Left
+        {+robot_width / 2.0, -robot_length / 2.0}   // Back Right
     };
+
 
     double ATA[3][3] = {};  // A^T * A
     double ATb[3]    = {};  // A^T * b
@@ -49,8 +51,8 @@ void wheel_odometry::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPt
 
         double dir_x = std::cos (theta);
         double dir_y = std::sin (theta);
-        double rx    = wheel_positions[i][0];
-        double ry    = wheel_positions[i][1];
+        double rx    = wheel_positions[i][1];
+        double ry    = wheel_positions[i][0];
 
         double ax[3] = {1.0f, 0.0f, -ry};
         double ay[3] = {0.0f, 1.0f, +rx};

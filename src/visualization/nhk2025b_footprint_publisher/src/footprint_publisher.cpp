@@ -10,8 +10,8 @@ footprint_publisher::footprint_publisher (const rclcpp::NodeOptions &options) : 
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/robot_footprint", 1);
 
     // Robot dimensions (in meters)
-    declare_parameter ("robot_width", 1.0);
-    declare_parameter ("robot_length", 1.0);
+    declare_parameter ("robot_width", 0.8);
+    declare_parameter ("robot_length", 0.6);
     declare_parameter ("history", 300);
 }
 
