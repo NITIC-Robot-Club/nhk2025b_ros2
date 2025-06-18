@@ -12,13 +12,8 @@ stateDiagram-v2
 
 
     [*] --> start
-    start --> position_0 : not check_ready()
-    position_0 --> start
-
-    start --> position_1 : check_ready()
+    start --> position_1
     position_1 --> position_2
-    position_2 --> start
-    
-    position_3 : 強制的に設定しないと行けない場所
-    position_3 : set_position(8.0, 4.0, 180)
+    position_2 --> position_0
+    position_0 --> start
 ```
