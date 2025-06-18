@@ -1,5 +1,5 @@
 footprint_publisher:
   ros__parameters:
-    robot_width: 1.0
+    robot_width: 0.6
     robot_length: 1.0
-    history: 500
+    history: 100
