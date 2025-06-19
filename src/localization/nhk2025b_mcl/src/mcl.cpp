@@ -152,14 +152,14 @@ void mcl::timer_callback () {
     transform.transform.rotation.w    = estimated.pose.orientation.w;
     tf_broadcaster_->sendTransform (transform);
 
-    if (!is_converged ()) {
-        RCLCPP_WARN (this->get_logger (), "Particles not converged");
-        // estimated.pose.position.x    = last_estimated_pose_.pose.position.x + (current_pose_.position.x - last_pose_.position.x);
-        // estimated.pose.position.y    = last_estimated_pose_.pose.position.y + (current_pose_.position.y - last_pose_.position.y);
-        // estimated.pose.orientation.z = last_estimated_pose_.pose.orientation.z + (current_pose_.orientation.z - last_pose_.orientation.z);
-        // estimated.pose.orientation.w = last_estimated_pose_.pose.orientation.w + (current_pose_.orientation.w - last_pose_.orientation.w);
-        return;
-    }
+    // if (!is_converged ()) {
+    //     RCLCPP_WARN (this->get_logger (), "Particles not converged");
+    //     // estimated.pose.position.x    = last_estimated_pose_.pose.position.x + (current_pose_.position.x - last_pose_.position.x);
+    //     // estimated.pose.position.y    = last_estimated_pose_.pose.position.y + (current_pose_.position.y - last_pose_.position.y);
+    //     // estimated.pose.orientation.z = last_estimated_pose_.pose.orientation.z + (current_pose_.orientation.z - last_pose_.orientation.z);
+    //     // estimated.pose.orientation.w = last_estimated_pose_.pose.orientation.w + (current_pose_.orientation.w - last_pose_.orientation.w);
+    //     return;
+    // }
 
     pose_pub_->publish (estimated);
 

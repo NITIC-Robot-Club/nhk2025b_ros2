@@ -60,16 +60,16 @@ void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::Shared
         text.pose.orientation.y = 0.0;
         text.pose.orientation.z = 0.0;
         text.pose.orientation.w = 1.0;
-        text.scale.z            = 0.05;
+        text.scale.z            = 0.1;
         if (abs (msg->wheel_angle[i] - last_angle[i]) > M_PI) {
             text.color.r = 1.0;
             text.color.g = 0.0;
             text.color.b = 0.0;
             text.color.a = 1.0;
         } else {
-            text.color.r = 1.0;
-            text.color.g = 1.0;
-            text.color.b = 1.0;
+            text.color.r = 0.0;
+            text.color.g = 0.0;
+            text.color.b = 0.0;
             text.color.a = 1.0;
         }
         text.lifetime = rclcpp::Duration (0, 0);
