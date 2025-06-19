@@ -12,7 +12,6 @@ lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options) : Node (
     lidar_y         = this->declare_parameter<double> ("lidar_y", 0);
     lidar_z         = this->declare_parameter<double> ("lidar_z", 0);
     lidar_frequency = this->declare_parameter<double> ("lidar_frequency", 12.0);
-    is_red_         = this->declare_parameter<bool> ("is_red", false);
     timer = this->create_wall_timer (std::chrono::milliseconds (int (1000 / lidar_frequency)), std::bind (&lidar_simulation::timer_callback, this));
 }
 

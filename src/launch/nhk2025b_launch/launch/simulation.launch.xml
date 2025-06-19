@@ -15,5 +15,5 @@
     <arg name="is_red" value="$(var is_red)"/>
   </include>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/localization.launch.xml"/>
-  <!-- <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/> -->
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/>
 </launch>
