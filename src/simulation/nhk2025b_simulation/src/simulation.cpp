@@ -17,14 +17,14 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
     double initial_x_blue = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
     double initial_y_blue = this->declare_parameter<double> ("initial_positions.blue.y", 1.0);
     double initial_x_red  = this->declare_parameter<double> ("initial_positions.red.x", 1.0);
-    double initial_y_red  = this->declare_parameter<double> ("initial_positions.red.y", 4.4);
+    double initial_y_red  = this->declare_parameter<double> ("initial_positions.red.y", 1.0);
 
     if (is_red) {
-        x_ = initial_x_red;
-        y_ = initial_y_red;
+        x_ = initial_x_red + 0.15;
+        y_ = -initial_y_red - 0.15;
     } else {
-        x_ = initial_x_blue;
-        y_ = initial_y_blue;
+        x_ = initial_x_blue + 0.15;
+        y_ = initial_y_blue + 0.15;
     }
     z_     = 0.0f;
     x_sum_ = 0.0f;

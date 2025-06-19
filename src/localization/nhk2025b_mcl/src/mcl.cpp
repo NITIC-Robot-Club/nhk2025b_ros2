@@ -120,6 +120,7 @@ void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) 
 
     sensor_update (*scan_msg);
     resample_particles ();
+    // timer_callback();
 }
 
 void mcl::timer_callback () {
@@ -305,7 +306,6 @@ void mcl::resample_particles () {
     }
 
     random_particle_map_num_ = 0;
-    auto pose                = estimate_pose ();
 
     std::uniform_real_distribution<double> dist_map_x (
         map_->info.origin.position.x, map_->info.origin.position.x + map_->info.resolution * map_->info.width);
@@ -318,7 +318,7 @@ void mcl::resample_particles () {
             p.x      = dist_map_x (rng_);
             p.y      = dist_map_y (rng_);
             p.weight = 0;
-            p.theta  = j * M_PI / 2 + get_yaw_2d (pose.orientation);
+            p.theta  = j * M_PI / 2 + get_yaw_2d (last_estimated_pose_.pose.orientation);
             new_particles.push_back (p);
         }
     }

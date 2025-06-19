@@ -12,6 +12,7 @@ lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options) : Node (
     lidar_y         = this->declare_parameter<double> ("lidar_y", 0);
     lidar_z         = this->declare_parameter<double> ("lidar_z", 0);
     lidar_frequency = this->declare_parameter<double> ("lidar_frequency", 12.0);
+    is_red_         = this->declare_parameter<bool> ("is_red", false);
     timer = this->create_wall_timer (std::chrono::milliseconds (int (1000 / lidar_frequency)), std::bind (&lidar_simulation::timer_callback, this));
 }
 
@@ -45,6 +46,8 @@ void lidar_simulation::timer_callback () {
     double yaw     = get_yaw_2d (current_pose.pose.orientation);
     double start_x = current_pose.pose.position.x + lidar_x * std::cos (yaw) - lidar_y * std::sin (yaw);
     double start_y = current_pose.pose.position.y + lidar_x * std::sin (yaw) + lidar_y * std::cos (yaw);
+    start_x -= current_map.info.origin.position.x;
+    start_y -= current_map.info.origin.position.y;
     for (size_t i = 0; i < scan.ranges.size (); ++i) {  // Ensure we iterate within bounds
         double angle = scan.angle_min + i * scan.angle_increment + yaw + lidar_z;
         for (double r = 0.12; r < scan.range_max; r += 0.01) {

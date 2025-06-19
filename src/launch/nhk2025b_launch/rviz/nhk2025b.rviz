@@ -130,7 +130,7 @@ Visualization Manager:
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: false
+      Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: 真の自己位置
@@ -144,7 +144,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /simulation/pose
-      Value: false
+      Value: true
     - Alpha: 1
       Angular Arrow Scale: 1
       Angular Color: 204; 204; 51
@@ -311,7 +311,7 @@ Visualization Manager:
       Axes Radius: 0.009999999776482582
       Class: rviz_default_plugins/PoseArray
       Color: 38; 162; 105
-      Enabled: false
+      Enabled: true
       Head Length: 0.07000000029802322
       Head Radius: 0.029999999329447746
       Name: 自己位置パーティクル
@@ -325,7 +325,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/mcl_particles
-      Value: false
+      Value: true
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.10000000149011612
@@ -406,7 +406,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: false
+      Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: 初期位置
@@ -420,7 +420,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/initialpose
-      Value: false
+      Value: true
     - Alpha: 0.6000000238418579
       Class: rviz_default_plugins/Map
       Color Scheme: costmap
@@ -498,7 +498,7 @@ Visualization Manager:
       Enabled: true
       Name: 箱
       Namespaces:
-        boxes: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -548,7 +548,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 101.4006118774414
+      Scale: 234.9948272705078
       Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
       X: 0

@@ -52,15 +52,10 @@ std::tuple<double, double, double> pose_initializer::compute_yaw_and_position (
     double x = -intersection.first * std::cos (yaw) + intersection.second * std::sin (yaw);
     double y = -intersection.first * std::sin (yaw) - intersection.second * std::cos (yaw);
 
-    x += 0.15;
-
-    if (intersection.second > 0) {
-        // red
-        y += 5.4;
-        y -= 0.15;
-    } else {
-        y += 0.15;
-    }
+    // if (intersection.second > 0) {
+    //     y -= 5.4;
+    //     y *= -1;
+    // }
 
     return {x, y, yaw};
 }
