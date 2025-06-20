@@ -5,17 +5,17 @@ visualize_swerve::visualize_swerve (const rclcpp::NodeOptions& options) : Node (
     marker_publisher_  = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/swerve", 1);
     swerve_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
         "/swerve/result", 1, std::bind (&visualize_swerve::swerve_callback, this, std::placeholders::_1));
-    robot_length   = this->declare_parameter<double> ("robot_length", 0.6);
-    robot_width    = this->declare_parameter<double> ("robot_width", 0.8);
-    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.0325);
+    robot_length = this->declare_parameter<double> ("robot_length", 0.6);
+    robot_width  = this->declare_parameter<double> ("robot_width", 0.8);
+    wheel_radius = this->declare_parameter<double> ("wheel_radius", 0.0325);
 }
 
 void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
     double wheel_positions[4][2] = {
-        {+robot_width / 2.0, +robot_length / 2.0},   // Front Right
-        {-robot_width / 2.0, +robot_length / 2.0},  // Front Left
+        {+robot_width / 2.0, +robot_length / 2.0}, // Front Right
+        {-robot_width / 2.0, +robot_length / 2.0}, // Front Left
         {-robot_width / 2.0, -robot_length / 2.0}, // Back Left
-        {+robot_width / 2.0, -robot_length / 2.0}   // Back Right
+        {+robot_width / 2.0, -robot_length / 2.0}  // Back Right
     };
     visualization_msgs::msg::MarkerArray marker_array_;
     for (int i = 0; i < 4; i++) {
