@@ -367,7 +367,7 @@ geometry_msgs::msg::PoseWithCovarianceStamped mcl::estimate_pose_with_covariance
     pose_with_cov.pose.pose       = estimate_pose ();
 
     // Compute covariance
-    double cov[36] = {0.0};
+    double cov[36]      = {0.0};
     double total_weight = 0.0;
     for (const auto& p : particles_) {
         double dx     = p.x - pose_with_cov.pose.pose.position.x;
