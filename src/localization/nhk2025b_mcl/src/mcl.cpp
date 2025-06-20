@@ -368,6 +368,7 @@ geometry_msgs::msg::PoseWithCovarianceStamped mcl::estimate_pose_with_covariance
 
     // Compute covariance
     double cov[36] = {0.0};
+    double total_weight = 0.0;
     for (const auto& p : particles_) {
         double dx     = p.x - pose_with_cov.pose.pose.position.x;
         double dy     = p.y - pose_with_cov.pose.pose.position.y;
@@ -382,6 +383,7 @@ geometry_msgs::msg::PoseWithCovarianceStamped mcl::estimate_pose_with_covariance
         cov[30] += dtheta * dx * p.weight;      // theta-x covariance
         cov[31] += dtheta * dy * p.weight;      // theta-y covariance
         cov[35] += dtheta * dtheta * p.weight;  // theta variance
+        total_weight += p.weight;
     }
 
     for (int i = 0; i < 6; ++i) {
