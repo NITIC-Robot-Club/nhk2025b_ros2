@@ -8,6 +8,7 @@
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
@@ -75,6 +76,7 @@ class mcl : public rclcpp::Node {
     rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr    particles_pub_;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr     distance_map_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr          odom_pub_;
 
     std::shared_ptr<tf2_ros::Buffer>               tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener>    tf_listener_;

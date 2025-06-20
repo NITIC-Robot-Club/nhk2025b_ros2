@@ -28,6 +28,7 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     pose_pub_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1);
     particles_pub_    = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 1);
     twist_pub_        = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 1);
+    odom_pub_         = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/odometry", 1);
 
     timer = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&mcl::timer_callback, this));
 }
@@ -175,6 +176,17 @@ void mcl::timer_callback () {
         twist.twist.linear.y  = (estimated.pose.position.y - last_estimated_pose_.pose.position.y) / dt;
         twist.twist.angular.z = (estimated.pose.orientation.z - last_estimated_pose_.pose.orientation.z) / dt;
         twist_pub_->publish (twist);
+
+        nav_msgs::msg::Odometry odom;
+        odom.header.frame_id = "map";
+        odom.child_frame_id  = "base_link";
+        odom.header.stamp    = this->now ();
+        odom.pose.pose       = estimated.pose;
+        odom.twist.twist     = twist.twist;
+        odom.pose.covariance.fill (0.0);
+        odom.twist.covariance.fill (0.0);
+        odom_pub_->publish (odom);
+
         last_estimated_pose_ = estimated;
     }
 }
