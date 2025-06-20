@@ -3,6 +3,6 @@ mcl:
     gaussian_stddev_angle: 0.3
     gaussian_stddev_linear: 0.3
     motion_noise_angle: 0.2
-    motion_noise_linear: 0.2
+    motion_noise_linear: 0.1
     num_particles: 500
     random_particle_map_num: 0

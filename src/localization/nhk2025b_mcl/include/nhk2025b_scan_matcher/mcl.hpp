@@ -54,6 +54,7 @@ class mcl : public rclcpp::Node {
     bool is_converged () const;
 
     geometry_msgs::msg::Pose estimate_pose () const;
+    geometry_msgs::msg::PoseWithCovarianceStamped estimate_pose_with_covariance () const;
 
     // ユーティリティ
     bool   is_pose_valid (double x, double y) const;
@@ -73,6 +74,7 @@ class mcl : public rclcpp::Node {
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr               ekf_sub_;
 
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr  pose_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_with_covariance_pub_;
     rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr    particles_pub_;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr     distance_map_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;

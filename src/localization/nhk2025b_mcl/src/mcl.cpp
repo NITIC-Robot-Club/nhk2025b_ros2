@@ -26,9 +26,11 @@ mcl::mcl (const rclcpp::NodeOptions& options)
 
     distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 1);
     pose_pub_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1);
-    particles_pub_    = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 1);
-    twist_pub_        = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 1);
-    odom_pub_         = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/odometry", 1);
+    pose_with_covariance_pub_ =
+        this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/current_pose_with_covariance", 1);
+    particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 1);
+    twist_pub_     = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 1);
+    odom_pub_      = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/odometry", 1);
 
     timer = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&mcl::timer_callback, this));
 }
@@ -163,6 +165,7 @@ void mcl::timer_callback () {
     }
 
     pose_pub_->publish (estimated);
+    pose_with_covariance_pub_->publish (estimate_pose_with_covariance ());
 
     if (!last_estimated_pose_.header.stamp.sec) {
         last_estimated_pose_ = estimated;
@@ -355,6 +358,42 @@ geometry_msgs::msg::Pose mcl::estimate_pose () const {
     pose.orientation = tf2::toMsg (q);
 
     return pose;
+}
+
+geometry_msgs::msg::PoseWithCovarianceStamped mcl::estimate_pose_with_covariance () const {
+    geometry_msgs::msg::PoseWithCovarianceStamped pose_with_cov;
+    pose_with_cov.header.frame_id = "map";
+    pose_with_cov.header.stamp    = this->now ();
+    pose_with_cov.pose.pose       = estimate_pose ();
+
+    // Compute covariance
+    double cov[36] = {0.0};
+    for (const auto& p : particles_) {
+        double dx = p.x - pose_with_cov.pose.pose.position.x;
+        double dy = p.y - pose_with_cov.pose.pose.position.y;
+        double dtheta = p.theta - tf2::getYaw (pose_with_cov.pose.pose.orientation);
+
+        cov[0] += dx * dx * p.weight;  // x variance
+        cov[1] += dx * dy * p.weight;  // xy covariance
+        cov[5] += dx * dtheta * p.weight;  // x-theta
+        cov[6] += dy * dx * p.weight;  // yx covariance
+        cov[7] += dy * dy * p.weight;  // y variance
+        cov[11] += dy * dtheta * p.weight;  // y-theta
+        cov[30] += dtheta * dx * p.weight;  // theta-x covariance
+        cov[31] += dtheta * dy * p.weight;  // theta-y covariance
+        cov[35] += dtheta * dtheta * p.weight;  // theta variance
+    }
+
+    for (int i = 0; i < 6; ++i) {
+        for (int j = i; j < 6; ++j) {
+            pose_with_cov.pose.covariance[i * 6 + j] = cov[i * 6 + j] / particles_.size ();
+            if (i != j) {
+                pose_with_cov.pose.covariance[j * 6 + i] = cov[i * 6 + j] / particles_.size ();
+            }
+        }
+    }
+
+    return pose_with_cov;
 }
 
 bool mcl::is_pose_valid (double x, double y) const {
