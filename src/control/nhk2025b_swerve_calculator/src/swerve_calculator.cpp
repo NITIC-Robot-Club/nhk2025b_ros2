@@ -4,18 +4,18 @@ namespace swerve_calculator {
 swerve_calculator::swerve_calculator (const rclcpp::NodeOptions& options) : Node ("swerve_calculator", options) {
     twist_sub_ = create_subscription<geometry_msgs::msg::TwistStamped> (
         "/cmd_vel", 1, std::bind (&swerve_calculator::twist_callback, this, std::placeholders::_1));
-    swerve_pub_    = create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1);
-    robot_width   = this->declare_parameter<double> ("robot_width", 0.8);
-    robot_length  = this->declare_parameter<double> ("robot_length", 0.6);
-    wheel_radius   = this->declare_parameter<double> ("wheel_radius", 0.0325);
+    swerve_pub_  = create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1);
+    robot_width  = this->declare_parameter<double> ("robot_width", 0.8);
+    robot_length = this->declare_parameter<double> ("robot_length", 0.6);
+    wheel_radius = this->declare_parameter<double> ("wheel_radius", 0.0325);
 }
 
 void swerve_calculator::twist_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
     double wheel_positions[4][2] = {
-        {+robot_width / 2.0, +robot_length / 2.0},   // Front Right
-        {-robot_width / 2.0, +robot_length / 2.0},  // Front Left
+        {+robot_width / 2.0, +robot_length / 2.0}, // Front Right
+        {-robot_width / 2.0, +robot_length / 2.0}, // Front Left
         {-robot_width / 2.0, -robot_length / 2.0}, // Back Left
-        {+robot_width / 2.0, -robot_length / 2.0}   // Back Right
+        {+robot_width / 2.0, -robot_length / 2.0}  // Back Right
     };
 
     nhk2025b_msgs::msg::Swerve swerve_msg;

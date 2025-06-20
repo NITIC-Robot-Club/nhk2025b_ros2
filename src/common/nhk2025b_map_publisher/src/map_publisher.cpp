@@ -13,14 +13,14 @@ void map_publisher::publish_map () {
     nav_msgs::msg::OccupancyGrid map;
     this->get_parameter ("resolution", resolution_);  // float
     this->get_parameter ("is_red", is_red);           // bool
-    map.header.stamp              = this->now ();
-    map.header.frame_id           = "map";
-    map.info.resolution           = resolution_;         // m
-    map.info.width                = 10.8 / resolution_;  // 10m
-    map.info.height               = 5.4 / resolution_;   // 5m
-    map.info.origin.position.x    = -0.15;
-    map.info.origin.position.y    = -0.15;
-    if(is_red) {
+    map.header.stamp           = this->now ();
+    map.header.frame_id        = "map";
+    map.info.resolution        = resolution_;         // m
+    map.info.width             = 10.8 / resolution_;  // 10m
+    map.info.height            = 5.4 / resolution_;   // 5m
+    map.info.origin.position.x = -0.15;
+    map.info.origin.position.y = -0.15;
+    if (is_red) {
         map.info.origin.position.y = -5.3;
     }
     map.info.origin.position.z    = 0.0;
