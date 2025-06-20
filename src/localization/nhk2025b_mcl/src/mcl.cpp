@@ -386,9 +386,9 @@ geometry_msgs::msg::PoseWithCovarianceStamped mcl::estimate_pose_with_covariance
 
     for (int i = 0; i < 6; ++i) {
         for (int j = i; j < 6; ++j) {
-            pose_with_cov.pose.covariance[i * 6 + j] = cov[i * 6 + j] / particles_.size ();
+            pose_with_cov.pose.covariance[i * 6 + j] = cov[i * 6 + j] / total_weight;
             if (i != j) {
-                pose_with_cov.pose.covariance[j * 6 + i] = cov[i * 6 + j] / particles_.size ();
+                pose_with_cov.pose.covariance[j * 6 + i] = cov[i * 6 + j] / total_weight;
             }
         }
     }
