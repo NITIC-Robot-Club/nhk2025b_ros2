@@ -26,16 +26,20 @@ class path_planner : public rclcpp::Node {
         { 1, -1},
         {-1,  1}
     };
+    const std::vector<int> rotations = {-1, 0, 1};
+
     struct astar_node {
         int    x, y;
         double cost, priority;
         bool   operator> (const astar_node& other) const {
-              return priority > other.priority;
+            return priority > other.priority;
         }
     };
+    int    theta_resolution;
     int    resolution_ms;
     int    offset_mm;
-    int    robot_size_mm;
+    int    robot_height_mm;
+    int    robot_width_mm;
     int    tolerance_xy_mm;
     double tolerance_z_rad;
     double sigmoid_gain;
@@ -43,25 +47,41 @@ class path_planner : public rclcpp::Node {
     int    map_width, map_height;
     double map_resolution;
 
+    int test = 0;
+
     void current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void find_freespace (std::pair<int, int>& point);
     void timer_callback ();
-
+    void linear_astar ();
+    void angular_astar (nav_msgs::msg::Path& path);
     void inflate_map ();
-    void astar (nav_msgs::msg::Path& path);
+    void init_rotated_footprint ();
+    bool is_collision (int x, int y, int theta);
+    double theta_heuristic(int theta);
 
     double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
     }
+    std::vector<std::vector<int8_t>>                inflated_map;
+    std::vector<std::vector<int8_t>>                offset_map;
+    std::vector<std::pair<int, int>>                linear_path;
+    std::vector<std::array<std::pair<int, int>, 4>> rotated_footprint;
 
+    int angle_to_index (int deg) {
+        if (deg < 0) deg += 360;
+        return deg / theta_resolution;
+    }
+    int rad_to_deg (double rad) {
+        return static_cast<int> (rad * 180.0 / M_PI);
+    }
     geometry_msgs::msg::PoseStamped                                   current_pose;
     geometry_msgs::msg::PoseStamped                                   goal_pose;
     geometry_msgs::msg::PoseStamped                                   safe_goal_pose;
     nav_msgs::msg::OccupancyGrid                                      original_map;
-    nav_msgs::msg::OccupancyGrid                                      inflated_map;
+    nav_msgs::msg::OccupancyGrid                                      last_map;
     geometry_msgs::msg::TwistStamped                                  current_vel;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr                 path_publisher;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscriber;

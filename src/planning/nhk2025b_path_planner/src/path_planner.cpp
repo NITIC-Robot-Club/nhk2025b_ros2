@@ -2,12 +2,14 @@
 
 namespace path_planner {
 path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_planner", options) {
-    resolution_ms   = this->declare_parameter<int> ("resolution_ms", 100);
-    offset_mm       = this->declare_parameter<int> ("offset_mm", 50);
-    robot_size_mm   = this->declare_parameter<int> ("robot_size_mm", 1414);
-    tolerance_xy_mm = this->declare_parameter<int> ("tolerance_xy_mm", 30);
-    tolerance_z_rad = this->declare_parameter<double> ("tolerance_z_rad", 0.03);
-    sigmoid_gain    = this->declare_parameter<double> ("sigmoid_gain", 7.5);
+    theta_resolution = this->declare_parameter<int> ("theta_resolution", 5);
+    resolution_ms    = this->declare_parameter<int> ("resolution_ms", 100);
+    offset_mm        = this->declare_parameter<int> ("offset_mm", 50);
+    robot_height_mm  = this->declare_parameter<int> ("robot_height_mm", 600);
+    robot_width_mm   = this->declare_parameter<int> ("robot_width_mm", 800);
+    tolerance_xy_mm  = this->declare_parameter<int> ("tolerance_xy_mm", 30);
+    tolerance_z_rad  = this->declare_parameter<double> ("tolerance_z_rad", 0.03);
+    sigmoid_gain     = this->declare_parameter<double> ("sigmoid_gain", 7.5);
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 1);
     current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
@@ -62,21 +64,12 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     header.stamp    = this->now ();
     path.header     = header;
 
-    astar (path);
+    linear_astar ();
 
-    double current_yaw = get_yaw_2d (current_pose.pose.orientation);
-    double goal_yaw    = get_yaw_2d (goal_pose.pose.orientation);
-    double delta_yaw   = goal_yaw - current_yaw;
-    if (delta_yaw > M_PI)
-        delta_yaw -= 2 * M_PI;
-    else if (delta_yaw < -M_PI)
-        delta_yaw += 2 * M_PI;
-    double delta_t = resolution_ms / 1000.0;
+    angular_astar (path);
+
     for (int i = 0; i < path.poses.size () - 1; i++) {
-        double now_yaw                   = current_yaw + delta_yaw / (1.0 + std::exp (-sigmoid_gain * ((double)i / path.poses.size () - 0.5)));
-        path.poses[i].pose.orientation.z = std::sin (now_yaw / 2.0);
-        path.poses[i].pose.orientation.w = std::cos (now_yaw / 2.0);
-        path.poses[i].header             = header;
+        path.poses[i].header = header;
     }
     path.poses[path.poses.size () - 1].pose.orientation.z = goal_pose.pose.orientation.z;
     path.poses[path.poses.size () - 1].pose.orientation.w = goal_pose.pose.orientation.w;
@@ -86,36 +79,42 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
 }
 
 void path_planner::inflate_map () {
-    inflated_map         = original_map;
-    int inflation_radius = std::ceil ((robot_size_mm / 2000.0 + offset_mm / 1000.0) / map_resolution);
-    // 事前計算：距離に応じたコスト値を計算しておく（距離 → コストのLUT）
-    std::vector<int8_t> cost_lookup (inflation_radius + 1);
-    for (int r = 0; r <= inflation_radius; ++r) {
-        double dist = r * map_resolution;
-        if (dist < robot_size_mm / 2000.0) {
-            cost_lookup[r] = 100;
-        } else if (dist < robot_size_mm / 2000.0 + offset_mm / 1000.0) {
-            cost_lookup[r] = 60;
-        } else {
-            cost_lookup[r] = 0;
+    if (original_map.data.size () == last_map.data.size ()) {
+        bool is_same_map = true;
+        for (int i = 0; i < original_map.data.size (); ++i) {
+            if (original_map.data[i] != last_map.data[i]) {
+                is_same_map = false;
+                break;
+            }
+        }
+        if (is_same_map) {
+            return;
         }
     }
-
+    inflated_map.resize (map_height, std::vector<int8_t> (map_width, 0));
+    offset_map.resize (map_height, std::vector<int8_t> (map_width, 0));
+    int width_radius         = std::ceil ((robot_width_mm / 2000.0 + offset_mm / 1000.0) / map_resolution);
+    int height_radius        = std::ceil ((robot_height_mm / 2000.0 + offset_mm / 1000.0) / map_resolution);
+    int max_inflation_radius = std::max (width_radius, height_radius);
+    int min_inflation_radius = std::min (width_radius, height_radius);
     // マップ全体を走査
     for (int y = 0; y < map_height; ++y) {
         for (int x = 0; x < map_width; ++x) {
             if (original_map.data[y * map_width + x] > 50) {  // 障害物
                 // 周囲にインフレーション
-                for (int dy = -inflation_radius; dy <= inflation_radius; ++dy) {
-                    for (int dx = -inflation_radius; dx <= inflation_radius; ++dx) {
-                        int nx = x + dx;
-                        int ny = y + dy;
-                        if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height) {
-                            int    nidx = ny * map_width + nx;
+                for (int dy = -max_inflation_radius; dy <= max_inflation_radius; ++dy) {
+                    for (int dx = -max_inflation_radius; dx <= max_inflation_radius; ++dx) {
+                        int next_x = x + dx;
+                        int next_y = y + dy;
+                        if (next_x >= 0 && next_x < map_width && next_y >= 0 && next_y < map_height) {
                             double dist = std::hypot (dx, dy);
-                            if (dist <= inflation_radius) {
-                                int8_t cost             = cost_lookup[static_cast<int> (std::round (dist))];
-                                inflated_map.data[nidx] = std::max (inflated_map.data[nidx], cost);
+                            if (dist <= std::ceil (offset_mm / 1000.0 / map_resolution)) {
+                                offset_map[next_y][next_x]   = std::max (offset_map[next_y][next_x], int8_t (100));
+                                inflated_map[next_y][next_x] = std::max (inflated_map[next_y][next_x], int8_t (100));
+                            } else if (dist <= min_inflation_radius) {
+                                inflated_map[next_y][next_x] = std::max (inflated_map[next_y][next_x], int8_t (100));
+                            } else if (dist <= max_inflation_radius) {
+                                inflated_map[next_y][next_x] = std::max (inflated_map[next_y][next_x], int8_t (30));
                             }
                         }
                     }
@@ -125,10 +124,11 @@ void path_planner::inflate_map () {
     }
 }
 
-void path_planner::astar (nav_msgs::msg::Path &path) {
+void path_planner::linear_astar () {
+    linear_path.clear ();
     auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
-        int gx = static_cast<int> ((x - inflated_map.info.origin.position.x) / inflated_map.info.resolution);
-        int gy = static_cast<int> ((y - inflated_map.info.origin.position.y) / inflated_map.info.resolution);
+        int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
+        int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
         return {gx, gy};
     };
 
@@ -152,15 +152,15 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
         if (current.x == goal.first && current.y == goal.second) break;
 
         for (auto [dx, dy] : directions) {
-            int nx = current.x + dx, ny = current.y + dy;
-            if (nx < 0 || ny < 0 || nx >= map_width || ny >= map_height) continue;
-            int idx = to_index (nx, ny);
-            if (inflated_map.data[idx] > 50) continue;
+            int next_x = current.x + dx, next_y = current.y + dy;
+            if (next_x < 0 || next_y < 0 || next_x >= map_width || next_y >= map_height) continue;
+            int idx = to_index (next_x, next_y);
+            if (inflated_map[next_y][next_x] > 50) continue;
             double new_cost = cost_so_far[to_index (current.x, current.y)] + std::hypot (dx, dy);
             if (!cost_so_far.count (idx) || new_cost < cost_so_far[idx]) {
                 cost_so_far[idx] = new_cost;
-                double priority  = new_cost + std::hypot (goal.first - nx, goal.second - ny);
-                open.push ({nx, ny, new_cost, priority});
+                double priority  = new_cost + std::hypot (goal.first - next_x, goal.second - next_y);
+                open.push ({next_x, next_y, new_cost, priority});
                 came_from[idx] = {current.x, current.y};
             }
         }
@@ -168,9 +168,91 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
 
     auto curr = goal;
     while (curr != start) {
+        // geometry_msgs::msg::PoseStamped pose;
+        // pose.pose.position.x = curr.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
+        // pose.pose.position.y = curr.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
+        linear_path.push_back (curr);
+        int idx = to_index (curr.first, curr.second);
+        if (!came_from.count (idx)) return;
+        curr = came_from[idx];
+    }
+    std::reverse (linear_path.begin (), linear_path.end ());
+    if (linear_path.size () == 0) {
+        linear_path.push_back (goal);
+    }
+}
+void path_planner::angular_astar (nav_msgs::msg::Path &path) {
+    if(linear_path.size () == 0) {
+        RCLCPP_ERROR (this->get_logger (), "linear path is empty, cannot perform angular A*");
+        return;
+    }
+
+    auto start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
+    auto goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
+    if (start_theta < 0) start_theta += 360;
+    if (goal_theta < 0) goal_theta += 360;
+    start_theta /= theta_resolution;
+    goal_theta /= theta_resolution;
+    std::priority_queue<astar_node, std::vector<astar_node>, std::greater<astar_node>> open;
+    std::unordered_map<int, std::pair<int, int>>                                       came_from;
+    std::unordered_map<int, double>                                                    cost_so_far;
+
+    // 各角度のコストを計算
+    std::vector<std::vector<int8_t>> angle_cost_map;
+    angle_cost_map.resize (linear_path.size (), std::vector<int8_t> (360 / theta_resolution, 0));
+    for (int i = 0; i < angle_cost_map.size (); ++i) {
+        if (offset_map[linear_path[i].second][linear_path[i].first] > 50) {
+            for (int j = 0; j < angle_cost_map[i].size (); ++j) {
+                int angle = j * theta_resolution;
+                if (is_collision (linear_path[i].first, linear_path[i].second, angle)) {
+                    angle_cost_map[i][j] = 100;
+                }
+            }
+        }
+    }
+
+    auto to_index = [&] (int x, int y) { return y * angle_cost_map.size () + x; };
+    open.push ({0, start_theta, 0.0, 0.0});
+    cost_so_far[to_index (0, start_theta)] = 0.0;
+
+
+    auto curr = std::make_pair (linear_path.size () - 1, goal_theta);
+    while (!open.empty ()) {
+        astar_node current = open.top ();
+        open.pop ();
+        if (current.x == linear_path.size () - 1) {
+            curr.second = current.y;
+            break;
+        }
+
+        for (auto dth : rotations) {
+            int next_x = current.x + 1, next_theta = current.y + dth;
+            if (next_x >= linear_path.size ()) continue;
+            if (next_theta < 0) {
+                next_theta += angle_cost_map[0].size ();
+            } else if (next_theta >= angle_cost_map[0].size ()) {
+                next_theta -= angle_cost_map[0].size ();
+            }
+            if (angle_cost_map[next_x][next_theta] > 50) continue;
+
+            double new_cost = cost_so_far[to_index (current.x, current.y)] + theta_heuristic (dth);
+            if (!cost_so_far.count (to_index (next_x, next_theta)) || new_cost < cost_so_far[to_index (next_x, next_theta)]) {
+                cost_so_far[to_index (next_x, next_theta)] = new_cost;
+
+                double priority = new_cost + theta_heuristic (goal_theta - next_theta);
+                open.push ({next_x, next_theta, new_cost, priority});
+                came_from[to_index (next_x, next_theta)] = {current.x, current.y};
+            }
+        }
+    }
+
+    while (curr.first != 0) {
         geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x = curr.first * map_resolution + inflated_map.info.origin.position.x + map_resolution / 2;
-        pose.pose.position.y = curr.second * map_resolution + inflated_map.info.origin.position.y + map_resolution / 2;
+        pose.pose.position.x    = linear_path[curr.first].first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
+        pose.pose.position.y    = linear_path[curr.first].second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
+        double yaw              = curr.second * theta_resolution * M_PI / 180.0;
+        pose.pose.orientation.z = std::sin (yaw / 2.0);
+        pose.pose.orientation.w = std::cos (yaw / 2.0);
         path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) return;
@@ -178,13 +260,45 @@ void path_planner::astar (nav_msgs::msg::Path &path) {
     }
     std::reverse (path.poses.begin (), path.poses.end ());
     if (path.poses.size () == 0) {
-        geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x = goal.first * map_resolution + inflated_map.info.origin.position.x + map_resolution / 2;
-        pose.pose.position.y = goal.second * map_resolution + inflated_map.info.origin.position.y + map_resolution / 2;
-        path.poses.push_back (pose);
+        path.poses.push_back (goal_pose);
     }
 }
-
+double path_planner::theta_heuristic (int theta) {
+    theta = std::abs (theta);
+    if (theta >= 180 / theta_resolution) theta = 360 / theta_resolution - theta;
+    double angle_weight = 1.0;
+    return angle_weight * theta;
+}
+void path_planner::init_rotated_footprint () {
+    int num_rotations = 360 / theta_resolution;
+    rotated_footprint.resize (num_rotations);
+    double inital_angle = std::atan2 (robot_height_mm / 2000.0, robot_width_mm / 2000.0);
+    for (int i = 0; i < num_rotations; ++i) {
+        double angle            = i * theta_resolution * M_PI / 180.0;
+        rotated_footprint[i][0] = {
+            static_cast<int> (robot_width_mm / 2000.0 * std::cos (angle + inital_angle) / map_resolution),
+            static_cast<int> (robot_height_mm / 2000.0 * std::sin (angle + inital_angle) / map_resolution)};
+        rotated_footprint[i][1] = {
+            static_cast<int> (robot_width_mm / 2000.0 * std::cos (angle - inital_angle) / map_resolution),
+            static_cast<int> (robot_height_mm / 2000.0 * std::sin (angle - inital_angle) / map_resolution)};
+        rotated_footprint[i][2] = {-rotated_footprint[i][0].first, -rotated_footprint[i][0].second};
+        rotated_footprint[i][3] = {-rotated_footprint[i][1].first, -rotated_footprint[i][1].second};
+    }
+}
+bool path_planner::is_collision (int x, int y, int theta) {
+    int theta_idx = angle_to_index (theta);
+    for (int i = 0; i < 4; ++i) {
+        int next_x = x + rotated_footprint[theta_idx][i].first;
+        int next_y = y + rotated_footprint[theta_idx][i].second;
+        if (next_x < 0 || next_y < 0 || next_x >= map_width || next_y >= map_height) {
+            return true;
+        }
+        if (offset_map[next_y][next_x] > 50) {
+            return true;
+        }
+    }
+    return false;
+}
 void path_planner::find_freespace (std::pair<int, int> &point) {
     std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
     std::queue<std::pair<int, int>> q;
@@ -194,18 +308,18 @@ void path_planner::find_freespace (std::pair<int, int> &point) {
     while (!q.empty ()) {
         auto [x, y] = q.front ();
         q.pop ();
-        if (inflated_map.data[y * map_width + x] == 0) {
+        if (inflated_map[y][x] == 0) {
             point.first  = x;
             point.second = y;
             break;
         }
 
         for (auto [dx, dy] : directions) {
-            int nx = x + dx;
-            int ny = y + dy;
-            if (nx >= 0 && nx < map_width && ny >= 0 && ny < map_height && !visited[ny][nx]) {
-                visited[ny][nx] = true;
-                q.push ({nx, ny});
+            int next_x = x + dx;
+            int next_y = y + dy;
+            if (next_x >= 0 && next_x < map_width && next_y >= 0 && next_y < map_height && !visited[next_y][next_x]) {
+                visited[next_y][next_x] = true;
+                q.push ({next_x, next_y});
             }
         }
     }
@@ -220,7 +334,8 @@ void path_planner::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr m
     map_height     = original_map.info.height;
     map_resolution = original_map.info.resolution;
     inflate_map ();
-    inflate_map_publisher->publish (inflated_map);
+    last_map = original_map;
+    // inflate_map_publisher->publish (inflated_map);
 }
 
 void path_planner::vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg) {

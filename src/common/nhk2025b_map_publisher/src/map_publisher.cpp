@@ -13,14 +13,14 @@ void map_publisher::publish_map () {
     nav_msgs::msg::OccupancyGrid map;
     this->get_parameter ("resolution", resolution_);  // float
     this->get_parameter ("is_red", is_red);           // bool
-    map.header.stamp              = this->now ();
-    map.header.frame_id           = "map";
-    map.info.resolution           = resolution_;         // m
-    map.info.width                = 10.8 / resolution_;  // 10m
-    map.info.height               = 5.4 / resolution_;   // 5m
-    map.info.origin.position.x    = -0.15;
-    map.info.origin.position.y    = -0.15;
-    if(is_red) {
+    map.header.stamp           = this->now ();
+    map.header.frame_id        = "map";
+    map.info.resolution        = resolution_;         // m
+    map.info.width             = 10.8 / resolution_;  // 10m
+    map.info.height            = 5.4 / resolution_;   // 5m
+    map.info.origin.position.x = -0.15;
+    map.info.origin.position.y = -0.15;
+    if (is_red) {
         map.info.origin.position.y = -5.3;
     }
     map.info.origin.position.z    = 0.0;
@@ -65,6 +65,14 @@ void map_publisher::publish_map () {
                 if (y > 6.95 / resolution_ && x > 4.8 / resolution_) {
                     map.data[y + x * map.info.width] = 100;
                 }
+            }
+            // テスト (2.0,2.0) ~ (3.0,3.0)
+            if (x > 2.0 / resolution_ && x < 3.0 / resolution_ && y > 2.0 / resolution_ && y < 3.0 / resolution_) {
+                map.data[y + x * map.info.width] = 100;
+            }
+            // テスト (3.7,2.0) ~ (4.7,3.0)
+            if (x > 3.8 / resolution_ && x < 4.8 / resolution_ && y > 2.0 / resolution_ && y < 3.0 / resolution_) {
+                map.data[y + x * map.info.width] = 100;
             }
         }
     }
