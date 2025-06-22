@@ -26,7 +26,7 @@ class path_planner : public rclcpp::Node {
         { 1, -1},
         {-1,  1}
     };
-    const std::vector<int> rotations = {-1, 0, 1};
+    const std::vector<int> rotations = {-2, -1, 0, 1, 2};
 
     struct astar_node {
         int    x, y;
@@ -49,18 +49,18 @@ class path_planner : public rclcpp::Node {
 
     int test = 0;
 
-    void current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
-    void goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
-    void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
-    void vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
-    void find_freespace (std::pair<int, int>& point);
-    void timer_callback ();
-    void linear_astar ();
-    void angular_astar (nav_msgs::msg::Path& path);
-    void inflate_map ();
-    void init_rotated_footprint ();
-    bool is_collision (int x, int y, int theta);
-    double theta_heuristic(int theta);
+    void   current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void   goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+    void   vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
+    void   find_freespace (std::pair<int, int>& point);
+    void   timer_callback ();
+    void   linear_astar ();
+    void   angular_astar (nav_msgs::msg::Path& path);
+    void   inflate_map ();
+    void   init_rotated_footprint ();
+    bool   is_collision (int x, int y, int theta);
+    double theta_heuristic (int dx, int theta);
 
     double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
@@ -82,6 +82,7 @@ class path_planner : public rclcpp::Node {
     geometry_msgs::msg::PoseStamped                                   safe_goal_pose;
     nav_msgs::msg::OccupancyGrid                                      original_map;
     nav_msgs::msg::OccupancyGrid                                      last_map;
+    nav_msgs::msg::OccupancyGrid                                      occ_map;
     geometry_msgs::msg::TwistStamped                                  current_vel;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr                 path_publisher;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscriber;
@@ -89,6 +90,7 @@ class path_planner : public rclcpp::Node {
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr     map_subscriber;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_subscriber;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr        inflate_map_publisher;
+    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr        theta_map_publisher;
     rclcpp::TimerBase::SharedPtr                                      timer_;
 };
 }  // namespace path_planner
