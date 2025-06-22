@@ -26,6 +26,7 @@ jobs:
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git
           git fetch origin
           git checkout ${{ github.ref_name }}
+          git pull --rebase origin ${{ github.ref_name }}
 
       - name: Run clang-format (auto-fix)
         working-directory: /home/nitic-robot-club/nhk2025b_ros2

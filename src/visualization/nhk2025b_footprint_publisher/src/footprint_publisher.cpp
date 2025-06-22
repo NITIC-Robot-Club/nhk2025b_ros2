@@ -61,16 +61,16 @@ void footprint_publisher::pose_callback (const geometry_msgs::msg::PoseStamped::
     for (auto &m : marker_history) {
         m.id = id++;  // IDをリセットして重複しないようにする
         if (id == marker_history.size ()) {
-            m.pose.position.z = 0.1;  // 最後のマーカーは少し上に
+            m.pose.position.z = 0.0;  // 最後のマーカーは少し上に
             m.color.a         = 1.0;  // 不透明にする
         } else if (m.color.b == 1.0) {
             m.color.g         = 1.0;
             m.color.b         = 0.0;
-            m.color.a         = 0.01;  // 半透明にする
-            m.pose.position.z = 0.0;   // 地面に
+            m.color.a         = 0.01;   // 半透明にする
+            m.pose.position.z = -0.01;  // 地面に
         } else {
-            m.color.a         = 0.1;  // 半透明にする
-            m.pose.position.z = 0.0;  // 地面に
+            m.color.a         = 0.1;    // 半透明にする
+            m.pose.position.z = -0.01;  // 地面に
         }
         marker_array.markers.push_back (m);
     }
