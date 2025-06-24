@@ -66,6 +66,14 @@ void map_publisher::publish_map () {
                     map.data[y + x * map.info.width] = 100;
                 }
             }
+            // // テスト (2.0,2.0) ~ (3.0,3.0)
+            // if (x > 1.8 / resolution_ && x < 2.8 / resolution_ && y > 2.0 / resolution_ && y < 3.0 / resolution_) {
+            //     map.data[y + x * map.info.width] = 100;
+            // }
+            // // テスト (3.7,2.0) ~ (4.7,3.0)
+            // if (x > 3.6 / resolution_ && x < 4.6 / resolution_ && y > 2.0 / resolution_ && y < 3.0 / resolution_) {
+            //     map.data[y + x * map.info.width] = 100;
+            // }
         }
     }
 
