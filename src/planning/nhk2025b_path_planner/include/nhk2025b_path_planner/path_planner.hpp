@@ -44,6 +44,11 @@ class path_planner : public rclcpp::Node {
     double tolerance_z_rad;
     double sigmoid_gain;
 
+    double grad_alpha;      // 障害物回避の重み
+    double grad_beta;       // 曲率項の重み
+    double grad_gamma;      // 元のパスからの引き戻し項の重み
+    double grad_step_size;  // 勾配降下のステップサイズ
+
     int    map_width, map_height;
     double map_resolution;
 
@@ -57,6 +62,7 @@ class path_planner : public rclcpp::Node {
     void   timer_callback ();
     void   linear_astar ();
     void   angular_astar (nav_msgs::msg::Path& path);
+    void   path_smoother ();
     void   inflate_map ();
     void   init_rotated_footprint ();
     bool   is_collision (int x, int y, int theta);
@@ -65,9 +71,10 @@ class path_planner : public rclcpp::Node {
     double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
     }
-    std::vector<std::vector<int8_t>>                inflated_map;
-    std::vector<std::vector<int8_t>>                offset_map;
-    std::vector<std::pair<int, int>>                linear_path;
+    std::vector<std::vector<int8_t>> inflated_map;
+    std::vector<std::vector<int8_t>> offset_map;
+    // std::vector<std::pair<int, int>>                linear_path;
+
     std::vector<std::array<std::pair<int, int>, 4>> rotated_footprint;
 
     int angle_to_index (int deg) {
@@ -83,6 +90,8 @@ class path_planner : public rclcpp::Node {
     nav_msgs::msg::OccupancyGrid                                      original_map;
     nav_msgs::msg::OccupancyGrid                                      last_map;
     nav_msgs::msg::OccupancyGrid                                      occ_map;
+    nav_msgs::msg::Path                                               linear_path;
+    nav_msgs::msg::Path                                               smoothed_path;
     geometry_msgs::msg::TwistStamped                                  current_vel;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr                 path_publisher;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscriber;

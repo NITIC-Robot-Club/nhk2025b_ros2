@@ -4,12 +4,16 @@ namespace path_planner {
 path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_planner", options) {
     theta_resolution = this->declare_parameter<int> ("theta_resolution", 5);
     resolution_ms    = this->declare_parameter<int> ("resolution_ms", 100);
-    offset_mm        = this->declare_parameter<int> ("offset_mm", 50);
+    offset_mm        = this->declare_parameter<int> ("offset_mm", 30);
     robot_height_mm  = this->declare_parameter<int> ("robot_height_mm", 800);
     robot_width_mm   = this->declare_parameter<int> ("robot_width_mm", 600);
     tolerance_xy_mm  = this->declare_parameter<int> ("tolerance_xy_mm", 30);
     tolerance_z_rad  = this->declare_parameter<double> ("tolerance_z_rad", 0.03);
     sigmoid_gain     = this->declare_parameter<double> ("sigmoid_gain", 7.5);
+    grad_alpha       = this->declare_parameter<double> ("grad_alpha", 1.0);
+    grad_beta        = this->declare_parameter<double> ("grad_beta", 8.2);
+    grad_gamma       = this->declare_parameter<double> ("grad_gamma", 0.0);
+    grad_step_size   = this->declare_parameter<double> ("grad_step_size", 0.1);
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 1);
     current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
@@ -68,6 +72,7 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     RCLCPP_WARN (this->get_logger (), "asatr");
     linear_astar ();
 
+    path_smoother ();
     angular_astar (path);
 
     for (int i = 0; i < path.poses.size () - 1; i++) {
@@ -78,6 +83,8 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     path.poses[path.poses.size () - 1].header             = header;
     safe_goal_pose                                        = path.poses[path.poses.size () - 1];
     path_publisher->publish (path);
+
+    RCLCPP_INFO (this->get_logger (), "Path planning completed with %zu points", path.poses.size ());
 }
 
 void path_planner::inflate_map () {
@@ -94,7 +101,7 @@ void path_planner::inflate_map () {
         }
     }
 
-    occ_map.data.resize (map_width * map_height);
+    occ_map.data.resize (map_width * map_height, 0);
     inflated_map.resize (map_height, std::vector<int8_t> (map_width, 0));
     offset_map.resize (map_height, std::vector<int8_t> (map_width, 0));
     double width_radius         = robot_width_mm / 2000.0 / map_resolution;
@@ -121,7 +128,11 @@ void path_planner::inflate_map () {
                             } else if (dist <= max_inflation_radius) {
                                 inflated_map[next_y][next_x] = std::max (inflated_map[next_y][next_x], int8_t (30));
                             }
-                            occ_map.data[next_y * map_width + next_x] = inflated_map[next_y][next_x] - 10;
+                            int8_t dist_penalty = 0;
+                            if (dist <= max_inflation_radius) {
+                                dist_penalty = static_cast<int8_t> (100 * (1.0 - (dist * dist) / (max_inflation_radius * max_inflation_radius)));
+                            }
+                            occ_map.data[next_y * map_width + next_x] = std::max (occ_map.data[next_y * map_width + next_x], dist_penalty);
                         }
                     }
                 }
@@ -129,9 +140,54 @@ void path_planner::inflate_map () {
         }
     }
 }
+void path_planner::path_smoother () {
+    auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
+        int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
+        int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
+        return {gx, gy};
+    };
+    auto get_cost = [&] (int x, int y) -> double {
+        if (x < 0 || y < 0 || x >= map_width || y >= map_height) return 1.0;
+        return static_cast<double> (occ_map.data[y * map_width + x]) / 100.0;
+    };
+    auto get_cost_gradient = [&] (double x, double y) -> std::pair<double, double> {
+        auto [grid_x, grid_y] = to_grid (x, y);
+        double dx             = get_cost (grid_x + 1, grid_y) - get_cost (grid_x - 1, grid_y);
+        double dy             = get_cost (grid_x, grid_y + 1) - get_cost (grid_x, grid_y - 1);
+        return {dx / 2.0, dy / 2.0};
+    };
+    smoothed_path            = linear_path;
+    const int max_iterations = 300;
 
+    for (int iter = 0; iter < max_iterations; ++iter) {
+        for (size_t i = 1; i + 1 < smoothed_path.poses.size (); ++i) {
+            geometry_msgs::msg::PoseStamped p_prev = smoothed_path.poses[i - 1];
+            geometry_msgs::msg::PoseStamped p_curr = smoothed_path.poses[i];
+            geometry_msgs::msg::PoseStamped p_next = smoothed_path.poses[i + 1];
+
+            // コストマップ勾配（障害物回避）
+            auto [cost_x, cost_y] = get_cost_gradient (p_curr.pose.position.x, p_curr.pose.position.y);
+
+            // 曲率項（滑らかさ） : 2nd derivative
+            double smooth_x = p_curr.pose.position.x - 0.5 * (p_prev.pose.position.x + p_next.pose.position.x);
+            double smooth_y = p_curr.pose.position.y - 0.5 * (p_prev.pose.position.y + p_next.pose.position.y);
+
+            // 元のパスからの引き戻し項
+            double anchor_x = p_curr.pose.position.x - linear_path.poses[i].pose.position.x;
+            double anchor_y = p_curr.pose.position.y - linear_path.poses[i].pose.position.y;
+
+            // 合成勾配
+            double total_x = cost_x * grad_alpha + smooth_x * grad_beta + anchor_x * grad_gamma;
+            double total_y = cost_y * grad_alpha + smooth_y * grad_beta + anchor_y * grad_gamma;
+
+            // 勾配降下による更新
+            smoothed_path.poses[i].pose.position.x -= total_x * grad_step_size;
+            smoothed_path.poses[i].pose.position.y -= total_y * grad_step_size;
+        }
+    }
+}
 void path_planner::linear_astar () {
-    linear_path.clear ();
+    linear_path.poses.clear ();
     auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
         int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
         int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
@@ -174,21 +230,26 @@ void path_planner::linear_astar () {
 
     auto curr = goal;
     while (curr != start) {
-        // geometry_msgs::msg::PoseStamped pose;
-        // pose.pose.position.x = curr.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
-        // pose.pose.position.y = curr.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
-        linear_path.push_back (curr);
+        geometry_msgs::msg::PoseStamped pose;
+        pose.pose.position.x = curr.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
+        pose.pose.position.y = curr.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
+        linear_path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) return;
         curr = came_from[idx];
     }
-    std::reverse (linear_path.begin (), linear_path.end ());
-    if (linear_path.size () == 0) {
-        linear_path.push_back (goal);
+    std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
+    if (linear_path.poses.size () == 0) {
+        linear_path.poses.push_back (goal_pose);
     }
 }
 void path_planner::angular_astar (nav_msgs::msg::Path &path) {
-    if (linear_path.size () == 0) {
+    auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
+        int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
+        int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
+        return {gx, gy};
+    };
+    if (smoothed_path.poses.size () == 0) {
         RCLCPP_ERROR (this->get_logger (), "linear path is empty, cannot perform angular A*");
         return;
     }
@@ -206,7 +267,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     nav_msgs::msg::OccupancyGrid theta_map;
     theta_map.header.frame_id        = "map";
     theta_map.header.stamp           = this->now ();
-    theta_map.info.width             = linear_path.size ();
+    theta_map.info.width             = smoothed_path.poses.size ();
     theta_map.info.height            = 360 / theta_resolution;
     theta_map.info.resolution        = 0.05;
     theta_map.info.origin.position.x = 0.0;
@@ -214,12 +275,13 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     theta_map.data.resize (theta_map.info.width * theta_map.info.height, 0);
     // 各角度のコストを計算
     std::vector<std::vector<int8_t>> angle_cost_map;
-    angle_cost_map.resize (linear_path.size (), std::vector<int8_t> (360 / theta_resolution, 0));
+    angle_cost_map.resize (smoothed_path.poses.size (), std::vector<int8_t> (360 / theta_resolution, 0));
     for (int i = 0; i < angle_cost_map.size (); ++i) {
-        if (inflated_map[linear_path[i].second][linear_path[i].first] > 10) {
+        auto [gx, gy] = to_grid (smoothed_path.poses[i].pose.position.x, smoothed_path.poses[i].pose.position.y);
+        if (inflated_map[gy][gx] > 10) {
             for (int j = 0; j < angle_cost_map[i].size (); ++j) {
                 int angle = j * theta_resolution;
-                if (is_collision (linear_path[i].first, linear_path[i].second, angle)) {
+                if (is_collision (gx, gy, angle)) {
                     angle_cost_map[i][j]                         = 100;
                     theta_map.data[j * theta_map.info.width + i] = 100;
                 }
@@ -232,18 +294,18 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     open.push ({0, start_theta, 0.0, 0.0});
     cost_so_far[to_index (0, start_theta)] = 0.0;
 
-    auto curr = std::make_pair (linear_path.size () - 1, goal_theta);
+    auto curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
     while (!open.empty ()) {
         astar_node current = open.top ();
         open.pop ();
-        if (current.x == linear_path.size () - 1) {
+        if (current.x == smoothed_path.poses.size () - 1) {
             curr.second = current.y;
             break;
         }
 
         for (auto dth : rotations) {
             int next_x = current.x + 1, next_theta = current.y + dth;
-            if (next_x >= linear_path.size ()) continue;
+            if (next_x >= smoothed_path.poses.size ()) continue;
             if (next_theta < 0) {
                 next_theta += angle_cost_map[0].size ();
             } else if (next_theta >= angle_cost_map[0].size ()) {
@@ -264,8 +326,8 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
 
     while (curr.first != 0) {
         geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x    = linear_path[curr.first].first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
-        pose.pose.position.y    = linear_path[curr.first].second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
+        pose.pose.position.x    = smoothed_path.poses[curr.first].pose.position.x;
+        pose.pose.position.y    = smoothed_path.poses[curr.first].pose.position.y;
         double yaw              = curr.second * theta_resolution * M_PI / 180.0;
         pose.pose.orientation.z = std::sin (yaw / 2.0);
         pose.pose.orientation.w = std::cos (yaw / 2.0);
