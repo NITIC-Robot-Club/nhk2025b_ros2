@@ -107,7 +107,7 @@ void path_planner::inflate_map () {
     int    offset_radius        = std::ceil (offset_mm / 1000.0 / map_resolution);
     int    max_inflation_radius = std::ceil (std::hypot (width_radius, height_radius)) + offset_radius;
     int    min_inflation_radius = std::ceil (std::min (width_radius, height_radius)) + offset_radius;
-    int    inflate_radius       = std::max (max_inflation_radius, static_cast<int>(std::ceil(penalty_mm / 1000.0 / map_resolution)));
+    int    inflate_radius       = std::max (max_inflation_radius, static_cast<int> (std::ceil (penalty_mm / 1000.0 / map_resolution)));
     // マップ全体を走査
     for (int y = 0; y < map_height; ++y) {
         for (int x = 0; x < map_width; ++x) {
