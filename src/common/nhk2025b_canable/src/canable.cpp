@@ -65,19 +65,19 @@ void canable::read_can_socket () {
         int nbytes = read (can_socket_, &frame, sizeof (struct can_frame));
         if (nbytes > 0) {
             switch (frame.can_id) {
-                case 0x000:
+                case 0x100:
                     robot_status_.signal       = (frame.data[0] >> 0) & 0x01;
                     robot_status_.is_resetting = (frame.data[0] >> 1) & 0x01;
                     memcpy (&robot_status_.voltage, frame.data + 1, sizeof (float));
                     robot_status_pub_->publish (robot_status_);
                     break;
-                case 0x001:
-                case 0x002:
-                case 0x003:
-                case 0x004:
-                    memcpy (&swerve_now_.wheel_angle[frame.can_id - 0x001], frame.data, sizeof (float));
-                    memcpy (&swerve_now_.wheel_speed[frame.can_id - 0x001], frame.data + 4, sizeof (float));
-                    swerve_flag_[frame.can_id - 0x001] = true;
+                case 0x110:
+                case 0x111:
+                case 0x112:
+                case 0x113:
+                    memcpy (&swerve_now_.wheel_angle[frame.can_id - 0x110], frame.data, sizeof (float));
+                    memcpy (&swerve_now_.wheel_speed[frame.can_id - 0x110], frame.data + 4, sizeof (float));
+                    swerve_flag_[frame.can_id - 0x110] = true;
                     if (swerve_flag_[0] && swerve_flag_[1] && swerve_flag_[2] && swerve_flag_[3]) {
                         swerve_pub_->publish (swerve_now_);
                         for (int i = 0; i < 4; i++) {
@@ -94,7 +94,7 @@ void canable::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) 
     for (int i = 0; i < 4; i++) {
         struct can_frame frame;
         std::memset (&frame, 0, sizeof (struct can_frame));
-        frame.can_id  = 0x101 + i;
+        frame.can_id  = 0x010 + i;
         frame.can_dlc = 8;
         std::memcpy (frame.data, &msg->wheel_angle[i], sizeof (float));
         std::memcpy (frame.data + 4, &msg->wheel_speed[i], sizeof (float));
@@ -103,10 +103,10 @@ void canable::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) 
             if (retry_write_can) {
                 retry_write_count++;
                 if (retry_write_count < max_retry_write_count) {
-                    RCLCPP_INFO (this->get_logger (), "Retrying to send CAN message...");
+                    // RCLCPP_INFO (this->get_logger (), "Retrying to send CAN message...");
                     swerve_callback (msg);
                 } else {
-                    RCLCPP_ERROR (this->get_logger (), "Max retry count reached. Giving up.");
+                    // RCLCPP_ERROR (this->get_logger (), "Max retry count reached. Giving up.");
                     retry_write_count = 0;
                     init_can_socket ();
                 }

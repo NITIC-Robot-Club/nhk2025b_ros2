@@ -476,7 +476,7 @@ Visualization Manager:
                 Position:
                   Alpha: 1
                   Color: 204; 51; 204
-                  Scale: 50
+                  Scale: 2
                   Value: true
                 Value: true
               Enabled: true
@@ -710,7 +710,7 @@ Visualization Manager:
               Enabled: true
               Name: 当たり判定
               Namespaces:
-                {}
+                robot_footprint: true
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
@@ -719,7 +719,7 @@ Visualization Manager:
                 Value: /visualization/robot_footprint
               Value: true
             - Class: rviz_default_plugins/MarkerArray
-              Enabled: true
+              Enabled: false
               Name: 独ステ可視化
               Namespaces:
                 {}
@@ -729,10 +729,10 @@ Visualization Manager:
                 History Policy: Keep Last
                 Reliability Policy: Reliable
                 Value: /visualization/swerve
-              Value: true
-          Enabled: false
+              Value: false
+          Enabled: true
           Name: Visualization
-      Enabled: false
+      Enabled: true
       Name: Debug
   Enabled: true
   Global Options:
@@ -766,7 +766,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -1.5700000524520874
+      Angle: -1.574999213218689
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -776,7 +776,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 168.3349151611328
+      Scale: 189.78514099121094
       Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
       X: 0
