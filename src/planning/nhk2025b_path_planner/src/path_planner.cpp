@@ -240,7 +240,7 @@ void path_planner::linear_astar () {
         curr = came_from[idx];
     }
     std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
-    if (linear_path.poses.size() == 0){
+    if (linear_path.poses.size () == 0) {
         geometry_msgs::msg::PoseStamped pose;
         pose.pose.position.x = goal.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
         pose.pose.position.y = goal.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
@@ -341,7 +341,6 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         curr = came_from[idx];
     }
     std::reverse (path.poses.begin (), path.poses.end ());
-
 }
 double path_planner::theta_heuristic (int dx, int theta) {
     theta = std::abs (theta);
