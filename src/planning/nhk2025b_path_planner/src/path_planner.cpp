@@ -69,7 +69,7 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     header.stamp    = this->now ();
     path.header     = header;
 
-    RCLCPP_WARN (this->get_logger (), "asatr");
+    // RCLCPP_WARN (this->get_logger (), "asatr");
     linear_astar ();
 
     path_smoother ();
@@ -84,7 +84,7 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     safe_goal_pose                                        = path.poses[path.poses.size () - 1];
     path_publisher->publish (path);
 
-    RCLCPP_INFO (this->get_logger (), "Path planning completed with %zu points", path.poses.size ());
+    // RCLCPP_INFO (this->get_logger (), "Path planning completed with %zu points", path.poses.size ());
 }
 
 void path_planner::inflate_map () {
@@ -360,10 +360,6 @@ void path_planner::init_rotated_footprint () {
             static_cast<int> (half_radius * std::cos (angle - inital_angle)), static_cast<int> (half_radius * std::sin (angle - inital_angle))};
         rotated_footprint[i][2] = {-rotated_footprint[i][0].first, -rotated_footprint[i][0].second};
         rotated_footprint[i][3] = {-rotated_footprint[i][1].first, -rotated_footprint[i][1].second};
-        if (i == 18) {
-            // Debugging angle and initalangle for the 90 degree
-            RCLCPP_INFO (this->get_logger (), "Angle: %f::%f", angle, half_radius * std::cos (angle + inital_angle));
-        }
     }
 }
 bool path_planner::is_collision (int x, int y, int theta) {
