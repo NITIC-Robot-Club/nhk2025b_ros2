@@ -26,7 +26,7 @@ class path_planner : public rclcpp::Node {
         { 1, -1},
         {-1,  1}
     };
-    const std::vector<int> rotations = {-2, -1, 0, 1, 2};
+    const std::vector<int> rotations = {-1, 0, 1};
 
     struct astar_node {
         int    x, y;

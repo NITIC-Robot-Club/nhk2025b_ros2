@@ -240,6 +240,12 @@ void path_planner::linear_astar () {
         curr = came_from[idx];
     }
     std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
+    if (linear_path.poses.size() == 0){
+        geometry_msgs::msg::PoseStamped pose;
+        pose.pose.position.x = goal.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
+        pose.pose.position.y = goal.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
+        linear_path.poses.push_back (pose);
+    }
 }
 void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
@@ -292,37 +298,37 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     open.push ({0, start_theta, 0.0, 0.0});
     cost_so_far[to_index (0, start_theta)] = 0.0;
 
-    auto curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
     while (!open.empty ()) {
         astar_node current = open.top ();
         open.pop ();
-        if (current.x == smoothed_path.poses.size () - 1) {
-            curr.second = current.y;
+        if (current.x == smoothed_path.poses.size () - 1 && current.y == goal_theta) {
             break;
         }
+        for (auto dx : {0, 1}) {
+            for (auto dth : rotations) {
+                int next_x = current.x + dx, next_theta = current.y + dth;
+                if (next_x >= smoothed_path.poses.size ()) continue;
+                if (next_theta < 0) {
+                    next_theta += angle_cost_map[0].size ();
+                } else if (next_theta >= angle_cost_map[0].size ()) {
+                    next_theta -= angle_cost_map[0].size ();
+                }
+                if (angle_cost_map[next_x][next_theta] > 50) continue;
 
-        for (auto dth : rotations) {
-            int next_x = current.x + 1, next_theta = current.y + dth;
-            if (next_x >= smoothed_path.poses.size ()) continue;
-            if (next_theta < 0) {
-                next_theta += angle_cost_map[0].size ();
-            } else if (next_theta >= angle_cost_map[0].size ()) {
-                next_theta -= angle_cost_map[0].size ();
-            }
-            if (angle_cost_map[next_x][next_theta] > 50) continue;
+                double new_cost = cost_so_far[to_index (current.x, current.y)] + theta_heuristic (dx, dth);
+                if (!cost_so_far.count (to_index (next_x, next_theta)) || new_cost < cost_so_far[to_index (next_x, next_theta)]) {
+                    cost_so_far[to_index (next_x, next_theta)] = new_cost;
 
-            double new_cost = cost_so_far[to_index (current.x, current.y)] + theta_heuristic (1, dth);
-            if (!cost_so_far.count (to_index (next_x, next_theta)) || new_cost < cost_so_far[to_index (next_x, next_theta)]) {
-                cost_so_far[to_index (next_x, next_theta)] = new_cost;
-
-                double priority = new_cost + theta_heuristic (angle_cost_map.size () - 1 - next_x, goal_theta - next_theta);
-                open.push ({next_x, next_theta, new_cost, priority});
-                came_from[to_index (next_x, next_theta)] = {current.x, current.y};
+                    double priority = new_cost + theta_heuristic (angle_cost_map.size () - 1 - next_x, goal_theta - next_theta);
+                    open.push ({next_x, next_theta, new_cost, priority});
+                    came_from[to_index (next_x, next_theta)] = {current.x, current.y};
+                }
             }
         }
     }
 
-    while (curr.first != 0) {
+    auto curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
+    while (curr.first != 0 || curr.second != start_theta) {
         geometry_msgs::msg::PoseStamped pose;
         pose.pose.position.x    = smoothed_path.poses[curr.first].pose.position.x;
         pose.pose.position.y    = smoothed_path.poses[curr.first].pose.position.y;
@@ -335,6 +341,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         curr = came_from[idx];
     }
     std::reverse (path.poses.begin (), path.poses.end ());
+
 }
 double path_planner::theta_heuristic (int dx, int theta) {
     theta = std::abs (theta);
