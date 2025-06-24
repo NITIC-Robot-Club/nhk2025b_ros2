@@ -37,6 +37,7 @@ class path_planner : public rclcpp::Node {
     };
     int    theta_resolution;
     int    resolution_ms;
+    int    penalty_mm;
     int    offset_mm;
     int    robot_height_mm;
     int    robot_width_mm;
