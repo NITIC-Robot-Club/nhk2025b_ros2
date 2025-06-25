@@ -5,3 +5,4 @@
 /.vscode/settings.json
 .colcon_build_config
 __pycache__
+**.pyc
