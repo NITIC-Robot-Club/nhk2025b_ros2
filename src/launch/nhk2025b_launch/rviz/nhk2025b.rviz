@@ -4,7 +4,6 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Default1
         - /Debug1
       Splitter Ratio: 0.6000000238418579
     Tree Height: 825
@@ -201,6 +200,18 @@ Visualization Manager:
           Plane: XY
           Plane Cell Count: 10
           Reference Frame: <Fixed Frame>
+          Value: true
+        - Class: rviz_default_plugins/MarkerArray
+          Enabled: true
+          Name: 当たり判定
+          Namespaces:
+            robot_footprint: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /visualization/robot_footprint
           Value: true
       Enabled: true
       Name: Default
@@ -710,7 +721,7 @@ Visualization Manager:
               Enabled: true
               Name: 当たり判定
               Namespaces:
-                robot_footprint: true
+                {}
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
@@ -719,7 +730,7 @@ Visualization Manager:
                 Value: /visualization/robot_footprint
               Value: true
             - Class: rviz_default_plugins/MarkerArray
-              Enabled: false
+              Enabled: true
               Name: 独ステ可視化
               Namespaces:
                 {}
@@ -729,8 +740,8 @@ Visualization Manager:
                 History Policy: Keep Last
                 Reliability Policy: Reliable
                 Value: /visualization/swerve
-              Value: false
-          Enabled: true
+              Value: true
+          Enabled: false
           Name: Visualization
       Enabled: true
       Name: Debug
@@ -776,7 +787,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 189.78514099121094
+      Scale: 100.15568542480469
       Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
       X: 0

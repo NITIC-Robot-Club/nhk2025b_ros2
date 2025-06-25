@@ -48,7 +48,16 @@ class nhk2025b_behavior(Node):
 
         # パラメータ宣言と取得
         self.declare_parameter('state_graph_path', 'state_graph.md')
+        self.declare_parameter('is_red', False)
         state_graph_path = self.get_parameter('state_graph_path').get_parameter_value().string_value
+        self.md_name = state_graph_path.split('/')[-1]
+        if not state_graph_path.endswith('.md'):
+            self.get_logger().error(f'状態遷移グラフのファイル名は.mdで終わる必要があります: {state_graph_path}')
+            raise RuntimeError(f'状態遷移グラフのファイル名は.mdで終わる必要があります: {state_graph_path}')
+        else:
+            self.get_logger().info(f'状態遷移グラフのファイル名: {self.md_name}')
+            self.md_name = self.md_name.split('.')[0]  # 拡張子を除去
+        self.is_red = self.get_parameter('is_red').get_parameter_value().bool_value
 
         self.label_to_state, self.state_to_pose, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
         self.id_to_label = {v: k for k, v in self.label_to_state.items()}
@@ -85,7 +94,7 @@ class nhk2025b_behavior(Node):
 
     def build_state_array(self):
         msg = StateArray()
-        msg.name = 'running_flow'
+        msg.name = self.md_name
         for label, state in self.label_to_state.items():
             state_msg = State()
             state_msg.name = label
@@ -195,7 +204,21 @@ class nhk2025b_behavior(Node):
 
         self.publish_state()
 
+    def is_pose_close(self, pose: PoseStamped, goal_x, goal_y, goal_yaw):
+        dx = pose.pose.position.x - goal_x
+        dy = pose.pose.position.y - goal_y
+        dist = math.hypot(dx, dy)
+        q = pose.pose.orientation
+        yaw = math.atan2(2.0*(q.w*q.z + q.x*q.y), 1.0 - 2.0*(q.y*q.y + q.z*q.z))
+        dyaw = abs((yaw - math.radians(goal_yaw) + math.pi) % (2*math.pi) - math.pi)
+        deg = math.degrees(dyaw)
+        return dist < 0.10 and deg < 7.0
+
+
+
     def set_position(self, x, y, yaw_deg):
+        if self.is_red:
+            y = -y
         pose = PoseStamped()
         pose.header.frame_id = "map"
         pose.header.stamp = self.get_clock().now().to_msg()
@@ -209,16 +232,6 @@ class nhk2025b_behavior(Node):
         pose.pose.orientation.w = math.cos(yaw / 2.0)
         self.pose_pub.publish(pose)
         self.goal_pose = pose
-
-    def is_pose_close(self, pose: PoseStamped, goal_x, goal_y, goal_yaw):
-        dx = pose.pose.position.x - goal_x
-        dy = pose.pose.position.y - goal_y
-        dist = math.hypot(dx, dy)
-        q = pose.pose.orientation
-        yaw = math.atan2(2.0*(q.w*q.z + q.x*q.y), 1.0 - 2.0*(q.y*q.y + q.z*q.z))
-        dyaw = abs((yaw - math.radians(goal_yaw) + math.pi) % (2*math.pi) - math.pi)
-        deg = math.degrees(dyaw)
-        return dist < 0.10 and deg < 7.0
 
     def check_ready(self):
         return self.command.automate_ready

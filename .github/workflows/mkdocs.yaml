@@ -31,6 +31,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install mkdocs mkdocs-material pymdown-extensions mkdocs-awesome-pages-plugin mkdocs-same-dir
+      
+      - name: copy state_graph
+        run: |
+          cp -r ./src/launch/nhk2025b_launch/state_graph ./docs/launch/nhk2025b_launch/state_graph
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
