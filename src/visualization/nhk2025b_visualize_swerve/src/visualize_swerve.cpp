@@ -12,10 +12,10 @@ visualize_swerve::visualize_swerve (const rclcpp::NodeOptions& options) : Node (
 
 void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
     double wheel_positions[4][2] = {
-        {+robot_width / 2.0, +robot_length / 2.0}, // Front Right
-        {-robot_width / 2.0, +robot_length / 2.0}, // Front Left
-        {-robot_width / 2.0, -robot_length / 2.0}, // Back Left
-        {+robot_width / 2.0, -robot_length / 2.0}  // Back Right
+        {+robot_length / 2.0, +robot_width / 2.0}, 
+        {-robot_length / 2.0, +robot_width / 2.0}, 
+        {-robot_length / 2.0, -robot_width / 2.0}, 
+        {+robot_length / 2.0, -robot_width / 2.0}   
     };
     visualization_msgs::msg::MarkerArray marker_array_;
     for (int i = 0; i < 4; i++) {
@@ -35,8 +35,8 @@ void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::Shared
         marker.lifetime           = rclcpp::Duration (0, 0);
         marker.header.stamp       = this->now ();
         marker.header.frame_id    = "base_link";
-        marker.pose.position.x    = wheel_positions[i][1];
-        marker.pose.position.y    = wheel_positions[i][0];
+        marker.pose.position.x    = wheel_positions[i][0];
+        marker.pose.position.y    = wheel_positions[i][1];
         marker.pose.position.z    = 0.0;
         marker.pose.orientation.x = 0.0;
         marker.pose.orientation.y = 0.0;

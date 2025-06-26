@@ -12,12 +12,11 @@ swerve_calculator::swerve_calculator (const rclcpp::NodeOptions& options) : Node
 
 void swerve_calculator::twist_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
     double wheel_positions[4][2] = {
-        {+robot_width / 2.0, +robot_length / 2.0}, // Front Right
-        {-robot_width / 2.0, +robot_length / 2.0}, // Front Left
-        {-robot_width / 2.0, -robot_length / 2.0}, // Back Left
-        {+robot_width / 2.0, -robot_length / 2.0}  // Back Right
+        {+robot_length / 2.0, +robot_width / 2.0}, 
+        {-robot_length / 2.0, +robot_width / 2.0}, 
+        {-robot_length / 2.0, -robot_width / 2.0}, 
+        {+robot_length / 2.0, -robot_width / 2.0}   
     };
-
     nhk2025b_msgs::msg::Swerve swerve_msg;
     swerve_msg.header.stamp    = this->now ();
     swerve_msg.header.frame_id = "base_link";
@@ -27,8 +26,8 @@ void swerve_calculator::twist_callback (const geometry_msgs::msg::TwistStamped::
         double y = msg->twist.linear.y;
         double z = msg->twist.angular.z;
 
-        double position_x = wheel_positions[i][1];
-        double position_y = wheel_positions[i][0];
+        double position_x = wheel_positions[i][0];
+        double position_y = wheel_positions[i][1];
 
         double vx, vy;
         if (x == 0 && y == 0 && z == 0) {

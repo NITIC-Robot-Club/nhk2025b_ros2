@@ -35,10 +35,10 @@ wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("whe
 
 void wheel_odometry::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
     double wheel_positions[4][2] = {
-        {+robot_width / 2.0, +robot_length / 2.0}, // Front Right
-        {-robot_width / 2.0, +robot_length / 2.0}, // Front Left
-        {-robot_width / 2.0, -robot_length / 2.0}, // Back Left
-        {+robot_width / 2.0, -robot_length / 2.0}  // Back Right
+        {+robot_length / 2.0, +robot_width / 2.0},
+        {-robot_length / 2.0, +robot_width / 2.0},
+        {-robot_length / 2.0, -robot_width / 2.0},
+        {+robot_length / 2.0, -robot_width / 2.0}
     };
 
     double ATA[3][3] = {};  // A^T * A
@@ -50,8 +50,8 @@ void wheel_odometry::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPt
 
         double dir_x = std::cos (theta);
         double dir_y = std::sin (theta);
-        double rx    = wheel_positions[i][1];
-        double ry    = wheel_positions[i][0];
+        double rx    = wheel_positions[i][0];
+        double ry    = wheel_positions[i][1];
 
         double ax[3] = {1.0f, 0.0f, -ry};
         double ay[3] = {0.0f, 1.0f, +rx};
