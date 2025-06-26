@@ -11,7 +11,8 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>nav_msgs</depend>
-  <depend>std_msgs</depend>
+  <depend>nhk2025b_msgs</depend>
+  <depend>nhk2025b_utils</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

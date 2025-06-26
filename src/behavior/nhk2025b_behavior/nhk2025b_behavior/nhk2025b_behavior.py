@@ -205,6 +205,8 @@ class nhk2025b_behavior(Node):
         self.publish_state()
 
     def is_pose_close(self, pose: PoseStamped, goal_x, goal_y, goal_yaw):
+        if self.is_red:
+            goal_y = -goal_y
         dx = pose.pose.position.x - goal_x
         dy = pose.pose.position.y - goal_y
         dist = math.hypot(dx, dy)

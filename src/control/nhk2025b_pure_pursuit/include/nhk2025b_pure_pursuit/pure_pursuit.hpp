@@ -6,6 +6,7 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/path.hpp>
+#include "nhk2025b_utils/get_yaw_2d.hpp"
 
 namespace pure_pursuit {
 
@@ -35,10 +36,6 @@ class pure_pursuit : public rclcpp::Node {
     void timer_callback ();
     void pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void path_callback (const nav_msgs::msg::Path::SharedPtr msg);
-
-    double get_yaw_2d (const geometry_msgs::msg::Quaternion &orientation) {
-        return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
-    }
 
     // ROS2通信
     rclcpp::TimerBase::SharedPtr                                     timer_;
