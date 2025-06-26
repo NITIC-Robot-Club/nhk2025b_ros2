@@ -1,12 +1,13 @@
 #ifndef __pure_pursuit_hpp__
 #define __pure_pursuit_hpp__
 
+#include "nhk2025b_utils/get_yaw_2d.hpp"
+
 #include <rclcpp/rclcpp.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include "nhk2025b_utils/get_yaw_2d.hpp"
 
 namespace pure_pursuit {
 

@@ -1,6 +1,7 @@
 #ifndef __mcl_hpp__
 #define __mcl_hpp__
 
+#include <nhk2025b_utils/get_yaw_2d.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <geometry_msgs/msg/pose.hpp>
@@ -12,7 +13,6 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#include <nhk2025b_utils/get_yaw_2d.hpp>
 #include <tf2/utils.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -63,7 +63,6 @@ class mcl : public rclcpp::Node {
     bool   get_transform (
           const std::string &target_frame, const std::string &source_frame, const rclcpp::Time &time,
           geometry_msgs::msg::TransformStamped &transform_out) const;
-
 
     // ノード内変数
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr                   scan_sub_;
