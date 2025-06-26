@@ -101,10 +101,10 @@ void simulation::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr ms
     swerve_publisher_->publish (*msg);
 
     double wheel_positions[4][2] = {
-        {+robot_length / 2.0, +robot_width / 2.0}, 
-        {-robot_length / 2.0, +robot_width / 2.0}, 
-        {-robot_length / 2.0, -robot_width / 2.0}, 
-        {+robot_length / 2.0, -robot_width / 2.0}   
+        {+robot_length / 2.0, +robot_width / 2.0},
+        {-robot_length / 2.0, +robot_width / 2.0},
+        {-robot_length / 2.0, -robot_width / 2.0},
+        {+robot_length / 2.0, -robot_width / 2.0}
     };
 
     double ATA[3][3] = {};  // A^T * A
