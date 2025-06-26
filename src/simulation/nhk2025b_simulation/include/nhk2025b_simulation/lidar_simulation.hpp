@@ -1,12 +1,12 @@
 #ifndef __lidar_simulation_hpp__
 #define __lidar_simulation_hpp__
 
+#include <nhk2025b_utils/get_yaw_2d.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
-#include <nhk2025b_utils/get_yaw_2d.hpp>
 
 namespace lidar_simulation {
 class lidar_simulation : public rclcpp::Node {

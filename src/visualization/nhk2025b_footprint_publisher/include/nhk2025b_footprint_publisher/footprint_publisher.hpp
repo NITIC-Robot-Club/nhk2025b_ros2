@@ -1,12 +1,12 @@
 #ifndef __footprint_publisher_hpp__
 #define __footprint_publisher_hpp__
 
+#include <nhk2025b_utils/get_yaw_2d.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
-#include <nhk2025b_utils/get_yaw_2d.hpp>
 
 #include <deque>
 #include <vector>
