@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(nhk2025b_visualize_swerve)
+project(nhk2025b_visualization)
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
@@ -15,6 +15,16 @@ target_include_directories(${PROJECT_NAME}
 rclcpp_components_register_node(${PROJECT_NAME}
     PLUGIN "visualize_swerve::visualize_swerve"
     EXECUTABLE visualize_swerve
+)
+
+rclcpp_components_register_node(${PROJECT_NAME}
+    PLUGIN "visualize_box::visualize_box"
+    EXECUTABLE visualize_box
+)
+
+rclcpp_components_register_node(${PROJECT_NAME}
+    PLUGIN "visualize_stl::visualize_stl"
+    EXECUTABLE visualize_stl
 )
 
 ament_auto_package(

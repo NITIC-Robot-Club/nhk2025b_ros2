@@ -29,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: ライダー
   - Class: rviz_common/Displays
     Help Height: 70
     Name: Displays
@@ -60,13 +60,22 @@ Visualization Manager:
           Frame Timeout: 15
           Frames:
             All Enabled: false
+            base_link:
+              Value: true
+            lidar:
+              Value: true
+            map:
+              Value: true
           Marker Scale: 2.5
           Name: TF
           Show Arrows: false
           Show Axes: true
           Show Names: true
           Tree:
-            {}
+            map:
+              base_link:
+                lidar:
+                  {}
           Update Interval: 0
           Value: true
         - Alpha: 1
@@ -183,7 +192,7 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: false
-          Enabled: true
+          Enabled: false
           Keep: 30
           Name: ホイールオドメトリ
           Position Tolerance: 0.009999999776482582
@@ -204,7 +213,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /localization/wheel_odometry
-          Value: true
+          Value: false
         - Alpha: 0.5
           Axes Length: 1
           Axes Radius: 0.10000000149011612
@@ -493,7 +502,7 @@ Visualization Manager:
             Value: /localization/distance_map_updates
           Use Timestamp: false
           Value: false
-      Enabled: false
+      Enabled: true
       Name: Planning&Control
     - Class: rviz_common/Group
       Displays:
@@ -509,7 +518,7 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: Intensity
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 1
@@ -530,8 +539,8 @@ Visualization Manager:
             Value: /sensor/scan
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
-      Enabled: false
+          Value: true
+      Enabled: true
       Name: Sensor
     - Class: rviz_common/Group
       Displays:
@@ -575,7 +584,7 @@ Visualization Manager:
           Enabled: true
           Name: 当たり判定
           Namespaces:
-            {}
+            robot_footprint: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -584,7 +593,7 @@ Visualization Manager:
             Value: /visualization/robot_footprint
           Value: true
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: false
+          Enabled: true
           Name: 独ステ可視化
           Namespaces:
             {}
@@ -594,7 +603,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /visualization/swerve
-          Value: false
+          Value: true
       Enabled: true
       Name: Visualization
   Enabled: true
@@ -639,11 +648,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 171.78907775878906
+      Scale: 100
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 0
-      Y: 0
+      X: 5.5
+      Y: 2.5
     Saved: ~
 Window Geometry:
   Displays:
