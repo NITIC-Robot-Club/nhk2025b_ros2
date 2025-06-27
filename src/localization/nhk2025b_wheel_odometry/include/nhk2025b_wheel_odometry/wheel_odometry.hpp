@@ -3,9 +3,9 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nhk2025b_msgs/msg/swerve.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
 
 namespace wheel_odometry {
 class wheel_odometry : public rclcpp::Node {
@@ -21,8 +21,8 @@ class wheel_odometry : public rclcpp::Node {
 
     rclcpp::TimerBase::SharedPtr timer;
 
-    rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr swerve_subscriber;
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr       odom_publisher;
+    rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr   swerve_subscriber;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr         odom_publisher;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_publisher;
 };
 }  // namespace wheel_odometry
