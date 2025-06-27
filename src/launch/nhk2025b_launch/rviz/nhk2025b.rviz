@@ -60,22 +60,13 @@ Visualization Manager:
           Frame Timeout: 15
           Frames:
             All Enabled: false
-            base_link:
-              Value: true
-            lidar:
-              Value: false
-            map:
-              Value: true
           Marker Scale: 2.5
           Name: TF
           Show Arrows: false
           Show Axes: true
           Show Names: true
           Tree:
-            map:
-              base_link:
-                lidar:
-                  {}
+            {}
           Update Interval: 0
           Value: true
         - Alpha: 1
@@ -129,8 +120,8 @@ Visualization Manager:
           Name: Grid
           Normal Cell Count: 0
           Offset:
-            X: 5
-            Y: 5
+            X: 0
+            Y: 0
             Z: 0
           Plane: XY
           Plane Cell Count: 10
@@ -192,7 +183,7 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: false
-          Enabled: false
+          Enabled: true
           Keep: 30
           Name: ホイールオドメトリ
           Position Tolerance: 0.009999999776482582
@@ -213,7 +204,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /localization/wheel_odometry
-          Value: false
+          Value: true
         - Alpha: 0.5
           Axes Length: 1
           Axes Radius: 0.10000000149011612
@@ -502,7 +493,7 @@ Visualization Manager:
             Value: /localization/distance_map_updates
           Use Timestamp: false
           Value: false
-      Enabled: true
+      Enabled: false
       Name: Planning&Control
     - Class: rviz_common/Group
       Displays:
@@ -540,7 +531,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: false
-      Enabled: true
+      Enabled: false
       Name: Sensor
     - Class: rviz_common/Group
       Displays:
@@ -564,7 +555,7 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /simulation/pose
           Value: true
-      Enabled: true
+      Enabled: false
       Name: Simulation
     - Class: rviz_common/Group
       Displays:
@@ -584,7 +575,7 @@ Visualization Manager:
           Enabled: true
           Name: 当たり判定
           Namespaces:
-            robot_footprint: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -648,11 +639,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 128
+      Scale: 171.78907775878906
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 5
-      Y: 2.5
+      X: 0
+      Y: 0
     Saved: ~
 Window Geometry:
   Displays:

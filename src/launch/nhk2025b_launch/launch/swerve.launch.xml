@@ -2,5 +2,9 @@
   <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_container" namespace="">
     <composable_node pkg="nhk2025b_swerve_calculator" plugin="swerve_calculator::swerve_calculator" name="swerve_calculator"/>
     <composable_node pkg="nhk2025b_canable" plugin="canable::canable" name="canable"/>
+    <composable_node pkg="nhk2025b_wheel_odometry" plugin="wheel_odometry::wheel_odometry" name="wheel_odometry">
+      <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
+      <!-- <param name="is_red" value="$(var is_red)"/> -->
+    </composable_node>
   </node_container>
 </launch>
