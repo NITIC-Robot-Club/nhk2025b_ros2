@@ -3,16 +3,28 @@
 
 namespace map_publisher {
 map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_publisher", options) {
-    publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1);
-    timer_     = this->create_wall_timer (std::chrono::milliseconds (1000), std::bind (&map_publisher::publish_map, this));
+    publisher_      = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1);
+    box_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::BoxArray> (
+        "/box_state", 1, std::bind (&map_publisher::box_callback, this, std::placeholders::_1));
+    timer_ = this->create_wall_timer (std::chrono::milliseconds (1000), std::bind (&map_publisher::publish_map, this));
     this->declare_parameter<double> ("resolution", 0.05);  // 5cm
     this->declare_parameter<bool> ("is_red", false);
+    this->get_parameter ("is_red", is_red);  // bool
+    if (is_red) {
+        for (int i = 0; i < 5; i++) {
+            // 赤のときはfield_dataのyを左右反転にする
+            double field_data_y[2];
+            field_data_y[0]  = field_data[i][2];
+            field_data_y[1]  = field_data[i][3];
+            field_data[i][2] = 5.4 - field_data_y[1];
+            field_data[i][3] = 5.4 - field_data_y[0];
+        }
+    }
 }
 
 void map_publisher::publish_map () {
     nav_msgs::msg::OccupancyGrid map;
     this->get_parameter ("resolution", resolution_);  // float
-    this->get_parameter ("is_red", is_red);           // bool
     map.header.stamp           = this->now ();
     map.header.frame_id        = "map";
     map.info.resolution        = resolution_;         // m
@@ -33,51 +45,67 @@ void map_publisher::publish_map () {
         }
     }
 
-    for (int y = 0; y < map.info.width; ++y) {
-        for (int x = 0; x < map.info.height; ++x) {
-            // 手前 (0,0) ~ (0.15,5.25)
-            if (y < 0.15 / resolution_) {
-                map.data[y + x * map.info.width] = 100;
+    for (const auto& box : boxes.boxes) {
+        // 1. Box情報の取得
+        double center_x = box.pose.position.x - 0.15;
+        double center_y = box.pose.position.y - 0.15;
+        double size_x   = box.size.x;
+        double size_y   = box.size.y;
+        double yaw      = nhk2025b_utils::get_yaw_2d (box.pose.orientation);
+
+        // 2. 回転行列（逆回転）を用意
+        double cos_yaw = std::cos (-yaw);
+        double sin_yaw = std::sin (-yaw);
+
+        // 3. BoxのAABBでループ（回転を考慮した描画領域を最小化するならここ工夫してもOK）
+        int min_x = (center_x - size_x / 2.0 - 0.0) / resolution_;
+        int max_x = (center_x + size_x / 2.0 + 0.0) / resolution_;
+        int min_y = (center_y - size_y / 2.0 - 0.0) / resolution_;
+        int max_y = (center_y + size_y / 2.0 + 0.0) / resolution_;
+
+        for (int mx = min_x; mx <= max_x; ++mx) {
+            for (int my = min_y; my <= max_y; ++my) {
+                // マップ範囲チェック
+                if (mx < 0 || mx >= map.info.width || my < 0 || my >= map.info.height) continue;
+
+                // マップ座標をワールド座標に変換
+                double wx = mx * resolution_;
+                double wy = my * resolution_;
+
+                // 4. Box中心に対する相対座標に変換
+                double dx = wx - center_x;
+                double dy = wy - center_y;
+
+                // 5. Box座標系に変換（yawの逆回転）
+                double local_x = cos_yaw * dx - sin_yaw * dy;
+                double local_y = sin_yaw * dx + cos_yaw * dy;
+
+                // 6. Box内部か判定
+                if (std::abs (local_x) < size_x / 2.0 && std::abs (local_y) < size_y / 2.0) {
+                    map.data[mx + my * map.info.width] = 100;
+                }
             }
-            if (is_red) {
-                // 左 (0,5.25)~(10.8,5.4)
-                if (x > 5.25 / resolution_) {
-                    map.data[y + x * map.info.width] = 100;
-                }
-                // 奥 (10.65,5.4)~(10.8,0.6)
-                if (y > 10.65 / resolution_ && x > 0.6 / resolution_) {
-                    map.data[y + x * map.info.width] = 100;
-                }
-                // 共有 (6.95,0)~(10.8,0.6)
-                if (y > 6.95 / resolution_ && x < 0.6 / resolution_) {
-                    map.data[y + x * map.info.width] = 100;
-                }
-            } else {
-                // 右 (0,0)~(10.8, 0.015)
-                if (x < 0.15 / resolution_) {
-                    map.data[y + x * map.info.width] = 100;
-                }
-                // 奥 (10.65,0)~(10.8,4.8)
-                if (y > 10.65 / resolution_ && x < 4.8 / resolution_) {
-                    map.data[y + x * map.info.width] = 100;
-                }
-                // 共有 (6.95,5.4)~(10.8,4.8)
-                if (y > 6.95 / resolution_ && x > 4.8 / resolution_) {
-                    map.data[y + x * map.info.width] = 100;
+        }
+    }
+
+    for (int y = 0; y < map.info.height; ++y) {
+        for (int x = 0; x < map.info.width; ++x) {
+            double wx = x * resolution_;
+            double wy = y * resolution_;
+            for (int i = 0; i < 5; ++i) {
+                if (field_data[i][0] <= wx && wx <= field_data[i][1] && field_data[i][2] <= wy && wy <= field_data[i][3]) {
+                    map.data[y * map.info.width + x] = 100;
                 }
             }
-            // // テスト (2.0,2.0) ~ (3.0,3.0)
-            // if (x > 1.8 / resolution_ && x < 2.8 / resolution_ && y > 2.0 / resolution_ && y < 3.0 / resolution_) {
-            //     map.data[y + x * map.info.width] = 100;
-            // }
-            // // テスト (3.7,2.0) ~ (4.7,3.0)
-            // if (x > 3.6 / resolution_ && x < 4.6 / resolution_ && y > 2.0 / resolution_ && y < 3.0 / resolution_) {
-            //     map.data[y + x * map.info.width] = 100;
-            // }
         }
     }
 
     publisher_->publish (map);
+}
+
+void map_publisher::box_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr msg) {
+    boxes = *msg;
+    publish_map ();
 }
 }  // namespace map_publisher
 

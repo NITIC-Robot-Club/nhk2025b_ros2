@@ -2,6 +2,7 @@
 #define __ekf_hpp__
 
 #include <Eigen/Dense>
+#include <nhk2025b_utils/get_yaw_2d.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -23,10 +24,6 @@ class ekf : public rclcpp::Node {
     void imu_callback (const sensor_msgs::msg::Imu::SharedPtr msg);
     void odom_callback (const nav_msgs::msg::Odometry::SharedPtr msg);
     void lidar_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
-
-    double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
-        return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
-    }
 
     // EKF予測・更新ステップ
     void predict (const nav_msgs::msg::Odometry& odom, const sensor_msgs::msg::Imu& imu, double dt);

@@ -1,4 +1,4 @@
-#include "nhk2025b_visualize_box/visualize_box.hpp"
+#include "nhk2025b_visualization/visualize_box.hpp"
 
 namespace visualize_box {
 

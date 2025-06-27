@@ -42,7 +42,7 @@ void lidar_simulation::timer_callback () {
     scan.ranges.resize (360 / scan.angle_increment, scan.range_max);
     scan.intensities.resize (360 / scan.angle_increment, 1.0);
 
-    double yaw     = get_yaw_2d (current_pose.pose.orientation);
+    double yaw     = nhk2025b_utils::get_yaw_2d (current_pose.pose.orientation);
     double start_x = current_pose.pose.position.x + lidar_x * std::cos (yaw) - lidar_y * std::sin (yaw);
     double start_y = current_pose.pose.position.y + lidar_x * std::sin (yaw) + lidar_y * std::cos (yaw);
     start_x -= current_map.info.origin.position.x;

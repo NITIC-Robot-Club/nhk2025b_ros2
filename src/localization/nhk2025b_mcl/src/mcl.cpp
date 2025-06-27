@@ -331,7 +331,7 @@ void mcl::resample_particles () {
             p.x      = dist_map_x (rng_);
             p.y      = dist_map_y (rng_);
             p.weight = 0;
-            p.theta  = j * M_PI / 2 + get_yaw_2d (last_estimated_pose_.pose.orientation);
+            p.theta  = j * M_PI / 2 + nhk2025b_utils::get_yaw_2d (last_estimated_pose_.pose.orientation);
             new_particles.push_back (p);
         }
     }

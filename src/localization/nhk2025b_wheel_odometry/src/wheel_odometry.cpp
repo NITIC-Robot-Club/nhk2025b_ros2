@@ -5,6 +5,7 @@ wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("whe
     swerve_subscriber = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
         "/swerve/result", 1, std::bind (&wheel_odometry::swerve_callback, this, std::placeholders::_1));
     odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 1);
+    pose_publisher = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/wheel_odometry_pose", 1);
     timer          = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&wheel_odometry::timer_callback, this));
     wheel_radius   = this->declare_parameter ("wheel_radius", 0.0325);
     robot_width    = this->declare_parameter ("robot_width", 0.8);
@@ -138,6 +139,12 @@ void wheel_odometry::timer_callback () {
     odom_msg.twist.twist.angular.z   = sum_z / count;
 
     odom_publisher->publish (odom_msg);
+
+    geometry_msgs::msg::PoseStamped pose_msg;
+    pose_msg.header.stamp    = this->now ();
+    pose_msg.header.frame_id = "map";
+    pose_msg.pose            = odom_msg.pose.pose;
+    pose_publisher->publish (pose_msg);
 
     sum_x = 0;
     sum_y = 0;

@@ -1,4 +1,4 @@
-#include "nhk2025b_visualize_swerve/visualize_swerve.hpp"
+#include "nhk2025b_visualization/visualize_swerve.hpp"
 
 namespace visualize_swerve {
 visualize_swerve::visualize_swerve (const rclcpp::NodeOptions& options) : Node ("visualize_swerve", options) {
