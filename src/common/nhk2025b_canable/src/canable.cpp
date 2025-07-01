@@ -98,22 +98,13 @@ void canable::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) 
         frame.can_dlc = 8;
         std::memcpy (frame.data, &msg->wheel_angle[i], sizeof (float));
         std::memcpy (frame.data + 4, &msg->wheel_speed[i], sizeof (float));
-        if (write (can_socket_, &frame, sizeof (struct can_frame)) < 0) {
-            RCLCPP_ERROR (this->get_logger (), "Failed to send CAN message");
-            if (retry_write_can) {
-                retry_write_count++;
-                if (retry_write_count < max_retry_write_count) {
-                    // RCLCPP_INFO (this->get_logger (), "Retrying to send CAN message...");
-                    swerve_callback (msg);
-                } else {
-                    // RCLCPP_ERROR (this->get_logger (), "Max retry count reached. Giving up.");
-                    retry_write_count = 0;
-                    init_can_socket ();
-                }
-            }
-        } else {
-            retry_write_count = 0;
+        int result = write(can_socket_, &frame, sizeof (struct can_frame));
+        if (result < 0) {
+            RCLCPP_ERROR (this->get_logger (), "Failed to send CAN message %d", result);
+            return;
         }
+        // sleep 1ms
+        std::this_thread::sleep_for (std::chrono::milliseconds (1));
     }
 }
 }  // namespace canable

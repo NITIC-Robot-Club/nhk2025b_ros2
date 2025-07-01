@@ -1,4 +1,4 @@
-footprint_publisher:
+visualize_footprint:
   ros__parameters:
     robot_width: 0.8
     robot_length: 0.6

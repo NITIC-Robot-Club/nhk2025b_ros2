@@ -1,5 +1,5 @@
-#ifndef __footprint_publisher_hpp__
-#define __footprint_publisher_hpp__
+#ifndef __visualize_footprint_hpp__
+#define __visualize_footprint_hpp__
 
 #include <nhk2025b_utils/get_yaw_2d.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -11,10 +11,10 @@
 #include <deque>
 #include <vector>
 
-namespace footprint_publisher {
-class footprint_publisher : public rclcpp::Node {
+namespace visualize_footprint {
+class visualize_footprint : public rclcpp::Node {
    public:
-    footprint_publisher (const rclcpp::NodeOptions &options);
+    visualize_footprint (const rclcpp::NodeOptions &options);
 
    private:
     std::deque<visualization_msgs::msg::Marker> marker_history;
@@ -30,6 +30,6 @@ class footprint_publisher : public rclcpp::Node {
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr      map_sub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 };
-}  // namespace footprint_publisher
+}  // namespace visualize_footprint
 
-#endif  //__footprint_publisher_hpp__
+#endif  //__visualize_footprint_hpp__

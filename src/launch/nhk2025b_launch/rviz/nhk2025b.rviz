@@ -596,13 +596,26 @@ Visualization Manager:
           Enabled: true
           Name: 独ステ可視化
           Namespaces:
-            {}
+            swerve: true
+            swerve_angle_text: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /visualization/swerve
+          Value: true
+        - Class: rviz_default_plugins/MarkerArray
+          Enabled: true
+          Name: 経路当たり判定
+          Namespaces:
+            path_collision: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /visualization/path_collision
           Value: true
       Enabled: true
       Name: Visualization

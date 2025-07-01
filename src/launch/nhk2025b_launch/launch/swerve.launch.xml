@@ -1,5 +1,5 @@
 <launch>
-  <arg name="is_red" default="true" doc="Is the robot red?"/>
+  <arg name="is_red" default="true"/>
   <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_container" namespace="">
     <composable_node pkg="nhk2025b_swerve_calculator" plugin="swerve_calculator::swerve_calculator" name="swerve_calculator"/>
     <composable_node pkg="nhk2025b_canable" plugin="canable::canable" name="canable"/>

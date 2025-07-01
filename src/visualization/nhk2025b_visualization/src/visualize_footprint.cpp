@@ -1,12 +1,12 @@
-#include "nhk2025b_footprint_publisher/footprint_publisher.hpp"
+#include "nhk2025b_visualization/visualize_footprint.hpp"
 
-namespace footprint_publisher {
+namespace visualize_footprint {
 
-footprint_publisher::footprint_publisher (const rclcpp::NodeOptions &options) : Node ("footprint_publisher", options) {
+visualize_footprint::visualize_footprint (const rclcpp::NodeOptions &options) : Node ("visualize_footprint", options) {
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/localization/current_pose", 1, std::bind (&footprint_publisher::pose_callback, this, std::placeholders::_1));
+        "/localization/current_pose", 1, std::bind (&visualize_footprint::pose_callback, this, std::placeholders::_1));
     map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
-        "/behavior/map", 1, std::bind (&footprint_publisher::map_callback, this, std::placeholders::_1));
+        "/behavior/map", 1, std::bind (&visualize_footprint::map_callback, this, std::placeholders::_1));
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/robot_footprint", 1);
 
     // Robot dimensions (in meters)
@@ -15,7 +15,7 @@ footprint_publisher::footprint_publisher (const rclcpp::NodeOptions &options) : 
     declare_parameter ("history", 300);
 }
 
-void footprint_publisher::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+void visualize_footprint::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     // パラメータ取得
     robot_width  = get_parameter ("robot_width").as_double ();
     robot_length = get_parameter ("robot_length").as_double ();
@@ -78,11 +78,11 @@ void footprint_publisher::pose_callback (const geometry_msgs::msg::PoseStamped::
     marker_pub_->publish (marker_array);
 }
 
-void footprint_publisher::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+void visualize_footprint::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
     map = *msg;
 }
 
-bool footprint_publisher::is_hit (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+bool visualize_footprint::is_hit (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     if (map.data.empty ()) return false;
 
     const double x = msg->pose.position.x;
@@ -132,8 +132,8 @@ bool footprint_publisher::is_hit (const geometry_msgs::msg::PoseStamped::SharedP
     return false;  // すべて安全
 }
 
-}  // namespace footprint_publisher
-// namespace footprint_publisher
+}  // namespace visualize_footprint
+// namespace visualize_footprint
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE (footprint_publisher::footprint_publisher)
+RCLCPP_COMPONENTS_REGISTER_NODE (visualize_footprint::visualize_footprint)
