@@ -50,16 +50,7 @@ void path_planner::timer_callback () {
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    // msg->pose.position.x = std::clamp (msg->pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
-    // msg->pose.position.y = std::clamp (msg->pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
     goal_pose = *msg;
-
-    // double clamped_current_x = std::clamp (current_pose.pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
-    // double clamped_current_y = std::clamp (current_pose.pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
-    // if (current_pose.pose.position.x != clamped_current_x || current_pose.pose.position.y != clamped_current_y) {
-    //     RCLCPP_WARN (this->get_logger (), "current pose is out of map");
-    //     return;
-    // }
 
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
@@ -139,12 +130,14 @@ void path_planner::inflate_map () {
         }
     }
 }
+std::pair<int, int> path_planner::to_grid (double x, double y) {
+    int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
+    int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
+    gx = std::clamp(gx, 0, map_width - 1);
+    gy = std::clamp(gy, 0, map_height - 1);
+    return {gx, gy};
+}
 void path_planner::path_smoother () {
-    auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
-        int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
-        int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
-        return {gx, gy};
-    };
     auto get_cost = [&] (int x, int y) -> double {
         if (x < 0 || y < 0 || x >= map_width || y >= map_height) return 1.0;
         return static_cast<double> (occ_map.data[y * map_width + x]) / 100.0;
@@ -189,11 +182,6 @@ void path_planner::path_smoother () {
 }
 void path_planner::linear_astar () {
     linear_path.poses.clear ();
-    auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
-        int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
-        int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
-        return {gx, gy};
-    };
 
     auto start = to_grid (current_pose.pose.position.x, current_pose.pose.position.y);
     auto goal  = to_grid (goal_pose.pose.position.x, goal_pose.pose.position.y);
@@ -248,11 +236,6 @@ void path_planner::linear_astar () {
     }
 }
 void path_planner::angular_astar (nav_msgs::msg::Path &path) {
-    auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
-        int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
-        int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
-        return {gx, gy};
-    };
     if (smoothed_path.poses.size () == 0) {
         // RCLCPP_WARN (this->get_logger (), "linear path is empty, cannot perform angular A*");
         return;
