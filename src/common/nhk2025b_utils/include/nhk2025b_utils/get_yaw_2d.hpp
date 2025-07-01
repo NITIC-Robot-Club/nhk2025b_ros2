@@ -1,6 +1,7 @@
 #ifndef __nhk2025b_utils_get_yaw_2d_hpp__
 #define __nhk2025b_utils_get_yaw_2d_hpp__
 #include <geometry_msgs/msg/quaternion.hpp>
+
 #include <cmath>
 
 namespace nhk2025b_utils {

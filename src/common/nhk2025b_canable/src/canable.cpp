@@ -98,7 +98,7 @@ void canable::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) 
         frame.can_dlc = 8;
         std::memcpy (frame.data, &msg->wheel_angle[i], sizeof (float));
         std::memcpy (frame.data + 4, &msg->wheel_speed[i], sizeof (float));
-        int result = write(can_socket_, &frame, sizeof (struct can_frame));
+        int result = write (can_socket_, &frame, sizeof (struct can_frame));
         if (result < 0) {
             RCLCPP_ERROR (this->get_logger (), "Failed to send CAN message %d", result);
             return;

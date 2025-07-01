@@ -17,8 +17,8 @@ visualize_path_collision::visualize_path_collision (const rclcpp::NodeOptions &o
 
 void visualize_path_collision::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
     // パラメータ取得
-    robot_width  = get_parameter ("robot_width").as_double ();
-    robot_length = get_parameter ("robot_length").as_double ();
+    robot_width                  = get_parameter ("robot_width").as_double ();
+    robot_length                 = get_parameter ("robot_length").as_double ();
     double wheel_positions[5][2] = {
         {+robot_length / 2.0, +robot_width / 2.0},
         {-robot_length / 2.0, +robot_width / 2.0},
@@ -31,15 +31,15 @@ void visualize_path_collision::path_callback (const nav_msgs::msg::Path::SharedP
     // MarkerArrayとしてpublish
     marker_array.markers.clear ();
     int id = 0;
-    for(const auto &pose : msg->poses) {
+    for (const auto &pose : msg->poses) {
         visualization_msgs::msg::Marker marker;
-        marker.header = pose.header;
-        marker.ns = "path_collision";
-        marker.id = id++;
-        marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
-        marker.action = visualization_msgs::msg::Marker::ADD;
+        marker.header  = pose.header;
+        marker.ns      = "path_collision";
+        marker.id      = id++;
+        marker.type    = visualization_msgs::msg::Marker::LINE_STRIP;
+        marker.action  = visualization_msgs::msg::Marker::ADD;
         marker.scale.x = 0.01;
-        if(is_hit (std::make_shared<geometry_msgs::msg::PoseStamped> (pose))) {
+        if (is_hit (std::make_shared<geometry_msgs::msg::PoseStamped> (pose))) {
             marker.color.r = 1.0;  // 赤色
             marker.color.g = 0.0;
             marker.color.b = 0.0;
@@ -48,14 +48,16 @@ void visualize_path_collision::path_callback (const nav_msgs::msg::Path::SharedP
             marker.color.g = 1.0;
             marker.color.b = 0.0;
         }
-        marker.color.a = 1.0;  // 不透明
+        marker.color.a  = 1.0;  // 不透明
         marker.lifetime = rclcpp::Duration::from_seconds (0.1);
         // ロボットの四隅の点を追加
         for (const auto &pos : wheel_positions) {
             geometry_msgs::msg::Point point;
-            point.x = pose.pose.position.x + pos[0] * cos (nhk2025b_utils::get_yaw_2d (pose.pose.orientation)) - pos[1] * sin (nhk2025b_utils::get_yaw_2d (pose.pose.orientation));
-            point.y = pose.pose.position.y + pos[0] * sin (nhk2025b_utils::get_yaw_2d (pose.pose.orientation)) + pos[1] * cos (nhk2025b_utils::get_yaw_2d (pose.pose.orientation));
-            point.z = pose.pose.position.z; // Z軸はそのまま
+            point.x = pose.pose.position.x + pos[0] * cos (nhk2025b_utils::get_yaw_2d (pose.pose.orientation)) -
+                      pos[1] * sin (nhk2025b_utils::get_yaw_2d (pose.pose.orientation));
+            point.y = pose.pose.position.y + pos[0] * sin (nhk2025b_utils::get_yaw_2d (pose.pose.orientation)) +
+                      pos[1] * cos (nhk2025b_utils::get_yaw_2d (pose.pose.orientation));
+            point.z = pose.pose.position.z;  // Z軸はそのまま
             marker.points.push_back (point);
         }
         marker_array.markers.push_back (marker);

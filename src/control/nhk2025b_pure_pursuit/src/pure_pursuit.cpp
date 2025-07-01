@@ -108,7 +108,7 @@ void pure_pursuit::timer_callback () {
     // ゴール付近での減速
     if (goal_distance < goal_deceleration_distance_) {
         double goal_target_speed = target_speed * goal_distance / goal_deceleration_distance_ / goal_deceleration_p_;
-        target_speed = std::min(target_speed, goal_target_speed);
+        target_speed             = std::min (target_speed, goal_target_speed);
     }
 
     // 曲率に応じた速度制限
