@@ -60,6 +60,7 @@ class path_planner : public rclcpp::Node {
     void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void   vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void   find_freespace (std::pair<int, int>& point);
+    void   find_freeangle (const int index, int &theta);
     void   timer_callback ();
     void   linear_astar ();
     void   angular_astar (nav_msgs::msg::Path& path);
@@ -76,6 +77,7 @@ class path_planner : public rclcpp::Node {
     }
     std::vector<std::vector<int8_t>> inflated_map;
     std::vector<std::vector<int8_t>> offset_map;
+    std::vector<std::vector<int8_t>> angle_cost_map;
     // std::vector<std::pair<int, int>>                linear_path;
 
     std::vector<std::array<std::pair<int, int>, 4>> rotated_footprint;

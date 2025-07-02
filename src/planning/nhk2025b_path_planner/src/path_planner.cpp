@@ -46,7 +46,7 @@ void path_planner::timer_callback () {
     else if (delta_yaw < -M_PI)
         delta_yaw += 2 * M_PI;
     if (distance < tolerance_xy_mm / 1000.0 && std::abs (delta_yaw) < tolerance_z_rad) {
-        path_publisher->publish (path);
+        // path_publisher->publish (path);
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
@@ -133,8 +133,8 @@ void path_planner::inflate_map () {
 std::pair<int, int> path_planner::to_grid (double x, double y) {
     int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
     int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
-    gx = std::clamp(gx, 0, map_width - 1);
-    gy = std::clamp(gy, 0, map_height - 1);
+    gx     = std::clamp (gx, 0, map_width - 1);
+    gy     = std::clamp (gy, 0, map_height - 1);
     return {gx, gy};
 }
 void path_planner::path_smoother () {
@@ -148,7 +148,8 @@ void path_planner::path_smoother () {
         double dy             = get_cost (grid_x, grid_y + 1) - get_cost (grid_x, grid_y - 1);
         return {dx / 2.0, dy / 2.0};
     };
-    smoothed_path            = linear_path;
+    smoothed_path.poses.clear ();
+    smoothed_path.poses = linear_path.poses;
     const int max_iterations = 300;
     if (smoothed_path.poses.size () < 3) {
         return;
@@ -179,6 +180,7 @@ void path_planner::path_smoother () {
             smoothed_path.poses[i].pose.position.y -= total_y * grad_step_size;
         }
     }
+    RCLCPP_INFO (this->get_logger (), "Smoothing  %zu points", smoothed_path.poses.size ());
 }
 void path_planner::linear_astar () {
     linear_path.poses.clear ();
@@ -228,12 +230,7 @@ void path_planner::linear_astar () {
         curr = came_from[idx];
     }
     std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
-    if (linear_path.poses.size () == 0) {
-        geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x = goal.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
-        pose.pose.position.y = goal.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
-        linear_path.poses.push_back (pose);
-    }
+    RCLCPP_INFO (this->get_logger (), "Linear %zu points", linear_path.poses.size ());
 }
 void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     if (smoothed_path.poses.size () == 0) {
@@ -241,16 +238,19 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         return;
     }
 
-    auto start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
-    auto goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
+    int start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
+    int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
     if (start_theta < 0) start_theta += 360;
     if (goal_theta < 0) goal_theta += 360;
     start_theta /= theta_resolution;
     goal_theta /= theta_resolution;
+
     std::priority_queue<astar_node, std::vector<astar_node>, std::greater<astar_node>> open;
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
     std::unordered_map<int, double>                                                    cost_so_far;
 
+    came_from.clear ();
+    cost_so_far.clear ();
     nav_msgs::msg::OccupancyGrid theta_map;
     theta_map.header.frame_id        = "map";
     theta_map.header.stamp           = this->now ();
@@ -261,14 +261,13 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     theta_map.info.origin.position.y = 0.0;
     theta_map.data.resize (theta_map.info.width * theta_map.info.height, 0);
     // 各角度のコストを計算
-    std::vector<std::vector<int8_t>> angle_cost_map;
+    angle_cost_map.clear ();
     angle_cost_map.resize (smoothed_path.poses.size (), std::vector<int8_t> (360 / theta_resolution, 0));
-    for (int i = 0; i < angle_cost_map.size (); ++i) {
+    for (int i = 0; i < smoothed_path.poses.size (); ++i) {
         auto [gx, gy] = to_grid (smoothed_path.poses[i].pose.position.x, smoothed_path.poses[i].pose.position.y);
         if (inflated_map[gy][gx] > 10) {
-            for (int j = 0; j < angle_cost_map[i].size (); ++j) {
-                int angle = j * theta_resolution;
-                if (is_collision (gx, gy, angle)) {
+            for (int j = 0; j < angle_cost_map[0].size (); ++j) {
+                if (is_collision (gx, gy, j)) {
                     angle_cost_map[i][j]                         = 100;
                     theta_map.data[j * theta_map.info.width + i] = 100;
                 }
@@ -277,26 +276,42 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     }
     theta_map_publisher->publish (theta_map);
 
+    find_freeangle (0, start_theta);
+    find_freeangle (smoothed_path.poses.size () - 1, goal_theta);
+
     auto to_index = [&] (int x, int y) { return y * angle_cost_map.size () + x; };
     open.push ({0, start_theta, 0.0, 0.0});
     cost_so_far[to_index (0, start_theta)] = 0.0;
 
     while (!open.empty ()) {
-        astar_node current = open.top ();
+        int        zyoukyou = 0;
+        int cost = -1;
+        int sofar = -1;
+        astar_node current  = open.top ();
         open.pop ();
         if (current.x == smoothed_path.poses.size () - 1 && current.y == goal_theta) {
             break;
         }
         for (auto dx : {0, 1}) {
             for (auto dth : rotations) {
+                if (dx == 0 && dth == 0) {
+                    zyoukyou = 1;
+                    continue;  // Skip no
+                }
                 int next_x = current.x + dx, next_theta = current.y + dth;
-                if (next_x >= smoothed_path.poses.size ()) continue;
+                if (next_x >= smoothed_path.poses.size ()) {
+                    zyoukyou = 2;
+                    continue;  // Skip no
+                }
                 if (next_theta < 0) {
                     next_theta += angle_cost_map[0].size ();
                 } else if (next_theta >= angle_cost_map[0].size ()) {
                     next_theta -= angle_cost_map[0].size ();
                 }
-                if (angle_cost_map[next_x][next_theta] > 50) continue;
+                if (angle_cost_map[next_x][next_theta] > 50) {
+                    zyoukyou = 3;
+                    continue;  // Skip no
+                }
 
                 double new_cost = cost_so_far[to_index (current.x, current.y)] + theta_heuristic (dx, dth);
                 if (!cost_so_far.count (to_index (next_x, next_theta)) || new_cost < cost_so_far[to_index (next_x, next_theta)]) {
@@ -305,13 +320,18 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
                     double priority = new_cost + theta_heuristic (angle_cost_map.size () - 1 - next_x, goal_theta - next_theta);
                     open.push ({next_x, next_theta, new_cost, priority});
                     came_from[to_index (next_x, next_theta)] = {current.x, current.y};
+                }else{
+                    zyoukyou = 4;  // Skip no
+                    cost = new_cost;
+                    sofar = cost_so_far[to_index (next_x, next_theta)];
+
                 }
             }
         }
+        if (open.empty ()) RCLCPP_INFO (this->get_logger (), "Open set is empty, no path found%d::z%d::c%d::so%d", current.x, zyoukyou,cost,sofar);
     }
-
     auto curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
-    while (curr.first != 0 || curr.second != start_theta) {
+    do {
         geometry_msgs::msg::PoseStamped pose;
         pose.pose.position.x    = smoothed_path.poses[curr.first].pose.position.x;
         pose.pose.position.y    = smoothed_path.poses[curr.first].pose.position.y;
@@ -320,15 +340,19 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         pose.pose.orientation.w = std::cos (yaw / 2.0);
         path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
-        if (!came_from.count (idx)) return;
+        if (!came_from.count (idx)) {
+            RCLCPP_INFO (this->get_logger (), "No path found");
+            return;
+        }
         curr = came_from[idx];
-    }
+    } while (curr.first != 0 || curr.second != start_theta);
     std::reverse (path.poses.begin (), path.poses.end ());
+    RCLCPP_INFO (this->get_logger (), "Angular %zu points", path.poses.size ());
 }
 double path_planner::theta_heuristic (int dx, int theta) {
     theta = std::abs (theta);
     if (theta >= 180 / theta_resolution) theta = 360 / theta_resolution - theta;
-    double angle_weight = 1.0;
+    double angle_weight = 0.5;
     return hypot (dx, angle_weight * theta);
 }
 void path_planner::init_rotated_footprint () {
@@ -347,10 +371,9 @@ void path_planner::init_rotated_footprint () {
     }
 }
 bool path_planner::is_collision (int x, int y, int theta) {
-    int theta_idx = angle_to_index (theta);
     for (int i = 0; i < 4; ++i) {
-        int next_x = x + rotated_footprint[theta_idx][i].first;
-        int next_y = y + rotated_footprint[theta_idx][i].second;
+        int next_x = x + rotated_footprint[theta][i].first;
+        int next_y = y + rotated_footprint[theta][i].second;
         if (next_x < 0 || next_y < 0 || next_x >= map_width || next_y >= map_height) {
             return true;
         }
@@ -372,7 +395,7 @@ void path_planner::find_freespace (std::pair<int, int> &point) {
         if (inflated_map[y][x] < 50) {
             point.first  = x;
             point.second = y;
-            break;
+            return;
         }
 
         for (auto [dx, dy] : directions) {
@@ -384,6 +407,35 @@ void path_planner::find_freespace (std::pair<int, int> &point) {
             }
         }
     }
+}
+void path_planner::find_freeangle (const int index, int &theta) {
+    std::vector<bool> visited (360 / theta_resolution, false);
+    std::queue<int>   q;
+    q.push (theta);
+    visited[theta] = true;
+    RCLCPP_INFO (this->get_logger (), "Finding free angle for index %d, initial angle %d", index, theta);
+    while (!q.empty ()) {
+        int angle = q.front ();
+        q.pop ();
+        if (angle_cost_map[index][angle] < 50) {
+            theta = angle;
+            return;
+        }
+
+        for (int d_theta : {-1, 1}) {
+            int next_theta = angle + d_theta;
+            if (next_theta < 0) {
+                next_theta += angle_cost_map[0].size ();
+            } else if (next_theta >= angle_cost_map[0].size ()) {
+                next_theta -= angle_cost_map[0].size ();
+            }
+            if (!visited[next_theta]) {
+                visited[next_theta] = true;
+                q.push (next_theta);
+            }
+        }
+    }
+    RCLCPP_INFO (this->get_logger (), "No free angle found for index %d", index);
 }
 void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     current_pose = *msg;
