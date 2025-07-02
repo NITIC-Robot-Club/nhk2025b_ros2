@@ -27,6 +27,16 @@ rclcpp_components_register_node(${PROJECT_NAME}
     EXECUTABLE visualize_stl
 )
 
+rclcpp_components_register_node(${PROJECT_NAME}
+    PLUGIN "visualize_footprint::visualize_footprint"
+    EXECUTABLE visualize_footprint
+)
+
+rclcpp_components_register_node(${PROJECT_NAME}
+    PLUGIN "visualize_path_collision::visualize_path_collision"
+    EXECUTABLE visualize_path_collision
+)
+
 ament_auto_package(
     INSTALL_TO_SHARE
 )
