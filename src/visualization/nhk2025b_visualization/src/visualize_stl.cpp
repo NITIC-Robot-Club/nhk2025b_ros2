@@ -1,7 +1,7 @@
 #include "nhk2025b_visualization/visualize_stl.hpp"
 
 namespace visualize_stl {
-visualize_stl::visualize_stl (const rclcpp::NodeOptions &node_options) : rclcpp::Node ("viz_stl", node_options) {
+visualize_stl::visualize_stl (const rclcpp::NodeOptions &node_options) : rclcpp::Node ("vizualize_stl", node_options) {
     publisher = create_publisher<visualization_msgs::msg::Marker> ("output/maker", 0);
 
     marker_msg = visualization_msgs::msg::Marker ();
@@ -44,6 +44,7 @@ visualize_stl::visualize_stl (const rclcpp::NodeOptions &node_options) : rclcpp:
 
     RCLCPP_INFO_STREAM (get_logger (), "ns:" << marker_msg.ns);
     RCLCPP_INFO_STREAM (get_logger (), "id:" << marker_msg.id);
+    RCLCPP_INFO_STREAM (get_logger (), "rate: " << period << " ms");
     RCLCPP_INFO_STREAM (get_logger (), "file:" << marker_msg.mesh_resource);
     RCLCPP_INFO_STREAM (get_logger (), "Initialize Task Done");
 }
