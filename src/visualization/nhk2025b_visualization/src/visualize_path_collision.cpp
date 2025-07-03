@@ -8,6 +8,7 @@ visualize_path_collision::visualize_path_collision (const rclcpp::NodeOptions &o
     map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
         "/behavior/map", 1, std::bind (&visualize_path_collision::map_callback, this, std::placeholders::_1));
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/path_collision", 1);
+    timer_      = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&visualize_path_collision::timer_callback, this));
 
     // Robot dimensions (in meters)
     declare_parameter ("robot_width", 0.8);
@@ -16,6 +17,10 @@ visualize_path_collision::visualize_path_collision (const rclcpp::NodeOptions &o
 }
 
 void visualize_path_collision::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
+    path = *msg;
+}
+
+void visualize_path_collision::timer_callback () {
     // パラメータ取得
     robot_width                  = get_parameter ("robot_width").as_double ();
     robot_length                 = get_parameter ("robot_length").as_double ();
@@ -31,7 +36,7 @@ void visualize_path_collision::path_callback (const nav_msgs::msg::Path::SharedP
     // MarkerArrayとしてpublish
     marker_array.markers.clear ();
     int id = 0;
-    for (const auto &pose : msg->poses) {
+    for (const auto &pose : path.poses) {
         visualization_msgs::msg::Marker marker;
         marker.header  = pose.header;
         marker.ns      = "path_collision";
@@ -44,9 +49,9 @@ void visualize_path_collision::path_callback (const nav_msgs::msg::Path::SharedP
             marker.color.g = 0.0;
             marker.color.b = 0.0;
         } else {
-            marker.color.r = 0.0;  // 緑色
-            marker.color.g = 1.0;
-            marker.color.b = 0.0;
+            marker.color.r = 0.0;
+            marker.color.g = 0.0;
+            marker.color.b = 1.0;
         }
         marker.color.a  = 1.0;  // 不透明
         marker.lifetime = rclcpp::Duration::from_seconds (0.1);
