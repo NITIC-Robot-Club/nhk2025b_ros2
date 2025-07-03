@@ -4,5 +4,7 @@ pure_pursuit:
     angle_lookahead_distance: 0.7
     lookahead_time: 1.0
     curve_decceleration_p: 5.0
-    goal_deceleration_distance_m: 0.3
-    max_acceleration_xy_m_s2_: 1.0
+    goal_deceleration_distance_p: 10.0
+    goal_deceleration_p: 1.0
+    max_acceleration_xy_m_s2_: 5.0
+    max_speed_xy_m_s: 3.0

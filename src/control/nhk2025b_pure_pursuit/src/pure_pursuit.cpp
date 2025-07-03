@@ -22,7 +22,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->declare_parameter ("max_speed_xy_m_s", 3.0);
     this->declare_parameter ("max_speed_z_rad_s", 3.14);
     this->declare_parameter ("max_acceleration_xy_m_s2_", 6.0);
-    this->declare_parameter ("goal_deceleration_distance_m", 2.0);
+    this->declare_parameter ("goal_deceleration_distance_p", 1.0);
     this->declare_parameter ("goal_deceleration_p", 2.0);
 }
 
@@ -45,11 +45,10 @@ void pure_pursuit::timer_callback () {
     this->get_parameter ("max_speed_xy_m_s", max_speed_xy_m_s_);
     this->get_parameter ("max_speed_z_rad_s", max_speed_z_rad_s_);
     this->get_parameter ("max_acceleration_xy_m_s2_", max_acceleration_xy_m_s2_);
-    this->get_parameter ("goal_deceleration_distance_m", goal_deceleration_distance_);
+    this->get_parameter ("goal_deceleration_distance_p", goal_deceleration_distance_p_);
     this->get_parameter ("goal_deceleration_p", goal_deceleration_p_);
 
     if (path_.poses.empty ()) {
-        // RCLCPP_WARN (this->get_logger (), "Path is empty");
         geometry_msgs::msg::TwistStamped cmd_vel;
         cmd_vel.header.stamp    = this->now ();
         cmd_vel.header.frame_id = "base_link";
@@ -105,11 +104,12 @@ void pure_pursuit::timer_callback () {
     // 最大速度制限
     target_speed = std::clamp (target_speed, 0.0, max_speed_xy_m_s_);
 
-    // ゴール付近での減速
-    if (goal_distance < goal_deceleration_distance_) {
-        double goal_target_speed = target_speed * goal_distance / goal_deceleration_distance_ / goal_deceleration_p_;
-        target_speed             = std::min (target_speed, goal_target_speed);
-    }
+    double d = std::max (goal_distance, 0.0);
+
+    // 今の距離dで静止できる最大速度
+    double max_stop_speed = std::sqrt (2.0 * max_acceleration_xy_m_s2_ * d / goal_deceleration_distance_p_);
+
+    target_speed = std::min (target_speed, max_stop_speed);
 
     // 曲率に応じた速度制限
     int p1 = closest_index;
@@ -130,7 +130,7 @@ void pure_pursuit::timer_callback () {
     }
 
     double curvature_speed = target_speed / (std::abs (curvature * curvature_decceleration_p_) + 1e-6);
-    // RCLCPP_INFO(this->get_logger (), "target speed: %f, curvature speed: %f", target_speed, curvature_speed);
+
     target_speed = std::min (target_speed, curvature_speed);
 
     // lookahead距離更新
@@ -180,7 +180,6 @@ void pure_pursuit::timer_callback () {
 
     last_cmd_vel_ = cmd_vel;
 }
-
 }  // namespace pure_pursuit
 
 #include <rclcpp_components/register_node_macro.hpp>

@@ -27,7 +27,7 @@ class pure_pursuit : public rclcpp::Node {
     double max_speed_z_rad_s_;           // 最大回転速度
     double max_acceleration_xy_m_s2_;    // 最大加速度
     double lookahead_distance_;          // 現在のlookahead距離 [m]（動的に計算される）
-    double goal_deceleration_distance_;  // ゴール減速距離 [m]
+    double goal_deceleration_distance_p_;  // ゴール減速距離 [m]
     double goal_deceleration_p_;         // ゴール到達許容距離 [m
 
     // 入力データ

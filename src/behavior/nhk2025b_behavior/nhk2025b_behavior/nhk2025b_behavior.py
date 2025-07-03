@@ -214,7 +214,7 @@ class nhk2025b_behavior(Node):
         yaw = math.atan2(2.0*(q.w*q.z + q.x*q.y), 1.0 - 2.0*(q.y*q.y + q.z*q.z))
         dyaw = abs((yaw - math.radians(goal_yaw) + math.pi) % (2*math.pi) - math.pi)
         deg = math.degrees(dyaw)
-        return dist < 0.10 and deg < 7.0
+        return dist < 0.10 and deg < 5.0
 
 
 
