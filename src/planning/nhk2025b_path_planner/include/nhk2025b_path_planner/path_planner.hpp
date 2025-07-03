@@ -59,8 +59,7 @@ class path_planner : public rclcpp::Node {
     void   goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void   vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
-    void   find_freespace (std::pair<int, int>& point);
-    void   find_freeangle (const int index, int& theta);
+    void   find_freespace (std::pair<int, int>& point, int theta);
     void   timer_callback ();
     void   linear_astar ();
     void   angular_astar (nav_msgs::msg::Path& path);

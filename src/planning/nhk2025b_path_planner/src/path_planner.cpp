@@ -191,8 +191,13 @@ void path_planner::linear_astar () {
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
     std::unordered_map<int, double>                                                    cost_so_far;
 
-    find_freespace (start);
-    find_freespace (goal);
+    int start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
+    int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
+    start_theta = angle_to_index(start_theta);
+    goal_theta  = angle_to_index(goal_theta);
+
+    find_freespace (start, start_theta);
+    find_freespace (goal, goal_theta);
 
     open.push ({start.first, start.second, 0.0, 0.0});
     cost_so_far[to_index (start.first, start.second)] = 0.0;
@@ -240,10 +245,8 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
 
     int start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
     int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
-    if (start_theta < 0) start_theta += 360;
-    if (goal_theta < 0) goal_theta += 360;
-    start_theta /= theta_resolution;
-    goal_theta /= theta_resolution;
+    start_theta = angle_to_index(start_theta);
+    goal_theta  = angle_to_index(goal_theta);
 
     std::priority_queue<astar_node, std::vector<astar_node>, std::greater<astar_node>> open;
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
@@ -275,9 +278,6 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         }
     }
     theta_map_publisher->publish (theta_map);
-
-    find_freeangle (0, start_theta);
-    find_freeangle (smoothed_path.poses.size () - 1, goal_theta);
 
     auto to_index = [&] (int x, int y) { return y * angle_cost_map.size () + x; };
     open.push ({0, start_theta, 0.0, 0.0});
@@ -373,7 +373,7 @@ bool path_planner::is_collision (int x, int y, int theta) {
     }
     return false;
 }
-void path_planner::find_freespace (std::pair<int, int> &point) {
+void path_planner::find_freespace (std::pair<int, int> &point, int theta) {
     std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
     std::queue<std::pair<int, int>> q;
     q.push ({point.first, point.second});
@@ -382,7 +382,7 @@ void path_planner::find_freespace (std::pair<int, int> &point) {
     while (!q.empty ()) {
         auto [x, y] = q.front ();
         q.pop ();
-        if (inflated_map[y][x] < 50) {
+        if (!is_collision (x, y, theta)) {
             point.first  = x;
             point.second = y;
             return;
@@ -397,34 +397,6 @@ void path_planner::find_freespace (std::pair<int, int> &point) {
             }
         }
     }
-}
-void path_planner::find_freeangle (const int index, int &theta) {
-    std::vector<bool> visited (360 / theta_resolution, false);
-    std::queue<int>   q;
-    q.push (theta);
-    visited[theta] = true;
-    while (!q.empty ()) {
-        int angle = q.front ();
-        q.pop ();
-        if (angle_cost_map[index][angle] < 50) {
-            theta = angle;
-            return;
-        }
-
-        for (int d_theta : {-1, 1}) {
-            int next_theta = angle + d_theta;
-            if (next_theta < 0) {
-                next_theta += angle_cost_map[0].size ();
-            } else if (next_theta >= angle_cost_map[0].size ()) {
-                next_theta -= angle_cost_map[0].size ();
-            }
-            if (!visited[next_theta]) {
-                visited[next_theta] = true;
-                q.push (next_theta);
-            }
-        }
-    }
-    // RCLCPP_INFO (this->get_logger (), "No free angle found for index %d", index);
 }
 void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     current_pose = *msg;
