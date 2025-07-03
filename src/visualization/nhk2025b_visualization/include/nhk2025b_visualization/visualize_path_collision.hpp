@@ -18,15 +18,18 @@ class visualize_path_collision : public rclcpp::Node {
 
    private:
     nav_msgs::msg::OccupancyGrid map;
+    nav_msgs::msg::Path       path;
 
     double robot_width, robot_length;
     void   path_callback (const nav_msgs::msg::Path::SharedPtr msg);
+    void   timer_callback ();
     void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     bool   is_hit (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr               path_sub_;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr      map_sub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
+    rclcpp::TimerBase::SharedPtr                  timer_;
 };
 }  // namespace visualize_path_collision
 

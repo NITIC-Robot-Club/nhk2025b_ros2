@@ -15,7 +15,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
 
     this->declare_parameter ("lookahead_time", 1.0);
     this->declare_parameter ("min_lookahead_distance", 0.3);
-    this->declare_parameter ("max_lookahead_distance", 3.0);
+    this->declare_parameter ("max_lookahead_distance", 5.0);
     this->declare_parameter ("angle_lookahead_distance", 1.0);
     this->declare_parameter ("curvature_decceleration_p", 10.0);
     this->declare_parameter ("angle_p", 2.0);
