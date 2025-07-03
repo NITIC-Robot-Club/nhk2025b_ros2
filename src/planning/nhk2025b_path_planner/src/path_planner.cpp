@@ -61,7 +61,6 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     header.stamp    = this->now ();
     path.header     = header;
 
-    // RCLCPP_WARN (this->get_logger (), "asatr");
     linear_astar ();
 
     path_smoother ();
@@ -72,8 +71,6 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     }
     if (path.poses.size () != 0) safe_goal_pose = path.poses.back ();
     path_publisher->publish (path);
-
-    // RCLCPP_INFO (this->get_logger (), "Path planning completed with %zu points", path.poses.size ());
 }
 
 void path_planner::inflate_map () {
@@ -149,7 +146,7 @@ void path_planner::path_smoother () {
         return {dx / 2.0, dy / 2.0};
     };
     smoothed_path.poses.clear ();
-    smoothed_path.poses = linear_path.poses;
+    smoothed_path.poses      = linear_path.poses;
     const int max_iterations = 300;
     if (smoothed_path.poses.size () < 3) {
         return;
@@ -284,34 +281,22 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     cost_so_far[to_index (0, start_theta)] = 0.0;
 
     while (!open.empty ()) {
-        int        zyoukyou = 0;
-        int cost = -1;
-        int sofar = -1;
-        astar_node current  = open.top ();
+        astar_node current = open.top ();
         open.pop ();
         if (current.x == smoothed_path.poses.size () - 1 && current.y == goal_theta) {
             break;
         }
         for (auto dx : {0, 1}) {
             for (auto dth : rotations) {
-                if (dx == 0 && dth == 0) {
-                    zyoukyou = 1;
-                    continue;  // Skip no
-                }
+                if (dx == 0 && dth == 0) continue;
                 int next_x = current.x + dx, next_theta = current.y + dth;
-                if (next_x >= smoothed_path.poses.size ()) {
-                    zyoukyou = 2;
-                    continue;  // Skip no
-                }
+                if (next_x >= smoothed_path.poses.size ()) continue;
                 if (next_theta < 0) {
                     next_theta += angle_cost_map[0].size ();
                 } else if (next_theta >= angle_cost_map[0].size ()) {
                     next_theta -= angle_cost_map[0].size ();
                 }
-                if (angle_cost_map[next_x][next_theta] > 50) {
-                    zyoukyou = 3;
-                    continue;  // Skip no
-                }
+                if (angle_cost_map[next_x][next_theta] > 50) continue;
 
                 double new_cost = cost_so_far[to_index (current.x, current.y)] + theta_heuristic (dx, dth);
                 if (!cost_so_far.count (to_index (next_x, next_theta)) || new_cost < cost_so_far[to_index (next_x, next_theta)]) {
@@ -320,18 +305,12 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
                     double priority = new_cost + theta_heuristic (angle_cost_map.size () - 1 - next_x, goal_theta - next_theta);
                     open.push ({next_x, next_theta, new_cost, priority});
                     came_from[to_index (next_x, next_theta)] = {current.x, current.y};
-                }else{
-                    zyoukyou = 4;  // Skip no
-                    cost = new_cost;
-                    sofar = cost_so_far[to_index (next_x, next_theta)];
-
                 }
             }
         }
-        if (open.empty ()) RCLCPP_INFO (this->get_logger (), "Open set is empty, no path found%d::z%d::c%d::so%d", current.x, zyoukyou,cost,sofar);
     }
     auto curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
-    do {
+    while (curr.first != 0 || curr.second != start_theta) {
         geometry_msgs::msg::PoseStamped pose;
         pose.pose.position.x    = smoothed_path.poses[curr.first].pose.position.x;
         pose.pose.position.y    = smoothed_path.poses[curr.first].pose.position.y;
@@ -345,7 +324,15 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
             return;
         }
         curr = came_from[idx];
-    } while (curr.first != 0 || curr.second != start_theta);
+    }
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x    = smoothed_path.poses[0].pose.position.x;
+    pose.pose.position.y    = smoothed_path.poses[0].pose.position.y;
+    double yaw              = start_theta * theta_resolution * M_PI / 180.0;
+    pose.pose.orientation.z = std::sin (yaw / 2.0);
+    pose.pose.orientation.w = std::cos (yaw / 2.0);
+    path.poses.push_back (pose);
+
     std::reverse (path.poses.begin (), path.poses.end ());
     RCLCPP_INFO (this->get_logger (), "Angular %zu points", path.poses.size ());
 }
