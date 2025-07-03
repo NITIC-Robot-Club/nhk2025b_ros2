@@ -224,7 +224,7 @@ void path_planner::linear_astar () {
         linear_path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
-            linear_path.poses.clear();
+            linear_path.poses.clear ();
             return;
         }
         curr = came_from[idx];
@@ -323,7 +323,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
-            path.poses.clear();
+            path.poses.clear ();
             return;
         }
         curr = came_from[idx];
