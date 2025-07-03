@@ -193,8 +193,8 @@ void path_planner::linear_astar () {
 
     int start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
     int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
-    start_theta = angle_to_index(start_theta);
-    goal_theta  = angle_to_index(goal_theta);
+    start_theta     = angle_to_index (start_theta);
+    goal_theta      = angle_to_index (goal_theta);
 
     find_freespace (start, start_theta);
     find_freespace (goal, goal_theta);
@@ -245,8 +245,8 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
 
     int start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
     int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
-    start_theta = angle_to_index(start_theta);
-    goal_theta  = angle_to_index(goal_theta);
+    start_theta     = angle_to_index (start_theta);
+    goal_theta      = angle_to_index (goal_theta);
 
     std::priority_queue<astar_node, std::vector<astar_node>, std::greater<astar_node>> open;
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
