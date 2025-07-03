@@ -8,8 +8,7 @@ visualize_path_collision::visualize_path_collision (const rclcpp::NodeOptions &o
     map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
         "/behavior/map", 1, std::bind (&visualize_path_collision::map_callback, this, std::placeholders::_1));
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/path_collision", 1);
-    timer_ = this->create_wall_timer (
-        std::chrono::milliseconds (100), std::bind (&visualize_path_collision::timer_callback, this));
+    timer_      = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&visualize_path_collision::timer_callback, this));
 
     // Robot dimensions (in meters)
     declare_parameter ("robot_width", 0.8);
