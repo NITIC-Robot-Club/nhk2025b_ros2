@@ -46,7 +46,7 @@ void path_planner::timer_callback () {
     else if (delta_yaw < -M_PI)
         delta_yaw += 2 * M_PI;
     if (distance < tolerance_xy_mm / 1000.0 && std::abs (delta_yaw) < tolerance_z_rad) {
-        // path_publisher->publish (path);
+        path_publisher->publish (path);
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
@@ -177,7 +177,7 @@ void path_planner::path_smoother () {
             smoothed_path.poses[i].pose.position.y -= total_y * grad_step_size;
         }
     }
-    RCLCPP_INFO (this->get_logger (), "Smoothing  %zu points", smoothed_path.poses.size ());
+    // RCLCPP_INFO (this->get_logger (), "Smoothing  %zu points", smoothed_path.poses.size ());
 }
 void path_planner::linear_astar () {
     linear_path.poses.clear ();
@@ -223,11 +223,14 @@ void path_planner::linear_astar () {
         pose.pose.position.y = curr.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
         linear_path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
-        if (!came_from.count (idx)) return;
+        if (!came_from.count (idx)) {
+            linear_path.poses.clear();
+            return;
+        }
         curr = came_from[idx];
     }
     std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
-    RCLCPP_INFO (this->get_logger (), "Linear %zu points", linear_path.poses.size ());
+    // RCLCPP_INFO (this->get_logger (), "Linear %zu points", linear_path.poses.size ());
 }
 void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     if (smoothed_path.poses.size () == 0) {
@@ -320,7 +323,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
-            RCLCPP_INFO (this->get_logger (), "No path found");
+            path.poses.clear();
             return;
         }
         curr = came_from[idx];
@@ -334,7 +337,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     path.poses.push_back (pose);
 
     std::reverse (path.poses.begin (), path.poses.end ());
-    RCLCPP_INFO (this->get_logger (), "Angular %zu points", path.poses.size ());
+    // RCLCPP_INFO (this->get_logger (), "Angular %zu points", path.poses.size ());
 }
 double path_planner::theta_heuristic (int dx, int theta) {
     theta = std::abs (theta);
@@ -400,7 +403,6 @@ void path_planner::find_freeangle (const int index, int &theta) {
     std::queue<int>   q;
     q.push (theta);
     visited[theta] = true;
-    RCLCPP_INFO (this->get_logger (), "Finding free angle for index %d, initial angle %d", index, theta);
     while (!q.empty ()) {
         int angle = q.front ();
         q.pop ();
@@ -422,7 +424,7 @@ void path_planner::find_freeangle (const int index, int &theta) {
             }
         }
     }
-    RCLCPP_INFO (this->get_logger (), "No free angle found for index %d", index);
+    // RCLCPP_INFO (this->get_logger (), "No free angle found for index %d", index);
 }
 void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     current_pose = *msg;
