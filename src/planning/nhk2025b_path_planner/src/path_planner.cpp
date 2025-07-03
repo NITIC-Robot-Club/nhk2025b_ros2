@@ -50,16 +50,7 @@ void path_planner::timer_callback () {
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    // msg->pose.position.x = std::clamp (msg->pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
-    // msg->pose.position.y = std::clamp (msg->pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
     goal_pose = *msg;
-
-    // double clamped_current_x = std::clamp (current_pose.pose.position.x, 0.01, original_map.info.width * original_map.info.resolution - 0.01);
-    // double clamped_current_y = std::clamp (current_pose.pose.position.y, 0.01, original_map.info.height * original_map.info.resolution - 0.01);
-    // if (current_pose.pose.position.x != clamped_current_x || current_pose.pose.position.y != clamped_current_y) {
-    //     RCLCPP_WARN (this->get_logger (), "current pose is out of map");
-    //     return;
-    // }
 
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
@@ -70,7 +61,6 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     header.stamp    = this->now ();
     path.header     = header;
 
-    // RCLCPP_WARN (this->get_logger (), "asatr");
     linear_astar ();
 
     path_smoother ();
@@ -81,8 +71,6 @@ void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::Sh
     }
     if (path.poses.size () != 0) safe_goal_pose = path.poses.back ();
     path_publisher->publish (path);
-
-    // RCLCPP_INFO (this->get_logger (), "Path planning completed with %zu points", path.poses.size ());
 }
 
 void path_planner::inflate_map () {
@@ -139,12 +127,14 @@ void path_planner::inflate_map () {
         }
     }
 }
+std::pair<int, int> path_planner::to_grid (double x, double y) {
+    int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
+    int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
+    gx     = std::clamp (gx, 0, map_width - 1);
+    gy     = std::clamp (gy, 0, map_height - 1);
+    return {gx, gy};
+}
 void path_planner::path_smoother () {
-    auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
-        int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
-        int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
-        return {gx, gy};
-    };
     auto get_cost = [&] (int x, int y) -> double {
         if (x < 0 || y < 0 || x >= map_width || y >= map_height) return 1.0;
         return static_cast<double> (occ_map.data[y * map_width + x]) / 100.0;
@@ -155,7 +145,8 @@ void path_planner::path_smoother () {
         double dy             = get_cost (grid_x, grid_y + 1) - get_cost (grid_x, grid_y - 1);
         return {dx / 2.0, dy / 2.0};
     };
-    smoothed_path            = linear_path;
+    smoothed_path.poses.clear ();
+    smoothed_path.poses      = linear_path.poses;
     const int max_iterations = 300;
     if (smoothed_path.poses.size () < 3) {
         return;
@@ -186,14 +177,10 @@ void path_planner::path_smoother () {
             smoothed_path.poses[i].pose.position.y -= total_y * grad_step_size;
         }
     }
+    // RCLCPP_INFO (this->get_logger (), "Smoothing  %zu points", smoothed_path.poses.size ());
 }
 void path_planner::linear_astar () {
     linear_path.poses.clear ();
-    auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
-        int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
-        int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
-        return {gx, gy};
-    };
 
     auto start = to_grid (current_pose.pose.position.x, current_pose.pose.position.y);
     auto goal  = to_grid (goal_pose.pose.position.x, goal_pose.pose.position.y);
@@ -204,8 +191,13 @@ void path_planner::linear_astar () {
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
     std::unordered_map<int, double>                                                    cost_so_far;
 
-    find_freespace (start);
-    find_freespace (goal);
+    int start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
+    int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
+    start_theta     = angle_to_index (start_theta);
+    goal_theta      = angle_to_index (goal_theta);
+
+    find_freespace (start, start_theta);
+    find_freespace (goal, goal_theta);
 
     open.push ({start.first, start.second, 0.0, 0.0});
     cost_so_far[to_index (start.first, start.second)] = 0.0;
@@ -236,38 +228,32 @@ void path_planner::linear_astar () {
         pose.pose.position.y = curr.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
         linear_path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
-        if (!came_from.count (idx)) return;
+        if (!came_from.count (idx)) {
+            linear_path.poses.clear ();
+            return;
+        }
         curr = came_from[idx];
     }
     std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
-    if (linear_path.poses.size () == 0) {
-        geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x = goal.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
-        pose.pose.position.y = goal.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
-        linear_path.poses.push_back (pose);
-    }
+    // RCLCPP_INFO (this->get_logger (), "Linear %zu points", linear_path.poses.size ());
 }
 void path_planner::angular_astar (nav_msgs::msg::Path &path) {
-    auto to_grid = [&] (double x, double y) -> std::pair<int, int> {
-        int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
-        int gy = static_cast<int> ((y - original_map.info.origin.position.y) / map_resolution);
-        return {gx, gy};
-    };
     if (smoothed_path.poses.size () == 0) {
         // RCLCPP_WARN (this->get_logger (), "linear path is empty, cannot perform angular A*");
         return;
     }
 
-    auto start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
-    auto goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
-    if (start_theta < 0) start_theta += 360;
-    if (goal_theta < 0) goal_theta += 360;
-    start_theta /= theta_resolution;
-    goal_theta /= theta_resolution;
+    int start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
+    int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
+    start_theta     = angle_to_index (start_theta);
+    goal_theta      = angle_to_index (goal_theta);
+
     std::priority_queue<astar_node, std::vector<astar_node>, std::greater<astar_node>> open;
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
     std::unordered_map<int, double>                                                    cost_so_far;
 
+    came_from.clear ();
+    cost_so_far.clear ();
     nav_msgs::msg::OccupancyGrid theta_map;
     theta_map.header.frame_id        = "map";
     theta_map.header.stamp           = this->now ();
@@ -278,14 +264,13 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     theta_map.info.origin.position.y = 0.0;
     theta_map.data.resize (theta_map.info.width * theta_map.info.height, 0);
     // 各角度のコストを計算
-    std::vector<std::vector<int8_t>> angle_cost_map;
+    angle_cost_map.clear ();
     angle_cost_map.resize (smoothed_path.poses.size (), std::vector<int8_t> (360 / theta_resolution, 0));
-    for (int i = 0; i < angle_cost_map.size (); ++i) {
+    for (int i = 0; i < smoothed_path.poses.size (); ++i) {
         auto [gx, gy] = to_grid (smoothed_path.poses[i].pose.position.x, smoothed_path.poses[i].pose.position.y);
         if (inflated_map[gy][gx] > 10) {
-            for (int j = 0; j < angle_cost_map[i].size (); ++j) {
-                int angle = j * theta_resolution;
-                if (is_collision (gx, gy, angle)) {
+            for (int j = 0; j < angle_cost_map[0].size (); ++j) {
+                if (is_collision (gx, gy, j)) {
                     angle_cost_map[i][j]                         = 100;
                     theta_map.data[j * theta_map.info.width + i] = 100;
                 }
@@ -306,6 +291,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         }
         for (auto dx : {0, 1}) {
             for (auto dth : rotations) {
+                if (dx == 0 && dth == 0) continue;
                 int next_x = current.x + dx, next_theta = current.y + dth;
                 if (next_x >= smoothed_path.poses.size ()) continue;
                 if (next_theta < 0) {
@@ -326,7 +312,6 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
             }
         }
     }
-
     auto curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
     while (curr.first != 0 || curr.second != start_theta) {
         geometry_msgs::msg::PoseStamped pose;
@@ -337,15 +322,27 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         pose.pose.orientation.w = std::cos (yaw / 2.0);
         path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
-        if (!came_from.count (idx)) return;
+        if (!came_from.count (idx)) {
+            path.poses.clear ();
+            return;
+        }
         curr = came_from[idx];
     }
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x    = smoothed_path.poses[0].pose.position.x;
+    pose.pose.position.y    = smoothed_path.poses[0].pose.position.y;
+    double yaw              = start_theta * theta_resolution * M_PI / 180.0;
+    pose.pose.orientation.z = std::sin (yaw / 2.0);
+    pose.pose.orientation.w = std::cos (yaw / 2.0);
+    path.poses.push_back (pose);
+
     std::reverse (path.poses.begin (), path.poses.end ());
+    // RCLCPP_INFO (this->get_logger (), "Angular %zu points", path.poses.size ());
 }
 double path_planner::theta_heuristic (int dx, int theta) {
     theta = std::abs (theta);
     if (theta >= 180 / theta_resolution) theta = 360 / theta_resolution - theta;
-    double angle_weight = 1.0;
+    double angle_weight = 0.5;
     return hypot (dx, angle_weight * theta);
 }
 void path_planner::init_rotated_footprint () {
@@ -364,10 +361,9 @@ void path_planner::init_rotated_footprint () {
     }
 }
 bool path_planner::is_collision (int x, int y, int theta) {
-    int theta_idx = angle_to_index (theta);
     for (int i = 0; i < 4; ++i) {
-        int next_x = x + rotated_footprint[theta_idx][i].first;
-        int next_y = y + rotated_footprint[theta_idx][i].second;
+        int next_x = x + rotated_footprint[theta][i].first;
+        int next_y = y + rotated_footprint[theta][i].second;
         if (next_x < 0 || next_y < 0 || next_x >= map_width || next_y >= map_height) {
             return true;
         }
@@ -377,7 +373,7 @@ bool path_planner::is_collision (int x, int y, int theta) {
     }
     return false;
 }
-void path_planner::find_freespace (std::pair<int, int> &point) {
+void path_planner::find_freespace (std::pair<int, int> &point, int theta) {
     std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
     std::queue<std::pair<int, int>> q;
     q.push ({point.first, point.second});
@@ -386,10 +382,10 @@ void path_planner::find_freespace (std::pair<int, int> &point) {
     while (!q.empty ()) {
         auto [x, y] = q.front ();
         q.pop ();
-        if (inflated_map[y][x] < 50) {
+        if (!is_collision (x, y, theta)) {
             point.first  = x;
             point.second = y;
-            break;
+            return;
         }
 
         for (auto [dx, dy] : directions) {

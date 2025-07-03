@@ -59,7 +59,7 @@ class path_planner : public rclcpp::Node {
     void   goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void   vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
-    void   find_freespace (std::pair<int, int>& point);
+    void   find_freespace (std::pair<int, int>& point, int theta);
     void   timer_callback ();
     void   linear_astar ();
     void   angular_astar (nav_msgs::msg::Path& path);
@@ -69,11 +69,14 @@ class path_planner : public rclcpp::Node {
     bool   is_collision (int x, int y, int theta);
     double theta_heuristic (int dx, int theta);
 
+    std::pair<int, int> to_grid (double x, double y);
+
     double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
     }
     std::vector<std::vector<int8_t>> inflated_map;
     std::vector<std::vector<int8_t>> offset_map;
+    std::vector<std::vector<int8_t>> angle_cost_map;
     // std::vector<std::pair<int, int>>                linear_path;
 
     std::vector<std::array<std::pair<int, int>, 4>> rotated_footprint;
