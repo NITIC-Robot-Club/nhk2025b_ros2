@@ -1,13 +1,13 @@
 #ifndef __icp_hpp__
 #define __icp_hpp__
 
+#include <nhk2025b_utils/get_yaw_2d.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <nhk2025b_utils/get_yaw_2d.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -40,7 +40,6 @@ class icp : public rclcpp::Node {
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr current_pose_sub_;
     geometry_msgs::msg::PoseStamped                                  current_pose_;
     nav_msgs::msg::OccupancyGrid                                     latest_map_;
-
 };
 }  // namespace nhk2025b_icp
 

@@ -147,9 +147,9 @@ void icp::lidar_callback (const sensor_msgs::msg::LaserScan::SharedPtr msg) {
     }
     // 4. publish
     geometry_msgs::msg::PoseStamped out;
-    out.header = msg->header;
+    out.header          = msg->header;
     out.header.frame_id = "map";
-    out.pose   = pose_est;
+    out.pose            = pose_est;
     icp_pose_pub_->publish (out);
 }
 
