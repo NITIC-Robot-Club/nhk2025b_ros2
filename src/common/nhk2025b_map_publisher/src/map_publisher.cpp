@@ -1,8 +1,6 @@
 
 #include "nhk2025b_map_publisher/map_publisher.hpp"
 
-#include <algorithm>
-
 namespace map_publisher {
 map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_publisher", options) {
     publisher_      = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1);
