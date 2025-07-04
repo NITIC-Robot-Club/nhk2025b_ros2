@@ -86,7 +86,9 @@ void path_planner::inflate_map () {
             return;
         }
     }
-
+    occ_map.data.clear ();
+    inflated_map.clear ();
+    offset_map.clear ();
     occ_map.data.resize (map_width * map_height, 0);
     inflated_map.resize (map_height, std::vector<int8_t> (map_width, 0));
     offset_map.resize (map_height, std::vector<int8_t> (map_width, 0));
