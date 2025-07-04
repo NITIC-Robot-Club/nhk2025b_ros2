@@ -98,9 +98,9 @@ void map_publisher::publish_map () {
                 // マップ範囲チェック
                 if (mx < 0 || mx >= map.info.width || my < 0 || my >= map.info.height) continue;
 
-                // マップ座標をワールド座標に変換
-                double wx = mx * resolution_ + map.info.origin.position.x;
-                double wy = my * resolution_ + map.info.origin.position.y;
+                // マップ座標をワールド座標に変換（グリッドセルの中心を使用）
+                double wx = (mx + 0.5) * resolution_ + map.info.origin.position.x;
+                double wy = (my + 0.5) * resolution_ + map.info.origin.position.y;
 
                 // 4. Box中心に対する相対座標に変換
                 double dx = wx - center_x;
