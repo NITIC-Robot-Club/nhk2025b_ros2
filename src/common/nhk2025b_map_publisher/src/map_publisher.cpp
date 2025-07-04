@@ -47,8 +47,8 @@ void map_publisher::publish_map () {
 
     for (const auto& box : boxes.boxes) {
         // 1. Box情報の取得
-        double center_x = box.pose.position.x - 0.15;
-        double center_y = box.pose.position.y - 0.15;
+        double center_x = box.pose.position.x;
+        double center_y = box.pose.position.y;
         double size_x   = box.size.x;
         double size_y   = box.size.y;
         double yaw      = nhk2025b_utils::get_yaw_2d (box.pose.orientation);
@@ -58,10 +58,10 @@ void map_publisher::publish_map () {
         double sin_yaw = std::sin (-yaw);
 
         // 3. BoxのAABBでループ（回転を考慮した描画領域を最小化するならここ工夫してもOK）
-        int min_x = (center_x - size_x / 2.0 - 0.0) / resolution_;
-        int max_x = (center_x + size_x / 2.0 + 0.0) / resolution_;
-        int min_y = (center_y - size_y / 2.0 - 0.0) / resolution_;
-        int max_y = (center_y + size_y / 2.0 + 0.0) / resolution_;
+        int min_x = (center_x - size_x / 2.0 - map.info.origin.position.x) / resolution_;
+        int max_x = (center_x + size_x / 2.0 - map.info.origin.position.x) / resolution_;
+        int min_y = (center_y - size_y / 2.0 - map.info.origin.position.y) / resolution_;
+        int max_y = (center_y + size_y / 2.0 - map.info.origin.position.y) / resolution_;
 
         for (int mx = min_x; mx <= max_x; ++mx) {
             for (int my = min_y; my <= max_y; ++my) {
@@ -69,8 +69,8 @@ void map_publisher::publish_map () {
                 if (mx < 0 || mx >= map.info.width || my < 0 || my >= map.info.height) continue;
 
                 // マップ座標をワールド座標に変換
-                double wx = mx * resolution_;
-                double wy = my * resolution_;
+                double wx = mx * resolution_ + map.info.origin.position.x;
+                double wy = my * resolution_ + map.info.origin.position.y;
 
                 // 4. Box中心に対する相対座標に変換
                 double dx = wx - center_x;
@@ -90,8 +90,8 @@ void map_publisher::publish_map () {
 
     for (int y = 0; y < map.info.height; ++y) {
         for (int x = 0; x < map.info.width; ++x) {
-            double wx = x * resolution_;
-            double wy = y * resolution_;
+            double wx = x * resolution_ + map.info.origin.position.x;
+            double wy = y * resolution_ + map.info.origin.position.y;
             for (int i = 0; i < 5; ++i) {
                 if (field_data[i][0] <= wx && wx <= field_data[i][1] && field_data[i][2] <= wy && wy <= field_data[i][3]) {
                     map.data[y * map.info.width + x] = 100;
