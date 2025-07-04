@@ -1,5 +1,6 @@
 
 #include "nhk2025b_map_publisher/map_publisher.hpp"
+#include <algorithm>
 
 namespace map_publisher {
 map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_publisher", options) {
@@ -53,15 +54,43 @@ void map_publisher::publish_map () {
         double size_y   = box.size.y;
         double yaw      = nhk2025b_utils::get_yaw_2d (box.pose.orientation);
 
-        // 2. 回転行列（逆回転）を用意
-        double cos_yaw = std::cos (-yaw);
-        double sin_yaw = std::sin (-yaw);
+        // 2. 回転行列を用意
+        double cos_yaw = std::cos (yaw);
+        double sin_yaw = std::sin (yaw);
+        
+        // 逆回転行列（world→box座標変換用）
+        double cos_yaw_inv = std::cos (-yaw);
+        double sin_yaw_inv = std::sin (-yaw);
 
-        // 3. BoxのAABBでループ（回転を考慮した描画領域を最小化するならここ工夫してもOK）
-        int min_x = (center_x - size_x / 2.0 - map.info.origin.position.x) / resolution_;
-        int max_x = (center_x + size_x / 2.0 - map.info.origin.position.x) / resolution_;
-        int min_y = (center_y - size_y / 2.0 - map.info.origin.position.y) / resolution_;
-        int max_y = (center_y + size_y / 2.0 - map.info.origin.position.y) / resolution_;
+        // 3. 回転を考慮したBoxのAABBを計算
+        double half_x = size_x / 2.0;
+        double half_y = size_y / 2.0;
+        
+        // 4つの角の座標を計算（ボックス座標系からワールド座標系）
+        double corners_x[4] = {
+            center_x + cos_yaw * (-half_x) - sin_yaw * (-half_y),  // left-bottom
+            center_x + cos_yaw * ( half_x) - sin_yaw * (-half_y),  // right-bottom
+            center_x + cos_yaw * ( half_x) - sin_yaw * ( half_y),  // right-top
+            center_x + cos_yaw * (-half_x) - sin_yaw * ( half_y)   // left-top
+        };
+        double corners_y[4] = {
+            center_y + sin_yaw * (-half_x) + cos_yaw * (-half_y),  // left-bottom
+            center_y + sin_yaw * ( half_x) + cos_yaw * (-half_y),  // right-bottom
+            center_y + sin_yaw * ( half_x) + cos_yaw * ( half_y),  // right-top
+            center_y + sin_yaw * (-half_x) + cos_yaw * ( half_y)   // left-top
+        };
+        
+        // 最小・最大座標を求める
+        double min_world_x = *std::min_element(corners_x, corners_x + 4);
+        double max_world_x = *std::max_element(corners_x, corners_x + 4);
+        double min_world_y = *std::min_element(corners_y, corners_y + 4);
+        double max_world_y = *std::max_element(corners_y, corners_y + 4);
+        
+        // グリッド座標に変換
+        int min_x = (min_world_x - map.info.origin.position.x) / resolution_;
+        int max_x = (max_world_x - map.info.origin.position.x) / resolution_;
+        int min_y = (min_world_y - map.info.origin.position.y) / resolution_;
+        int max_y = (max_world_y - map.info.origin.position.y) / resolution_;
 
         for (int mx = min_x; mx <= max_x; ++mx) {
             for (int my = min_y; my <= max_y; ++my) {
@@ -77,8 +106,8 @@ void map_publisher::publish_map () {
                 double dy = wy - center_y;
 
                 // 5. Box座標系に変換（yawの逆回転）
-                double local_x = cos_yaw * dx - sin_yaw * dy;
-                double local_y = sin_yaw * dx + cos_yaw * dy;
+                double local_x = cos_yaw_inv * dx - sin_yaw_inv * dy;
+                double local_y = sin_yaw_inv * dx + cos_yaw_inv * dy;
 
                 // 6. Box内部か判定
                 if (std::abs (local_x) < size_x / 2.0 && std::abs (local_y) < size_y / 2.0) {
@@ -90,8 +119,8 @@ void map_publisher::publish_map () {
 
     for (int y = 0; y < map.info.height; ++y) {
         for (int x = 0; x < map.info.width; ++x) {
-            double wx = x * resolution_ + map.info.origin.position.x;
-            double wy = y * resolution_ + map.info.origin.position.y;
+            double wx = x * resolution_;
+            double wy = y * resolution_;
             for (int i = 0; i < 5; ++i) {
                 if (field_data[i][0] <= wx && wx <= field_data[i][1] && field_data[i][2] <= wy && wy <= field_data[i][3]) {
                     map.data[y * map.info.width + x] = 100;
