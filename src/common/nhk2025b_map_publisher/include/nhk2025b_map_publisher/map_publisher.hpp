@@ -8,6 +8,8 @@
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nhk2025b_msgs/msg/box_array.hpp>
 
+#include <algorithm>
+
 namespace map_publisher {
 class map_publisher : public rclcpp::Node {
    public:
