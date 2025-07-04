@@ -1,5 +1,6 @@
 
 #include "nhk2025b_map_publisher/map_publisher.hpp"
+
 #include <algorithm>
 
 namespace map_publisher {
@@ -57,7 +58,7 @@ void map_publisher::publish_map () {
         // 2. 回転行列を用意
         double cos_yaw = std::cos (yaw);
         double sin_yaw = std::sin (yaw);
-        
+
         // 逆回転行列（world→box座標変換用）
         double cos_yaw_inv = std::cos (-yaw);
         double sin_yaw_inv = std::sin (-yaw);
@@ -65,27 +66,27 @@ void map_publisher::publish_map () {
         // 3. 回転を考慮したBoxのAABBを計算
         double half_x = size_x / 2.0;
         double half_y = size_y / 2.0;
-        
+
         // 4つの角の座標を計算（ボックス座標系からワールド座標系）
         double corners_x[4] = {
             center_x + cos_yaw * (-half_x) - sin_yaw * (-half_y),  // left-bottom
-            center_x + cos_yaw * ( half_x) - sin_yaw * (-half_y),  // right-bottom
-            center_x + cos_yaw * ( half_x) - sin_yaw * ( half_y),  // right-top
-            center_x + cos_yaw * (-half_x) - sin_yaw * ( half_y)   // left-top
+            center_x + cos_yaw * (half_x)-sin_yaw * (-half_y),     // right-bottom
+            center_x + cos_yaw * (half_x)-sin_yaw * (half_y),      // right-top
+            center_x + cos_yaw * (-half_x) - sin_yaw * (half_y)    // left-top
         };
         double corners_y[4] = {
             center_y + sin_yaw * (-half_x) + cos_yaw * (-half_y),  // left-bottom
-            center_y + sin_yaw * ( half_x) + cos_yaw * (-half_y),  // right-bottom
-            center_y + sin_yaw * ( half_x) + cos_yaw * ( half_y),  // right-top
-            center_y + sin_yaw * (-half_x) + cos_yaw * ( half_y)   // left-top
+            center_y + sin_yaw * (half_x) + cos_yaw * (-half_y),   // right-bottom
+            center_y + sin_yaw * (half_x) + cos_yaw * (half_y),    // right-top
+            center_y + sin_yaw * (-half_x) + cos_yaw * (half_y)    // left-top
         };
-        
+
         // 最小・最大座標を求める
-        double min_world_x = *std::min_element(corners_x, corners_x + 4);
-        double max_world_x = *std::max_element(corners_x, corners_x + 4);
-        double min_world_y = *std::min_element(corners_y, corners_y + 4);
-        double max_world_y = *std::max_element(corners_y, corners_y + 4);
-        
+        double min_world_x = *std::min_element (corners_x, corners_x + 4);
+        double max_world_x = *std::max_element (corners_x, corners_x + 4);
+        double min_world_y = *std::min_element (corners_y, corners_y + 4);
+        double max_world_y = *std::max_element (corners_y, corners_y + 4);
+
         // グリッド座標に変換
         int min_x = (min_world_x - map.info.origin.position.x) / resolution_;
         int max_x = (max_world_x - map.info.origin.position.x) / resolution_;
