@@ -137,7 +137,7 @@ void pose_initializer::lidar_callback (const sensor_msgs::msg::LaserScan::Shared
     RCLCPP_INFO (this->get_logger (), "交点のy: %f", maybe_intersection->second);
     auto [x, y, yaw] = compute_yaw_and_position (line1, line2, *maybe_intersection);
 
-    RCLCPP_INFO (this->get_logger (), "Estimated position: x=%.2f, y=%.2f, yaw=%.2f deg", x, y, yaw * 180.0 / M_PI);
+    RCLCPP_INFO (this->get_logger (), "position: x=%.2f, y=%.2f, yaw=%.2f deg", x, y, yaw * 180.0 / M_PI);
 
     geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
     pose_msg.header.stamp            = this->now ();

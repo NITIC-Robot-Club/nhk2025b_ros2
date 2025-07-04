@@ -5,6 +5,7 @@ from geometry_msgs.msg import PoseStamped
 from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command
 import math
 import re
+import time
 
 def parse_labels_and_positions(md_path):
     with open(md_path, encoding="utf-8") as f:
@@ -78,11 +79,14 @@ class nhk2025b_behavior(Node):
 
         self.current_pose = None
         self.robot_status = None
-        self.goal_pose = None
+        self.goal_pose = PoseStamped()
         self.command = Command()
         self.waiting_for_goal = False
 
         self.finished = False  # 完了フラグ
+
+        # sleep 1 second
+        time.sleep(1)
 
         self.state_array_timer = self.create_timer(0.5, self.publish_state_array)
         self.automaton_timer = self.create_timer(0.05, self.automaton_step)
@@ -146,6 +150,7 @@ class nhk2025b_behavior(Node):
         label = found.name
         state = self.label_to_state[label]
         self.get_logger().info(f'[set_status_num] ラベル {label}({state}) へ強制遷移')
+        self.goal_pose.pose.position.y = -1
         self.current_state = state
         self.waiting_for_goal = False
         self.finished = False
@@ -166,7 +171,7 @@ class nhk2025b_behavior(Node):
             x, y, yaw = self.state_to_pose[self.current_state]
             self.set_position(x, y, yaw)
             if self.current_pose is not None and self.is_pose_close(self.current_pose, x, y, yaw):
-                # self.get_logger().info(f'ゴール({self.current_state})に到達したため次へ進みます')
+                self.get_logger().info(f'ゴール({self.current_state})に到達したため次へ進みます')
                 advanced = True
         else:
             advanced = True
@@ -192,7 +197,7 @@ class nhk2025b_behavior(Node):
                             continue
 
         if next_state and next_state not in ('[*]', '[*] '):
-            # self.get_logger().info(f'自動遷移: {self.current_state} -> {next_state}')
+            self.get_logger().info(f'自動遷移: {self.current_state} -> {next_state}')
             self.current_state = next_state
             self.waiting_for_goal = False
             self.finished = False
@@ -232,8 +237,26 @@ class nhk2025b_behavior(Node):
         pose.pose.orientation.y = 0.0
         pose.pose.orientation.z = math.sin(yaw / 2.0)
         pose.pose.orientation.w = math.cos(yaw / 2.0)
-        self.pose_pub.publish(pose)
-        self.goal_pose = pose
+        
+        def is_same_pose(p1: PoseStamped, p2: PoseStamped):
+            if p1 is None or p2 is None:
+                return False
+            pos_eps = 1e-4
+            yaw_eps = 1e-3
+            dx = abs(p1.pose.position.x - p2.pose.position.x)
+            dy = abs(p1.pose.position.y - p2.pose.position.y)
+            dz = abs(p1.pose.position.z - p2.pose.position.z)
+            # クォータニオンからyawを計算
+            def get_yaw(q):
+                return math.atan2(2.0*(q.w*q.z + q.x*q.y), 1.0 - 2.0*(q.y*q.y + q.z*q.z))
+            yaw1 = get_yaw(p1.pose.orientation)
+            yaw2 = get_yaw(p2.pose.orientation)
+            dyaw = abs((yaw1 - yaw2 + math.pi) % (2*math.pi) - math.pi)
+            return dx < pos_eps and dy < pos_eps and dz < pos_eps and dyaw < yaw_eps
+
+        if not is_same_pose(self.goal_pose, pose):
+            self.pose_pub.publish(pose)
+            self.goal_pose = pose
 
     def check_ready(self):
         return self.command.automate_ready
