@@ -384,7 +384,7 @@ void path_planner::find_freespace (std::pair<int, int> &point, int theta) {
     while (!q.empty ()) {
         auto [x, y] = q.front ();
         q.pop ();
-        if (!is_collision (x, y, theta)) {
+        if (!is_collision (x, y, theta) && inflated_map[y][x] < 50) {
             point.first  = x;
             point.second = y;
             return;
