@@ -10,7 +10,6 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     robot_width_mm   = this->declare_parameter<int> ("robot_width_mm", 600);
     tolerance_xy_mm  = this->declare_parameter<int> ("tolerance_xy_mm", 30);
     tolerance_z_rad  = this->declare_parameter<double> ("tolerance_z_rad", 0.03);
-    sigmoid_gain     = this->declare_parameter<double> ("sigmoid_gain", 7.5);
     grad_alpha       = this->declare_parameter<double> ("grad_alpha", 1.0);
     grad_beta        = this->declare_parameter<double> ("grad_beta", 8.2);
     grad_gamma       = this->declare_parameter<double> ("grad_gamma", 0.0);
@@ -32,9 +31,9 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
 }
 
 void path_planner::timer_callback () {
-    nav_msgs::msg::Path path;
-    path.header.frame_id = "map";
-    path.header.stamp    = this->now ();
+    nav_msgs::msg::Path empty_path;
+    empty_path.header.frame_id = "map";
+    empty_path.header.stamp    = this->now ();
     double diff_x        = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
     double diff_y        = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
     double distance      = std::hypot (diff_x, diff_y);
@@ -46,16 +45,23 @@ void path_planner::timer_callback () {
     else if (delta_yaw < -M_PI)
         delta_yaw += 2 * M_PI;
     if (distance < tolerance_xy_mm / 1000.0 && std::abs (delta_yaw) < tolerance_z_rad) {
+        path_publisher->publish (empty_path);
+    }else{
         path_publisher->publish (path);
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     goal_pose = *msg;
+    create_path();
+}
+void path_planner::create_path () {
 
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
     if (goal_pose.header.stamp.sec == 0) return;
-    nav_msgs::msg::Path   path;
+
+    path.poses.clear ();
+
     std_msgs::msg::Header header;
     header.frame_id = "map";
     header.stamp    = this->now ();
@@ -82,6 +88,7 @@ void path_planner::inflate_map () {
                 break;
             }
         }
+        is_map_changed = !is_same_map;
         if (is_same_map) {
             return;
         }
@@ -232,6 +239,12 @@ void path_planner::linear_astar () {
             return;
         }
         curr = came_from[idx];
+    }
+    if (linear_path.poses.size () == 0) {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.pose.position.x = goal.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
+        pose.pose.position.y = goal.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
+        linear_path.poses.push_back (pose);
     }
     std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
     // RCLCPP_INFO (this->get_logger (), "Linear %zu points", linear_path.poses.size ());
@@ -415,6 +428,8 @@ void path_planner::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr m
     if (rotated_footprint.size () == 0) {
         init_rotated_footprint ();
     }
+
+    if(is_map_changed)create_path ();
 }
 
 void path_planner::vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
