@@ -88,10 +88,8 @@ void path_planner::inflate_map () {
     }
     occ_map.data.clear ();
     inflated_map.clear ();
-    offset_map.clear ();
     occ_map.data.resize (map_width * map_height, 0);
     inflated_map.resize (map_height, std::vector<int8_t> (map_width, 0));
-    offset_map.resize (map_height, std::vector<int8_t> (map_width, 0));
     double width_radius         = robot_width_mm / 2000.0 / map_resolution;
     double height_radius        = robot_height_mm / 2000.0 / map_resolution;
     int    offset_radius        = std::ceil (offset_mm / 1000.0 / map_resolution);
@@ -110,7 +108,6 @@ void path_planner::inflate_map () {
                         if (next_x >= 0 && next_x < map_width && next_y >= 0 && next_y < map_height) {
                             double dist = std::hypot (dx, dy);
                             if (dist <= offset_radius) {
-                                offset_map[next_y][next_x]   = std::max (offset_map[next_y][next_x], int8_t (100));
                                 inflated_map[next_y][next_x] = std::max (inflated_map[next_y][next_x], int8_t (100));
                             } else if (dist <= min_inflation_radius) {
                                 inflated_map[next_y][next_x] = std::max (inflated_map[next_y][next_x], int8_t (80));
@@ -369,7 +366,7 @@ bool path_planner::is_collision (int x, int y, int theta) {
         if (next_x < 0 || next_y < 0 || next_x >= map_width || next_y >= map_height) {
             return true;
         }
-        if (offset_map[next_y][next_x] > 50) {
+        if (inflated_map[next_y][next_x] > 90) {
             return true;
         }
     }

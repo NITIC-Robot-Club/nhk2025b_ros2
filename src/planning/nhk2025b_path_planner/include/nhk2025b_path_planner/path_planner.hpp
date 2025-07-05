@@ -75,7 +75,6 @@ class path_planner : public rclcpp::Node {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
     }
     std::vector<std::vector<int8_t>> inflated_map;
-    std::vector<std::vector<int8_t>> offset_map;
     std::vector<std::vector<int8_t>> angle_cost_map;
     // std::vector<std::pair<int, int>>                linear_path;
 
