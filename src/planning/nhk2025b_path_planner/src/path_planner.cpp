@@ -47,6 +47,7 @@ void path_planner::timer_callback () {
     if (distance < tolerance_xy_mm / 1000.0 && std::abs (delta_yaw) < tolerance_z_rad) {
         path_publisher->publish (empty_path);
     } else {
+        if (path.header.stamp.sec == 0) return;
         path_publisher->publish (path);
     }
 }
