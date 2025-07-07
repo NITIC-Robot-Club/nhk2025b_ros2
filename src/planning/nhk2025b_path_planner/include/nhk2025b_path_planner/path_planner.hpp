@@ -52,7 +52,7 @@ class path_planner : public rclcpp::Node {
     int    map_width, map_height;
     double map_resolution;
 
-    bool   is_map_changed = true;
+    bool is_map_changed = true;
 
     void   current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void   goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);

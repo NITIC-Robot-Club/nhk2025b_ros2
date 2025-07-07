@@ -34,28 +34,27 @@ void path_planner::timer_callback () {
     nav_msgs::msg::Path empty_path;
     empty_path.header.frame_id = "map";
     empty_path.header.stamp    = this->now ();
-    double diff_x        = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
-    double diff_y        = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
-    double distance      = std::hypot (diff_x, diff_y);
-    double current_yaw   = get_yaw_2d (current_pose.pose.orientation);
-    double goal_yaw      = get_yaw_2d (safe_goal_pose.pose.orientation);
-    double delta_yaw     = goal_yaw - current_yaw;
+    double diff_x              = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
+    double diff_y              = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
+    double distance            = std::hypot (diff_x, diff_y);
+    double current_yaw         = get_yaw_2d (current_pose.pose.orientation);
+    double goal_yaw            = get_yaw_2d (safe_goal_pose.pose.orientation);
+    double delta_yaw           = goal_yaw - current_yaw;
     if (delta_yaw > M_PI)
         delta_yaw -= 2 * M_PI;
     else if (delta_yaw < -M_PI)
         delta_yaw += 2 * M_PI;
     if (distance < tolerance_xy_mm / 1000.0 && std::abs (delta_yaw) < tolerance_z_rad) {
         path_publisher->publish (empty_path);
-    }else{
+    } else {
         path_publisher->publish (path);
     }
 }
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     goal_pose = *msg;
-    create_path();
+    create_path ();
 }
 void path_planner::create_path () {
-
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
     if (goal_pose.header.stamp.sec == 0) return;
@@ -429,7 +428,7 @@ void path_planner::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr m
         init_rotated_footprint ();
     }
 
-    if(is_map_changed)create_path ();
+    if (is_map_changed) create_path ();
 }
 
 void path_planner::vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
