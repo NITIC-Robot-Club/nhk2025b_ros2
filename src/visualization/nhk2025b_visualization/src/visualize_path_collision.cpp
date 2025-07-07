@@ -13,7 +13,6 @@ visualize_path_collision::visualize_path_collision (const rclcpp::NodeOptions &o
     // Robot dimensions (in meters)
     declare_parameter ("robot_width", 0.8);
     declare_parameter ("robot_length", 0.6);
-    declare_parameter ("history", 300);
 }
 
 void visualize_path_collision::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
@@ -38,7 +37,8 @@ void visualize_path_collision::timer_callback () {
     int id = 0;
     for (const auto &pose : path.poses) {
         visualization_msgs::msg::Marker marker;
-        marker.header  = pose.header;
+        marker.header.frame_id = "map";
+        marker.header.stamp    = this->now ();
         marker.ns      = "path_collision";
         marker.id      = id++;
         marker.type    = visualization_msgs::msg::Marker::LINE_STRIP;
