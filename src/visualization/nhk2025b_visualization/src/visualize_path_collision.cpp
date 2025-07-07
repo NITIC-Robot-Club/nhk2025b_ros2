@@ -39,11 +39,11 @@ void visualize_path_collision::timer_callback () {
         visualization_msgs::msg::Marker marker;
         marker.header.frame_id = "map";
         marker.header.stamp    = this->now ();
-        marker.ns      = "path_collision";
-        marker.id      = id++;
-        marker.type    = visualization_msgs::msg::Marker::LINE_STRIP;
-        marker.action  = visualization_msgs::msg::Marker::ADD;
-        marker.scale.x = 0.01;
+        marker.ns              = "path_collision";
+        marker.id              = id++;
+        marker.type            = visualization_msgs::msg::Marker::LINE_STRIP;
+        marker.action          = visualization_msgs::msg::Marker::ADD;
+        marker.scale.x         = 0.01;
         if (is_hit (std::make_shared<geometry_msgs::msg::PoseStamped> (pose))) {
             marker.color.r = 1.0;  // 赤色
             marker.color.g = 0.0;
