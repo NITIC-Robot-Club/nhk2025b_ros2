@@ -28,6 +28,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
 
     inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 1);
     theta_map_publisher   = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/thetamap", 1);
+    path.header.frame_id  = "map";
 }
 
 void path_planner::timer_callback () {
@@ -44,17 +45,15 @@ void path_planner::timer_callback () {
         delta_yaw -= 2 * M_PI;
     else if (delta_yaw < -M_PI)
         delta_yaw += 2 * M_PI;
-    if (distance < tolerance_xy_mm / 1000.0 && std::abs (delta_yaw) < tolerance_z_rad) {
-        path_publisher->publish (empty_path);
-    } else {
-        if (path.header.stamp.sec == 0) return;
-        path_publisher->publish (path);
-    }
+    path.header.stamp = this->now ();
+    path_publisher->publish (path);
 }
+
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     goal_pose = *msg;
     create_path ();
 }
+
 void path_planner::create_path () {
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
@@ -62,18 +61,13 @@ void path_planner::create_path () {
 
     path.poses.clear ();
 
-    std_msgs::msg::Header header;
-    header.frame_id = "map";
-    header.stamp    = this->now ();
-    path.header     = header;
-
     linear_astar ();
 
     path_smoother ();
     angular_astar (path);
 
     for (int i = 0; i < path.poses.size (); i++) {
-        path.poses[i].header = header;
+        path.poses[i].header = path.header;
     }
     if (path.poses.size () != 0) safe_goal_pose = path.poses.back ();
     path_publisher->publish (path);

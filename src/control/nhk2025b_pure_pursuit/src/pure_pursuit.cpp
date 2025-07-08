@@ -4,8 +4,8 @@ namespace pure_pursuit {
 
 pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pursuit", options) {
     cmd_vel_publisher_    = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1);
-    lookahead_publisher_  = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_pose", 1);
-    lookahead2_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_pose2", 1);
+    lookahead_position_publisher_  = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_position", 1);
+    lookahead_angle_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_angle", 1);
     pose_subscriber_      = this->create_subscription<geometry_msgs::msg::PoseStamped> (
         "/localization/current_pose", 1, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
     path_subscriber_ =
@@ -22,8 +22,10 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->declare_parameter ("max_speed_xy_m_s", 3.0);
     this->declare_parameter ("max_speed_z_rad_s", 3.14);
     this->declare_parameter ("max_acceleration_xy_m_s2_", 6.0);
+    this->declare_parameter ("max_acceleration_z_rad_s2", 6.0);
     this->declare_parameter ("goal_deceleration_distance_p", 1.0);
     this->declare_parameter ("goal_deceleration_p", 2.0);
+    this->declare_parameter ("angle_deceleration_p", 2.0);
 }
 
 void pure_pursuit::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
@@ -45,8 +47,10 @@ void pure_pursuit::timer_callback () {
     this->get_parameter ("max_speed_xy_m_s", max_speed_xy_m_s_);
     this->get_parameter ("max_speed_z_rad_s", max_speed_z_rad_s_);
     this->get_parameter ("max_acceleration_xy_m_s2_", max_acceleration_xy_m_s2_);
+    this->get_parameter ("max_acceleration_z_rad_s2", max_acceleration_z_rad_s2_);
     this->get_parameter ("goal_deceleration_distance_p", goal_deceleration_distance_p_);
     this->get_parameter ("goal_deceleration_p", goal_deceleration_p_);
+    this->get_parameter ("angle_deceleration_p", angle_deceleration_p_);
 
     if (path_.poses.empty ()) {
         geometry_msgs::msg::TwistStamped cmd_vel;
@@ -134,11 +138,11 @@ void pure_pursuit::timer_callback () {
     target_speed = std::min (target_speed, curvature_speed);
 
     // lookahead距離更新
-    lookahead_distance_ = std::clamp (lookahead_time_ * target_speed, min_lookahead_distance_, max_lookahead_distance_);
-
+    
     double acceleration = (target_speed - last_speed) / delta_t;
     acceleration        = std::clamp (acceleration, -max_acceleration_xy_m_s2_, max_acceleration_xy_m_s2_);
     double speed        = last_speed + acceleration * delta_t;
+    lookahead_distance_ = std::clamp (lookahead_time_ * speed, min_lookahead_distance_, max_lookahead_distance_);
 
     int angle_lookahead_index = closest_index;
     for (int i = closest_index; i < path_.poses.size (); i++) {
@@ -154,6 +158,10 @@ void pure_pursuit::timer_callback () {
     while (yaw_diff > +M_PI) yaw_diff -= 2.0 * M_PI;
     while (yaw_diff < -M_PI) yaw_diff += 2.0 * M_PI;
     double yaw_speed = angle_p_ * yaw_diff;
+    // 加速度を考慮
+    double angle_acceleration = (yaw_speed - last_cmd_vel_.twist.angular.z) / delta_t;
+    angle_acceleration         = std::clamp (angle_acceleration, -max_acceleration_z_rad_s2_, max_acceleration_z_rad_s2_);
+    yaw_speed                 = last_cmd_vel_.twist.angular.z + angle_acceleration * delta_t;
     yaw_speed        = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
 
     // Twist 発行
@@ -166,17 +174,17 @@ void pure_pursuit::timer_callback () {
     cmd_vel_publisher_->publish (cmd_vel);
 
     // lookahead可視化
-    geometry_msgs::msg::PoseStamped lookahead_msg;
-    lookahead_msg.header.stamp    = this->now ();
-    lookahead_msg.header.frame_id = "map";
-    lookahead_msg.pose            = path_.poses[lookahead_index].pose;
-    lookahead_publisher_->publish (lookahead_msg);
+    geometry_msgs::msg::PoseStamped lookahead_position_msg;
+    lookahead_position_msg.header.stamp    = this->now ();
+    lookahead_position_msg.header.frame_id = "map";
+    lookahead_position_msg.pose            = path_.poses[lookahead_index].pose;
+    lookahead_position_publisher_->publish (lookahead_position_msg);
 
-    geometry_msgs::msg::PoseStamped lookahead2_msg;
-    lookahead2_msg.header.stamp    = this->now ();
-    lookahead2_msg.header.frame_id = "map";
-    lookahead2_msg.pose            = path_.poses[p2].pose;
-    lookahead2_publisher_->publish (lookahead2_msg);
+    geometry_msgs::msg::PoseStamped lookahead_angle_msg;
+    lookahead_angle_msg.header.stamp    = this->now ();
+    lookahead_angle_msg.header.frame_id = "map";
+    lookahead_angle_msg.pose            = path_.poses[angle_lookahead_index].pose;
+    lookahead_angle_publisher_->publish (lookahead_angle_msg);
 
     last_cmd_vel_ = cmd_vel;
 }
