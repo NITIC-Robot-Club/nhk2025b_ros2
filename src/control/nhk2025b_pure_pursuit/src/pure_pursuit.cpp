@@ -3,10 +3,10 @@
 namespace pure_pursuit {
 
 pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pursuit", options) {
-    cmd_vel_publisher_    = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1);
-    lookahead_position_publisher_  = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_position", 1);
-    lookahead_angle_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_angle", 1);
-    pose_subscriber_      = this->create_subscription<geometry_msgs::msg::PoseStamped> (
+    cmd_vel_publisher_            = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1);
+    lookahead_position_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_position", 1);
+    lookahead_angle_publisher_    = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_angle", 1);
+    pose_subscriber_              = this->create_subscription<geometry_msgs::msg::PoseStamped> (
         "/localization/current_pose", 1, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
     path_subscriber_ =
         this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 1, std::bind (&pure_pursuit::path_callback, this, std::placeholders::_1));
@@ -138,7 +138,7 @@ void pure_pursuit::timer_callback () {
     target_speed = std::min (target_speed, curvature_speed);
 
     // lookahead距離更新
-    
+
     double acceleration = (target_speed - last_speed) / delta_t;
     acceleration        = std::clamp (acceleration, -max_acceleration_xy_m_s2_, max_acceleration_xy_m_s2_);
     double speed        = last_speed + acceleration * delta_t;
@@ -160,9 +160,9 @@ void pure_pursuit::timer_callback () {
     double yaw_speed = angle_p_ * yaw_diff;
     // 加速度を考慮
     double angle_acceleration = (yaw_speed - last_cmd_vel_.twist.angular.z) / delta_t;
-    angle_acceleration         = std::clamp (angle_acceleration, -max_acceleration_z_rad_s2_, max_acceleration_z_rad_s2_);
+    angle_acceleration        = std::clamp (angle_acceleration, -max_acceleration_z_rad_s2_, max_acceleration_z_rad_s2_);
     yaw_speed                 = last_cmd_vel_.twist.angular.z + angle_acceleration * delta_t;
-    yaw_speed        = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
+    yaw_speed                 = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
 
     // Twist 発行
     geometry_msgs::msg::TwistStamped cmd_vel;
