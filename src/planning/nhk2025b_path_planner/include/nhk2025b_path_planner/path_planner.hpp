@@ -43,7 +43,6 @@ class path_planner : public rclcpp::Node {
     int    robot_width_mm;
     int    tolerance_xy_mm;
     double tolerance_z_rad;
-    double sigmoid_gain;
 
     double grad_alpha;      // 障害物回避の重み
     double grad_beta;       // 曲率項の重み
@@ -53,12 +52,13 @@ class path_planner : public rclcpp::Node {
     int    map_width, map_height;
     double map_resolution;
 
-    int test = 0;
+    bool is_map_changed = true;
 
     void   current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void   goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void   vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
+    void   create_path ();
     void   find_freespace (std::pair<int, int>& point, int theta);
     void   timer_callback ();
     void   linear_astar ();
@@ -75,7 +75,6 @@ class path_planner : public rclcpp::Node {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
     }
     std::vector<std::vector<int8_t>> inflated_map;
-    std::vector<std::vector<int8_t>> offset_map;
     std::vector<std::vector<int8_t>> angle_cost_map;
     // std::vector<std::pair<int, int>>                linear_path;
 
@@ -94,6 +93,7 @@ class path_planner : public rclcpp::Node {
     nav_msgs::msg::OccupancyGrid                                      original_map;
     nav_msgs::msg::OccupancyGrid                                      last_map;
     nav_msgs::msg::OccupancyGrid                                      occ_map;
+    nav_msgs::msg::Path                                               path;
     nav_msgs::msg::Path                                               linear_path;
     nav_msgs::msg::Path                                               smoothed_path;
     geometry_msgs::msg::TwistStamped                                  current_vel;
