@@ -438,7 +438,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /control/lookahead_pose
+            Value: /control/lookahead_position
           Value: false
         - Alpha: 1
           Axes Length: 1
@@ -448,7 +448,7 @@ Visualization Manager:
           Enabled: false
           Head Length: 0.30000001192092896
           Head Radius: 0.10000000149011612
-          Name: 曲率計算位置
+          Name: 角度注視点
           Shaft Length: 1
           Shaft Radius: 0.05000000074505806
           Shape: Arrow
@@ -458,7 +458,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /control/lookahead_pose2
+            Value: /control/lookahead_angle
           Value: false
         - Alpha: 0.6000000238418579
           Class: rviz_default_plugins/Map

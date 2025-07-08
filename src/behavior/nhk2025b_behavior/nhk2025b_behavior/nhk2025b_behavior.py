@@ -150,7 +150,7 @@ class nhk2025b_behavior(Node):
         label = found.name
         state = self.label_to_state[label]
         self.get_logger().info(f'[set_status_num] ラベル {label}({state}) へ強制遷移')
-        self.goal_pose.pose.position.y = -1
+        self.goal_pose.pose.position.x = -1.0
         self.current_state = state
         self.waiting_for_goal = False
         self.finished = False
