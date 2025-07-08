@@ -83,17 +83,17 @@ void pure_pursuit::timer_callback () {
     double goal_distance = std::hypot (goal_pose.position.x - current_pose_.pose.position.x, goal_pose.position.y - current_pose_.pose.position.y);
 
     // lookahead点の探索
-    int lookahead_index = closest_index;
+    int    lookahead_index     = closest_index;
+    double min_lookahead_error = 1e9;
     for (int i = closest_index; i < path_.poses.size (); i++) {
         double dist = std::hypot (
             path_.poses[i].pose.position.x - current_pose_.pose.position.x, path_.poses[i].pose.position.y - current_pose_.pose.position.y);
-        if (dist > lookahead_distance_) {
-            break;
+        double error = std::abs (dist - lookahead_distance_);
+        if (error < min_lookahead_error) {
+            min_lookahead_error = error;
+            lookahead_index     = i;
         }
-        lookahead_index = i;
     }
-
-    if (lookahead_index == closest_index) lookahead_index = path_.poses.size () - 1;
 
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
@@ -136,8 +136,6 @@ void pure_pursuit::timer_callback () {
     double curvature_speed = target_speed / (std::abs (curvature * curvature_decceleration_p_) + 1e-6);
 
     target_speed = std::min (target_speed, curvature_speed);
-
-    // lookahead距離更新
 
     double acceleration = (target_speed - last_speed) / delta_t;
     acceleration        = std::clamp (acceleration, -max_acceleration_xy_m_s2_, max_acceleration_xy_m_s2_);
