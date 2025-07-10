@@ -4,7 +4,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
-#include <sensor_msgs/msg/laser_scan.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 #include <cmath>
 #include <limits>
@@ -20,7 +20,7 @@ class pose_initializer : public rclcpp::Node {
    private:
     using Point = std::pair<double, double>;
 
-    void lidar_callback (const sensor_msgs::msg::LaserScan::SharedPtr msg);
+    void lidar_callback (const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
     // RANSACによる直線フィッティング
     std::tuple<double, double, double> ransac_line_fit (const std::vector<Point>& points, std::vector<Point>& inliers_out);
@@ -33,7 +33,7 @@ class pose_initializer : public rclcpp::Node {
     double point_line_distance (const Point& pt, double a, double b, double c);
     bool   is_horizontal (const std::tuple<double, double, double>& line);
 
-    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr                lidar_subscriber;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr              lidar_subscriber;
     rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_publisher;
 };
 }  // namespace pose_initializer
