@@ -267,11 +267,11 @@ void mcl::sensor_update (const sensor_msgs::msg::PointCloud2& cloud) {
 double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::PointCloud2& cloud) const {
     if (!map_ || distance_map_.empty ()) return 0.0;
 
-    double score = 0.0;
+    double       score     = 0.0;
     const double sigma_hit = 0.2;
     const double z_hit     = 0.8;
     const double z_rand    = 0.2;
-    const double max_range = 11.0; // LIDAR最大距離（適宜調整）
+    const double max_range = 11.0;  // LIDAR最大距離（適宜調整）
 
     // PointCloud2のデータをxyzで走査
     int x_offset = -1, y_offset = -1, z_offset = -1;
@@ -286,14 +286,15 @@ double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::Point
     size_t num_points = cloud.width * cloud.height;
     for (size_t i = 0; i < num_points; ++i) {
         // double range = scan.ranges[i];
-        double range = std::hypot(
+        double range = std::hypot (
             *reinterpret_cast<const float*> (&cloud.data[i * point_step + x_offset]),
             *reinterpret_cast<const float*> (&cloud.data[i * point_step + y_offset]));
-        
+
         if (std::isnan (range) || range > max_range) continue;
-        double angle = std::atan2(
-            *reinterpret_cast<const float*> (&cloud.data[i * point_step + y_offset]),
-            *reinterpret_cast<const float*> (&cloud.data[i * point_step + x_offset])) + p.theta;
+        double angle = std::atan2 (
+                           *reinterpret_cast<const float*> (&cloud.data[i * point_step + y_offset]),
+                           *reinterpret_cast<const float*> (&cloud.data[i * point_step + x_offset])) +
+                       p.theta;
 
         double hit_x = p.x + range * cos (angle);
         double hit_y = p.y + range * sin (angle);
