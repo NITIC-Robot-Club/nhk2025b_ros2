@@ -134,7 +134,7 @@ void pose_initializer::lidar_callback (const sensor_msgs::msg::PointCloud2::Shar
 
     RCLCPP_INFO (this->get_logger (), "position: x=%.2f, y=%.2f, yaw=%.2f deg", x, y, yaw * 180.0 / M_PI);
 
-    if(0.0 > x || x > 2.0 || abs(y) > 2.0) {
+    if (0.0 > x || x > 2.0 || abs (y) > 2.0) {
         RCLCPP_ERROR (this->get_logger (), "Computed position is out of bounds: x=%.2f, y=%.2f", x, y);
         return;  // 範囲外の位置は無視
     }
