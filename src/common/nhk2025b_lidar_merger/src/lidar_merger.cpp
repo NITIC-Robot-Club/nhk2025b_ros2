@@ -34,8 +34,8 @@ void lidar_merger::publish_merged_point_cloud2 () {
 
     merged_cloud.header.frame_id = "base_link";
     merged_cloud.header.stamp    = this->now ();
-    double robot_width           = 0.6;
-    double robot_length          = 0.8;
+    double robot_width           = 0.8;
+    double robot_length          = 0.6;
 
     if (!scan1.ranges.empty ()) {
         // scan1のtf -> base_link変換
@@ -60,15 +60,16 @@ void lidar_merger::publish_merged_point_cloud2 () {
                 point_in.point.y = y;
                 point_in.point.z = z;
                 tf2::doTransform (point_in, point_out, transform1);
-                if ((point_out.point.x < -robot_length / 2.0 || point_out.point.x > robot_length / 2.0) &&
-                    (point_out.point.y < -robot_width / 2.0 || point_out.point.y > robot_width / 2.0)) {
-                    *iter_x = point_out.point.x;
-                    *iter_y = point_out.point.y;
-                    *iter_z = point_out.point.z;
-                    ++iter_x;
-                    ++iter_y;
-                    ++iter_z;
+                if ((point_out.point.x > -robot_length / 2.0 && point_out.point.x < robot_length / 2.0) ||
+                    (point_out.point.y > -robot_width / 2.0 && point_out.point.y < robot_width / 2.0)) {
+                    continue;
                 }
+                *iter_x = point_out.point.x;
+                *iter_y = point_out.point.y;
+                *iter_z = point_out.point.z;
+                ++iter_x;
+                ++iter_y;
+                ++iter_z;
             }
         }
     }
@@ -95,15 +96,16 @@ void lidar_merger::publish_merged_point_cloud2 () {
                 point_in.point.y = y;
                 point_in.point.z = z;
                 tf2::doTransform (point_in, point_out, transform2);
-                if ((point_out.point.x < -robot_length / 2.0 || point_out.point.x > robot_length / 2.0) &&
-                    (point_out.point.y < -robot_width / 2.0 || point_out.point.y > robot_width / 2.0)) {
-                    *iter_x = point_out.point.x;
-                    *iter_y = point_out.point.y;
-                    *iter_z = point_out.point.z;
-                    ++iter_x;
-                    ++iter_y;
-                    ++iter_z;
+                if ((point_out.point.x > -robot_length / 2.0 && point_out.point.x < robot_length / 2.0) ||
+                    (point_out.point.y > -robot_width / 2.0 && point_out.point.y < robot_width / 2.0)) {
+                    continue;
                 }
+                *iter_x = point_out.point.x;
+                *iter_y = point_out.point.y;
+                *iter_z = point_out.point.z;
+                ++iter_x;
+                ++iter_y;
+                ++iter_z;
             }
         }
     }

@@ -12,6 +12,7 @@ lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options) : Node (
     lidar_y         = this->declare_parameter<double> ("lidar_y", 0);
     lidar_z         = this->declare_parameter<double> ("lidar_z", 0);
     lidar_frequency = this->declare_parameter<double> ("lidar_frequency", 12.0);
+    frame_name = this->declare_parameter<std::string>("frame_name","lidar");
     timer = this->create_wall_timer (std::chrono::milliseconds (int (1000 / lidar_frequency)), std::bind (&lidar_simulation::timer_callback, this));
 }
 
@@ -31,7 +32,7 @@ void lidar_simulation::timer_callback () {
 
     sensor_msgs::msg::LaserScan scan;
     scan.header.stamp    = this->now ();
-    scan.header.frame_id = "lidar";
+    scan.header.frame_id = frame_name;
     scan.angle_min       = -1.57;
     scan.angle_max       = 1.57;
     scan.angle_increment = lidar_frequency / 13.953488372093023;

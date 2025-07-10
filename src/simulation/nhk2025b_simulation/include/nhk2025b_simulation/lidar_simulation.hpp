@@ -16,6 +16,7 @@ class lidar_simulation : public rclcpp::Node {
    private:
     double lidar_x, lidar_y, lidar_z;
     double lidar_frequency;
+    std::string frame_name;
 
     nav_msgs::msg::OccupancyGrid    current_map;
     geometry_msgs::msg::PoseStamped current_pose;
