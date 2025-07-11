@@ -7,8 +7,8 @@ pose_initializer::pose_initializer (const rclcpp::NodeOptions& options) : Node (
     this->declare_parameter<double> ("distance_threshold", 0.1);
     this->declare_parameter<int> ("max_iterations", 100);
 
-    lidar_subscriber = this->create_subscription<sensor_msgs::msg::LaserScan> (
-        "/sensor/scan", rclcpp::SensorDataQoS (), std::bind (&pose_initializer::lidar_callback, this, std::placeholders::_1));
+    lidar_subscriber = this->create_subscription<sensor_msgs::msg::PointCloud2> (
+        "/sensor/lidar", rclcpp::SensorDataQoS (), std::bind (&pose_initializer::lidar_callback, this, std::placeholders::_1));
 
     pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/initialpose", 1);
 }
@@ -97,19 +97,14 @@ std::tuple<double, double, double> pose_initializer::ransac_line_fit (const std:
     return best_line;
 }
 
-void pose_initializer::lidar_callback (const sensor_msgs::msg::LaserScan::SharedPtr msg) {
+void pose_initializer::lidar_callback (const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
     std::vector<Point> points;
-    double             angle = msg->angle_min;
-
-    for (const auto& r : msg->ranges) {
-        if (std::isfinite (r) && r >= msg->range_min && r <= msg->range_max) {
-            double x = r * std::cos (angle);
-            double y = r * std::sin (angle);
-            points.emplace_back (x, y);
-        }
-        angle += msg->angle_increment;
+    points.reserve (msg->width * msg->height);
+    for (size_t i = 0; i < msg->width * msg->height; ++i) {
+        float x = *reinterpret_cast<const float*> (&msg->data[i * msg->point_step + msg->fields[0].offset]);
+        float y = *reinterpret_cast<const float*> (&msg->data[i * msg->point_step + msg->fields[1].offset]);
+        points.emplace_back (x, y);
     }
-
     if (points.size () < 10) return;
 
     std::vector<Point> inliers1, inliers2;
@@ -138,6 +133,11 @@ void pose_initializer::lidar_callback (const sensor_msgs::msg::LaserScan::Shared
     auto [x, y, yaw] = compute_yaw_and_position (line1, line2, *maybe_intersection);
 
     RCLCPP_INFO (this->get_logger (), "position: x=%.2f, y=%.2f, yaw=%.2f deg", x, y, yaw * 180.0 / M_PI);
+
+    if (0.0 > x || x > 2.0 || abs (y) > 2.0) {
+        RCLCPP_ERROR (this->get_logger (), "Computed position is out of bounds: x=%.2f, y=%.2f", x, y);
+        return;  // 範囲外の位置は無視
+    }
 
     geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
     pose_msg.header.stamp            = this->now ();

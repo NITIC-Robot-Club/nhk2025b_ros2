@@ -10,7 +10,7 @@
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-#include <sensor_msgs/msg/laser_scan.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <tf2/utils.h>
@@ -41,7 +41,7 @@ class mcl : public rclcpp::Node {
    private:
     // コールバック
     void map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr map_msg);
-    void scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg);
+    void cloud_callback (const sensor_msgs::msg::PointCloud2::SharedPtr cloud_msg);
     void pose_callback (const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose_msg);
     void ekf_callback (const geometry_msgs::msg::PoseStamped::SharedPtr ekf_msg);
     void timer_callback ();
@@ -49,7 +49,7 @@ class mcl : public rclcpp::Node {
     // 内部処理
     void initialize_particles_gaussian (const geometry_msgs::msg::Pose &initial_pose);
     void motion_update (const geometry_msgs::msg::Pose &current, const geometry_msgs::msg::Pose &last);
-    void sensor_update (const sensor_msgs::msg::LaserScan &scan);
+    void sensor_update (const sensor_msgs::msg::PointCloud2 &cloud);
     void resample_particles ();
     void create_distance_map ();
     bool is_converged () const;
@@ -59,13 +59,13 @@ class mcl : public rclcpp::Node {
 
     // ユーティリティ
     bool   is_pose_valid (double x, double y) const;
-    double compute_likelihood (const Particle &p, const sensor_msgs::msg::LaserScan &scan) const;
+    double compute_likelihood (const Particle &p, const sensor_msgs::msg::PointCloud2 &cloud) const;
     bool   get_transform (
           const std::string &target_frame, const std::string &source_frame, const rclcpp::Time &time,
           geometry_msgs::msg::TransformStamped &transform_out) const;
 
     // ノード内変数
-    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr                   scan_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr                 cloud_sub_;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr                  map_sub_;
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr               ekf_sub_;

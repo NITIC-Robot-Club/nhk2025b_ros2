@@ -15,8 +15,8 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     gaussian_stddev_angle_   = this->declare_parameter ("gaussian_stddev_angle", 1.0);
     random_particle_map_num_ = this->declare_parameter ("random_particle_map_num", 100);
 
-    scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan> (
-        "/sensor/scan", rclcpp::SensorDataQoS (), std::bind (&mcl::scan_callback, this, std::placeholders::_1));
+    cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2> (
+        "/sensor/lidar", rclcpp::SensorDataQoS (), std::bind (&mcl::cloud_callback, this, std::placeholders::_1));
     map_sub_ =
         this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&mcl::map_callback, this, std::placeholders::_1));
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> (
@@ -118,10 +118,10 @@ void mcl::ekf_callback (const geometry_msgs::msg::PoseStamped::SharedPtr ekf_msg
     ekf_last_pose_ = ekf_current_pose_;
 }
 
-void mcl::scan_callback (const sensor_msgs::msg::LaserScan::SharedPtr scan_msg) {
+void mcl::cloud_callback (const sensor_msgs::msg::PointCloud2::SharedPtr cloud_msg) {
     if (!map_ || particles_.empty ()) return;
 
-    sensor_update (*scan_msg);
+    sensor_update (*cloud_msg);
     resample_particles ();
     // timer_callback();
 }
@@ -156,12 +156,12 @@ void mcl::timer_callback () {
     tf_broadcaster_->sendTransform (transform);
 
     if (!is_converged ()) {
-        // RCLCPP_WARN (this->get_logger (), "Particles not converged");
+        RCLCPP_WARN (this->get_logger (), "Particles not converged");
         // estimated.pose.position.x    = last_estimated_pose_.pose.position.x + (current_pose_.position.x - last_pose_.position.x);
         // estimated.pose.position.y    = last_estimated_pose_.pose.position.y + (current_pose_.position.y - last_pose_.position.y);
         // estimated.pose.orientation.z = last_estimated_pose_.pose.orientation.z + (current_pose_.orientation.z - last_pose_.orientation.z);
         // estimated.pose.orientation.w = last_estimated_pose_.pose.orientation.w + (current_pose_.orientation.w - last_pose_.orientation.w);
-        return;
+        // return;
     }
 
     pose_pub_->publish (estimated);
@@ -244,12 +244,12 @@ void mcl::motion_update (const geometry_msgs::msg::Pose& current, const geometry
     }
 }
 
-void mcl::sensor_update (const sensor_msgs::msg::LaserScan& scan) {
+void mcl::sensor_update (const sensor_msgs::msg::PointCloud2& cloud) {
     double total_weight = 0.0;
     int    score_max    = 0;
     int    score_min    = 1000;
     for (auto& p : particles_) {
-        p.weight = compute_likelihood (p, scan);
+        p.weight = compute_likelihood (p, cloud);
         total_weight += p.weight;
         if (p.weight > score_max) {
             score_max = p.weight;
@@ -264,20 +264,38 @@ void mcl::sensor_update (const sensor_msgs::msg::LaserScan& scan) {
     }
 }
 
-double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::LaserScan& scan) const {
+double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::PointCloud2& cloud) const {
     if (!map_ || distance_map_.empty ()) return 0.0;
 
     double       score     = 0.0;
-    const double max_range = scan.range_max;
     const double sigma_hit = 0.2;
     const double z_hit     = 0.8;
     const double z_rand    = 0.2;
+    const double max_range = 11.0;  // LIDAR最大距離（適宜調整）
 
-    for (size_t i = 0; i < scan.ranges.size (); i++) {
-        double range = scan.ranges[i];
+    // PointCloud2のデータをxyzで走査
+    int x_offset = -1, y_offset = -1, z_offset = -1;
+    int point_step = cloud.point_step;
+    for (const auto& field : cloud.fields) {
+        if (field.name == "x") x_offset = field.offset;
+        if (field.name == "y") y_offset = field.offset;
+        if (field.name == "z") z_offset = field.offset;
+    }
+    if (x_offset < 0 || y_offset < 0) return 0.0;
+
+    size_t num_points = cloud.width * cloud.height;
+    for (size_t i = 0; i < num_points; ++i) {
+        // double range = scan.ranges[i];
+        double range = std::hypot (
+            *reinterpret_cast<const float*> (&cloud.data[i * point_step + x_offset]),
+            *reinterpret_cast<const float*> (&cloud.data[i * point_step + y_offset]));
+
         if (std::isnan (range) || range > max_range) continue;
+        double angle = std::atan2 (
+                           *reinterpret_cast<const float*> (&cloud.data[i * point_step + y_offset]),
+                           *reinterpret_cast<const float*> (&cloud.data[i * point_step + x_offset])) +
+                       p.theta;
 
-        double angle = scan.angle_min + i * scan.angle_increment + p.theta;
         double hit_x = p.x + range * cos (angle);
         double hit_y = p.y + range * sin (angle);
 

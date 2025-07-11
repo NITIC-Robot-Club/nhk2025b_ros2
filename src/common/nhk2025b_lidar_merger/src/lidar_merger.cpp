@@ -24,18 +24,11 @@ void lidar_merger::publish_merged_point_cloud2 () {
         // どちらかのスキャンが未受信なら何もしない
         return;
     }
-    sensor_msgs::msg::PointCloud2    merged_cloud;
-    sensor_msgs::PointCloud2Modifier modifier (merged_cloud);
-    modifier.setPointCloud2FieldsByString (1, "xyz");
-    modifier.resize (scan1.ranges.size () + scan2.ranges.size ());
-    sensor_msgs::PointCloud2Iterator<float> iter_x (merged_cloud, "x");
-    sensor_msgs::PointCloud2Iterator<float> iter_y (merged_cloud, "y");
-    sensor_msgs::PointCloud2Iterator<float> iter_z (merged_cloud, "z");
 
-    merged_cloud.header.frame_id = "base_link";
-    merged_cloud.header.stamp    = this->now ();
-    double robot_width           = 0.6;
-    double robot_length          = 0.8;
+    // 一時的に有効な点を格納するバッファ
+    std::vector<std::tuple<float, float, float>> valid_points;
+    double                                       robot_width  = 0.8;
+    double                                       robot_length = 0.6;
 
     if (!scan1.ranges.empty ()) {
         // scan1のtf -> base_link変換
@@ -60,15 +53,11 @@ void lidar_merger::publish_merged_point_cloud2 () {
                 point_in.point.y = y;
                 point_in.point.z = z;
                 tf2::doTransform (point_in, point_out, transform1);
-                if ((point_out.point.x < -robot_length / 2.0 || point_out.point.x > robot_length / 2.0) &&
-                    (point_out.point.y < -robot_width / 2.0 || point_out.point.y > robot_width / 2.0)) {
-                    *iter_x = point_out.point.x;
-                    *iter_y = point_out.point.y;
-                    *iter_z = point_out.point.z;
-                    ++iter_x;
-                    ++iter_y;
-                    ++iter_z;
+                if ((point_out.point.x > -robot_length / 2.0 && point_out.point.x < robot_length / 2.0) &&
+                    (point_out.point.y > -robot_width / 2.0 && point_out.point.y < robot_width / 2.0)) {
+                    continue;
                 }
+                valid_points.push_back (std::make_tuple (point_out.point.x, point_out.point.y, point_out.point.z));
             }
         }
     }
@@ -95,17 +84,31 @@ void lidar_merger::publish_merged_point_cloud2 () {
                 point_in.point.y = y;
                 point_in.point.z = z;
                 tf2::doTransform (point_in, point_out, transform2);
-                if ((point_out.point.x < -robot_length / 2.0 || point_out.point.x > robot_length / 2.0) &&
-                    (point_out.point.y < -robot_width / 2.0 || point_out.point.y > robot_width / 2.0)) {
-                    *iter_x = point_out.point.x;
-                    *iter_y = point_out.point.y;
-                    *iter_z = point_out.point.z;
-                    ++iter_x;
-                    ++iter_y;
-                    ++iter_z;
+                if ((point_out.point.x > -robot_length / 2.0 && point_out.point.x < robot_length / 2.0) &&
+                    (point_out.point.y > -robot_width / 2.0 && point_out.point.y < robot_width / 2.0)) {
+                    continue;
                 }
+                valid_points.push_back (std::make_tuple (point_out.point.x, point_out.point.y, point_out.point.z));
             }
         }
+    }
+    // valid_pointsの数でresizeし、PointCloud2に格納
+    sensor_msgs::msg::PointCloud2    merged_cloud;
+    sensor_msgs::PointCloud2Modifier modifier (merged_cloud);
+    modifier.setPointCloud2FieldsByString (1, "xyz");
+    modifier.resize (valid_points.size ());
+    sensor_msgs::PointCloud2Iterator<float> iter_x (merged_cloud, "x");
+    sensor_msgs::PointCloud2Iterator<float> iter_y (merged_cloud, "y");
+    sensor_msgs::PointCloud2Iterator<float> iter_z (merged_cloud, "z");
+    merged_cloud.header.frame_id = "base_link";
+    merged_cloud.header.stamp    = this->now ();
+    for (const auto &pt : valid_points) {
+        *iter_x = std::get<0> (pt);
+        *iter_y = std::get<1> (pt);
+        *iter_z = std::get<2> (pt);
+        ++iter_x;
+        ++iter_y;
+        ++iter_z;
     }
     pointcloud2_pub->publish (merged_cloud);
 }
