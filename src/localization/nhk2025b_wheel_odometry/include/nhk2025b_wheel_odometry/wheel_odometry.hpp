@@ -14,7 +14,7 @@ class wheel_odometry : public rclcpp::Node {
 
    private:
     double robot_width, robot_length, wheel_radius, current_x, current_y, current_z, sum_x, sum_y, sum_z;
-    int    count;
+    int    count, publish_rate_hz;
 
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
     void timer_callback ();

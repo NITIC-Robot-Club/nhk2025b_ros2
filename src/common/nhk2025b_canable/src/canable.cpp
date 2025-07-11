@@ -77,13 +77,13 @@ void canable::read_can_socket () {
                 case 0x113:
                     memcpy (&swerve_now_.wheel_angle[frame.can_id - 0x110], frame.data, sizeof (float));
                     memcpy (&swerve_now_.wheel_speed[frame.can_id - 0x110], frame.data + 4, sizeof (float));
-                    swerve_flag_[frame.can_id - 0x110] = true;
-                    if (swerve_flag_[0] && swerve_flag_[1] && swerve_flag_[2] && swerve_flag_[3]) {
-                        swerve_pub_->publish (swerve_now_);
-                        for (int i = 0; i < 4; i++) {
-                            swerve_flag_[i] = false;
-                        }
-                    }
+                    swerve_pub_->publish (swerve_now_);
+                    // swerve_flag_[frame.can_id - 0x110] = true;
+                    // if (swerve_flag_[0] && swerve_flag_[1] && swerve_flag_[2] && swerve_flag_[3]) {
+                    //     for (int i = 0; i < 4; i++) {
+                    //         swerve_flag_[i] = false;
+                    //     }
+                    // }
                     break;
             }
         }
