@@ -9,15 +9,15 @@ wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("whe
     wheel_radius   = this->declare_parameter ("wheel_radius", 0.0325);
     robot_width    = this->declare_parameter ("robot_width", 0.8);
     robot_length   = this->declare_parameter ("robot_length", 0.6);
-    
+
     bool   is_red         = this->declare_parameter<bool> ("is_red", false);
     double initial_x_blue = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
     double initial_y_blue = this->declare_parameter<double> ("initial_positions.blue.y", 1.0);
     double initial_x_red  = this->declare_parameter<double> ("initial_positions.red.x", 1.0);
     double initial_y_red  = this->declare_parameter<double> ("initial_positions.red.y", 4.4);
-    publish_rate_hz = this->declare_parameter<int>("publish_rate_hz", 10);
+    publish_rate_hz       = this->declare_parameter<int> ("publish_rate_hz", 10);
 
-    timer          = this->create_wall_timer (std::chrono::milliseconds (1000/publish_rate_hz), std::bind (&wheel_odometry::timer_callback, this));
+    timer = this->create_wall_timer (std::chrono::milliseconds (1000 / publish_rate_hz), std::bind (&wheel_odometry::timer_callback, this));
     if (is_red) {
         current_x = initial_x_red;
         current_y = initial_y_red;
