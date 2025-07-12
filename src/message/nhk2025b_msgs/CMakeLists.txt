@@ -8,6 +8,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Swerve.msg"
   "msg/RobotStatus.msg"
   "msg/Command.msg"
+  "msg/Conveyor.msg"
   "msg/State.msg"
   "msg/StateArray.msg"
   "msg/BoxInfo.msg"
