@@ -1,1 +1,1 @@
-float32 conveyor_rpm
+float32[2] conveyor_rpm

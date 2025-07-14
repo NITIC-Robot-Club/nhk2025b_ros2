@@ -1,2 +1,2 @@
-float32 height
-float32 collect_rpm
+float32[2] height
+float32[2] collect_rpm

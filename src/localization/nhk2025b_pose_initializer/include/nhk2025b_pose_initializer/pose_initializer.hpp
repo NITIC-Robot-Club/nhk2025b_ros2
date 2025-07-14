@@ -33,6 +33,8 @@ class pose_initializer : public rclcpp::Node {
     double point_line_distance (const Point& pt, double a, double b, double c);
     bool   is_horizontal (const std::tuple<double, double, double>& line);
 
+    bool success_ = false;
+
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr              lidar_subscriber;
     rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_publisher;
 };

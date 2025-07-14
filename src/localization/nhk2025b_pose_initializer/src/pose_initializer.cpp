@@ -98,6 +98,10 @@ std::tuple<double, double, double> pose_initializer::ransac_line_fit (const std:
 }
 
 void pose_initializer::lidar_callback (const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+    if(success_) {
+        RCLCPP_INFO (this->get_logger (), "Pose initialization already succeeded, ignoring new data");
+        return;  // 既に成功している場合は無視
+    }
     std::vector<Point> points;
     points.reserve (msg->width * msg->height);
     for (size_t i = 0; i < msg->width * msg->height; ++i) {
@@ -151,6 +155,7 @@ void pose_initializer::lidar_callback (const sensor_msgs::msg::PointCloud2::Shar
 
     // 終わり
     lidar_subscriber.reset ();
+    success_ = true;
 }
 
 }  // namespace pose_initializer

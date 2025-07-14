@@ -117,7 +117,9 @@ void canable::timer_callback () {
             frame.can_dlc = 8;
             std::memcpy (frame.data, &latest_swerve_->wheel_angle[i], sizeof (float));
             std::memcpy (frame.data + 4, &latest_swerve_->wheel_speed[i], sizeof (float));
-            write (can_socket_, &frame, sizeof (struct can_frame));
+            if(!write (can_socket_, &frame, sizeof (struct can_frame))) {
+                RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+            }
         }
     }
 
@@ -127,9 +129,11 @@ void canable::timer_callback () {
         std::memset (&frame, 0, sizeof (struct can_frame));
         frame.can_id  = 0x016;
         frame.can_dlc = 8;
-        std::memcpy (frame.data, &latest_conveyor_->conveyor_rpm_right, sizeof (float));
-        std::memcpy (frame.data + 4, &latest_conveyor_->conveyor_rpm_left, sizeof (float));
-        write (can_socket_, &frame, sizeof (struct can_frame));
+        std::memcpy (frame.data, &latest_conveyor_->conveyor_rpm[0], sizeof (float));
+        std::memcpy (frame.data + 4, &latest_conveyor_->conveyor_rpm[1], sizeof (float));
+        if(!write (can_socket_, &frame, sizeof (struct can_frame)) ){
+            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+        }
     }
 }
 
