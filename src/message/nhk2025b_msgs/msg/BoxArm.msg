@@ -1,0 +1,3 @@
+float32 height
+float32 arm_position_strong
+float32 arm_position_weak

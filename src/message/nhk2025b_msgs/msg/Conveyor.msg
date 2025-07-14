@@ -1,3 +1,1 @@
-std_msgs/Header header
-float32 conveyor_rpm_right
-float32 conveyor_rpm_left
+float32 conveyor_rpm
