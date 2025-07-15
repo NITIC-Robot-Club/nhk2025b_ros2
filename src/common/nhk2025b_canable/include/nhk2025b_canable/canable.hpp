@@ -6,6 +6,7 @@
 #include "nhk2025b_msgs/msg/conveyor.hpp"
 #include "nhk2025b_msgs/msg/robot_status.hpp"
 #include "nhk2025b_msgs/msg/swerve.hpp"
+#include "nhk2025b_msgs/msg/pylon_arm.hpp"
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -32,6 +33,7 @@ class canable : public rclcpp::Node {
     // === サブスクコールバック ===
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
     void conveyor_callback (const nhk2025b_msgs::msg::Conveyor::SharedPtr msg);
+    void pylon_arm_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr msg);
 
     // === ソケット・ステータス ===
     int  can_socket_;
@@ -44,18 +46,46 @@ class canable : public rclcpp::Node {
     struct ifreq        ifr_;
 
     // === 最新メッセージ保存用 ===
-    nhk2025b_msgs::msg::Swerve::SharedPtr   latest_swerve_;
     nhk2025b_msgs::msg::Swerve              swerve_cmd_;
-    nhk2025b_msgs::msg::Conveyor::SharedPtr latest_conveyor_;
     nhk2025b_msgs::msg::RobotStatus         robot_status_;
+    nhk2025b_msgs::msg::Swerve::SharedPtr   latest_swerve_;
+    nhk2025b_msgs::msg::Conveyor::SharedPtr latest_conveyor_;
+    nhk2025b_msgs::msg::PylonArm::SharedPtr latest_pylon_arm_;
+    
     bool                                    swerve_flag_[4] = {false, false, false, false};
     std::mutex                              data_mutex_;
 
+    // === 構造体 ===
+
+    union float_bytes { // float byte変換
+  uint8_t bytes[4];
+  float value;
+};
+
+union claw_receive_union {
+  uint8_t raw;
+  struct {
+    uint8_t reset_swerve : 1;
+    uint8_t expand_pylon_arm_right : 1;
+    uint8_t expand_pylon_arm_left : 1;
+    uint8_t : 5;
+  } data;
+} claw_receive;
+
+union claw_transmit_union {
+  uint8_t raw;
+  struct {
+    uint8_t swerve_reset_success : 1;
+    uint8_t : 7;
+  } data;
+} claw_transmit;
+
     // === ROS 通信 ===
+    rclcpp::Subscription<nhk2025b_msgs::msg::Conveyor>::SharedPtr conveyor_sub_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::PylonArm>::SharedPtr pylon_arm_sub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::RobotStatus>::SharedPtr robot_status_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr      swerve_pub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr   swerve_sub_;
-    rclcpp::Subscription<nhk2025b_msgs::msg::Conveyor>::SharedPtr conveyor_sub_;
     rclcpp::TimerBase::SharedPtr                                  timer_;
 };
 

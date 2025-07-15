@@ -15,12 +15,14 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
         return;
     }
 
+    conveyor_sub_ = this->create_subscription<nhk2025b_msgs::msg::Conveyor> (
+        "/conveyor/cmd", 1, std::bind (&canable::conveyor_callback, this, std::placeholders::_1));
+    pylon_arm_sub_ = this->create_subscription<nhk2025b_msgs::msg::PylonArm> (
+        "/pylon_arm/cmd", 1, std::bind (&canable::pylon_arm_callback, this, std::placeholders::_1));
     robot_status_pub_ = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 1);
     swerve_pub_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 1);
     swerve_sub_ =
         this->create_subscription<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1, std::bind (&canable::swerve_callback, this, std::placeholders::_1));
-    conveyor_sub_ = this->create_subscription<nhk2025b_msgs::msg::Conveyor> (
-        "/conveyor/cmd", 1, std::bind (&canable::conveyor_callback, this, std::placeholders::_1));
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&canable::timer_callback, this));
 
@@ -75,11 +77,11 @@ void canable::read_can_socket () {
                     robot_status_pub_->publish (robot_status_);
                     break;
 
-                case 0x110:
                 case 0x111:
                 case 0x112:
-                case 0x113: {
-                    int i = frame.can_id - 0x110;
+                case 0x113:
+                case 0x114: {
+                    int i = frame.can_id - 0x111;
                     std::memcpy (&swerve_cmd_.wheel_angle[i], frame.data, sizeof (float));
                     std::memcpy (&swerve_cmd_.wheel_speed[i], frame.data + 4, sizeof (float));
                     swerve_flag_[i] = true;
@@ -105,15 +107,20 @@ void canable::conveyor_callback (const nhk2025b_msgs::msg::Conveyor::SharedPtr m
     latest_conveyor_ = msg;
 }
 
+void canable::pylon_arm_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr msg) {
+    std::lock_guard<std::mutex> lock (data_mutex_);
+    latest_pylon_arm_ = msg;
+}
+
 void canable::timer_callback () {
     std::lock_guard<std::mutex> lock (data_mutex_);
+    bool pylon_expand[2] = {false, false};  // 0: right, 1: left
 
-    // Send swerve data if available
     if (latest_swerve_) {
         for (int i = 0; i < 4; i++) {
             struct can_frame frame;
             std::memset (&frame, 0, sizeof (struct can_frame));
-            frame.can_id  = 0x010 + i;
+            frame.can_id  = 0x011 + i;
             frame.can_dlc = 8;
             std::memcpy (frame.data, &latest_swerve_->wheel_angle[i], sizeof (float));
             std::memcpy (frame.data + 4, &latest_swerve_->wheel_speed[i], sizeof (float));
@@ -122,12 +129,25 @@ void canable::timer_callback () {
             }
         }
     }
+    if (latest_pylon_arm_) {
+        for(int i = 0; i<2; i++) {
+            pylon_expand[i] = latest_pylon_arm_->expand[i];
+            struct can_frame frame;
+            std::memset (&frame, 0, sizeof (struct can_frame));
+            frame.can_id  = 0x015 + i;
+            frame.can_dlc = 8;
+            std::memcpy (frame.data, &latest_pylon_arm_->height[i], sizeof (float));
+            std::memcpy (frame.data + 4, &latest_pylon_arm_->collect_rpm[i], sizeof (float));
+            if (!write (can_socket_, &frame, sizeof (struct can_frame))) {
+                RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+            }
+        }
+    }
 
-    // Send conveyor data if available
     if (latest_conveyor_) {
         struct can_frame frame;
         std::memset (&frame, 0, sizeof (struct can_frame));
-        frame.can_id  = 0x016;
+        frame.can_id  = 0x017;
         frame.can_dlc = 8;
         std::memcpy (frame.data, &latest_conveyor_->conveyor_rpm[0], sizeof (float));
         std::memcpy (frame.data + 4, &latest_conveyor_->conveyor_rpm[1], sizeof (float));
@@ -135,6 +155,9 @@ void canable::timer_callback () {
             RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
         }
     }
+
+
+    
 }
 
 }  // namespace canable

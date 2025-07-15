@@ -22,15 +22,11 @@
 | - | - | - |
 | cmd | nhk2025b_msgs/BoxArm | アーム司令 |
 | result | nhk2025b_msgs/BoxArm | アーム結果 |
-| expand_right | std_msgs/Bool | アーム展開右 |
-| expand_left | std_msgs/Bool | アーム展開左 |
 
 # /pylon_arm
 | topic名 | 型 | 説明 |
 | - | - | - |
 | cmd | nhk2025b_msgs/PylonArm | パイロンアーム司令 |
 | result | nhk2025b_msgs/PylonArm | パイロンアーム結果 |
-| expand_right | std_msgs/Bool | パイロンアーム展開右 |
-| expand_left | std_msgs/Bool | パイロンアーム展開左 |
 
 ## /localization
