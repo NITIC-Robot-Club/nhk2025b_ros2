@@ -4,9 +4,9 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "nhk2025b_msgs/msg/conveyor.hpp"
+#include "nhk2025b_msgs/msg/pylon_arm.hpp"
 #include "nhk2025b_msgs/msg/robot_status.hpp"
 #include "nhk2025b_msgs/msg/swerve.hpp"
-#include "nhk2025b_msgs/msg/pylon_arm.hpp"
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -51,34 +51,34 @@ class canable : public rclcpp::Node {
     nhk2025b_msgs::msg::Swerve::SharedPtr   latest_swerve_;
     nhk2025b_msgs::msg::Conveyor::SharedPtr latest_conveyor_;
     nhk2025b_msgs::msg::PylonArm::SharedPtr latest_pylon_arm_;
-    
-    bool                                    swerve_flag_[4] = {false, false, false, false};
-    std::mutex                              data_mutex_;
+
+    bool       swerve_flag_[4] = {false, false, false, false};
+    std::mutex data_mutex_;
 
     // === 構造体 ===
 
-    union float_bytes { // float byte変換
-  uint8_t bytes[4];
-  float value;
-};
+    union float_bytes {  // float byte変換
+        uint8_t bytes[4];
+        float   value;
+    };
 
-union claw_receive_union {
-  uint8_t raw;
-  struct {
-    uint8_t reset_swerve : 1;
-    uint8_t expand_pylon_arm_right : 1;
-    uint8_t expand_pylon_arm_left : 1;
-    uint8_t : 5;
-  } data;
-} claw_receive;
+    union claw_receive_union {
+        uint8_t raw;
+        struct {
+            uint8_t reset_swerve : 1;
+            uint8_t expand_pylon_arm_right : 1;
+            uint8_t expand_pylon_arm_left : 1;
+            uint8_t : 5;
+        } data;
+    } claw_receive;
 
-union claw_transmit_union {
-  uint8_t raw;
-  struct {
-    uint8_t swerve_reset_success : 1;
-    uint8_t : 7;
-  } data;
-} claw_transmit;
+    union claw_transmit_union {
+        uint8_t raw;
+        struct {
+            uint8_t swerve_reset_success : 1;
+            uint8_t : 7;
+        } data;
+    } claw_transmit;
 
     // === ROS 通信 ===
     rclcpp::Subscription<nhk2025b_msgs::msg::Conveyor>::SharedPtr conveyor_sub_;

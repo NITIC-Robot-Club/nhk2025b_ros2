@@ -114,7 +114,7 @@ void canable::pylon_arm_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr 
 
 void canable::timer_callback () {
     std::lock_guard<std::mutex> lock (data_mutex_);
-    bool pylon_expand[2] = {false, false};  // 0: right, 1: left
+    bool                        pylon_expand[2] = {false, false};  // 0: right, 1: left
 
     if (latest_swerve_) {
         for (int i = 0; i < 4; i++) {
@@ -130,7 +130,7 @@ void canable::timer_callback () {
         }
     }
     if (latest_pylon_arm_) {
-        for(int i = 0; i<2; i++) {
+        for (int i = 0; i < 2; i++) {
             pylon_expand[i] = latest_pylon_arm_->expand[i];
             struct can_frame frame;
             std::memset (&frame, 0, sizeof (struct can_frame));
@@ -155,9 +155,6 @@ void canable::timer_callback () {
             RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
         }
     }
-
-
-    
 }
 
 }  // namespace canable
