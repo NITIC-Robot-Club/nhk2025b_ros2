@@ -127,6 +127,7 @@ void canable::timer_callback () {
             if (!write (can_socket_, &frame, sizeof (struct can_frame))) {
                 RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
             }
+            std::this_thread::sleep_for(std::chrono::microseconds(500));
         }
     }
     if (latest_pylon_arm_) {
@@ -141,6 +142,7 @@ void canable::timer_callback () {
             if (!write (can_socket_, &frame, sizeof (struct can_frame))) {
                 RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
             }
+            std::this_thread::sleep_for(std::chrono::microseconds(500));
         }
     }
 
@@ -154,7 +156,20 @@ void canable::timer_callback () {
         if (!write (can_socket_, &frame, sizeof (struct can_frame))) {
             RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
         }
+        std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
+
+    claw_receive.data.expand_pylon_arm_right = pylon_expand[0];
+    claw_receive.data.expand_pylon_arm_left  = pylon_expand[1];
+    struct can_frame claw_frame;
+    std::memset (&claw_frame, 0, sizeof (struct can_frame));
+    claw_frame.can_id  = 0x010;
+    claw_frame.can_dlc = 1;
+    claw_frame.data[0] = claw_receive.raw;
+    if (!write (can_socket_, &claw_frame, sizeof (struct can_frame))) {
+        RCLCPP_ERROR (this->get_logger (), "Failed to write claw command to CAN socket");
+    }
+    std::this_thread::sleep_for(std::chrono::microseconds(500));
 }
 
 }  // namespace canable
