@@ -26,10 +26,10 @@ class canable : public rclcpp::Node {
 
    private:
     // === 初期化と処理 ===
-    int  init_can_socket ();  // CANソケット初期化
-    void read_can_socket ();  // CAN受信スレッド
-    void timer_callback ();   // 10ms周期送信コールバック
-    void check_can_receive();  // CAN受信確認
+    int  init_can_socket ();    // CANソケット初期化
+    void read_can_socket ();    // CAN受信スレッド
+    void timer_callback ();     // 10ms周期送信コールバック
+    void check_can_receive ();  // CAN受信確認
 
     // === サブスクコールバック ===
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
@@ -56,7 +56,7 @@ class canable : public rclcpp::Node {
     bool       swerve_flag_[4] = {false, false, false, false};
     std::mutex data_mutex_;
 
-    int id_list[12] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x120, 0x121, 0x122, 0x123};
+    int  id_list[12] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x120, 0x121, 0x122, 0x123};
     bool id_flag[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 
     // === 構造体 ===
