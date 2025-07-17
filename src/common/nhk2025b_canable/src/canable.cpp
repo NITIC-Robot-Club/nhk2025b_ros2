@@ -27,6 +27,8 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
     timer_ = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&canable::timer_callback, this));
 
     std::thread ([this] () { this->read_can_socket (); }).detach ();
+    can_receive_timer_ = this->create_wall_timer (
+        std::chrono::milliseconds (100), std::bind (&canable::check_can_receive, this));  // 100msごとにCAN受信確認
 }
 
 canable::~canable () {
@@ -69,6 +71,12 @@ void canable::read_can_socket () {
     while (rclcpp::ok ()) {
         int nbytes = read (can_socket_, &frame, sizeof (struct can_frame));
         if (nbytes > 0) {
+            for(int i = 0; i < 12; i++) {
+                if (frame.can_id == id_list[i]) {
+                    id_flag[i] = true;  // フラグを立てる
+                    break;
+                }
+            }
             switch (frame.can_id) {
                 case 0x100:
                     robot_status_.signal       = (frame.data[0] >> 0) & 0x01;
@@ -94,6 +102,23 @@ void canable::read_can_socket () {
                 }
             }
         }
+    }
+}
+
+
+void canable::check_can_receive () {
+    std::ostringstream missing_ids;
+    for (int i = 0; i < 12; i++) {
+        if (!id_flag[i]) {
+            if (!missing_ids.str().empty()) {
+                missing_ids << ", ";
+            }
+            missing_ids << std::hex << id_list[i];
+        }
+        id_flag[i] = false;  // フラグをリセット
+    }
+    if (!missing_ids.str().empty()) {
+        RCLCPP_WARN (this->get_logger (), "Missing CAN messages: %s", missing_ids.str().c_str ());
     }
 }
 
@@ -159,8 +184,8 @@ void canable::timer_callback () {
         std::this_thread::sleep_for (std::chrono::microseconds (500));
     }
 
-    claw_receive.data.expand_pylon_arm_right = pylon_expand[0];
-    claw_receive.data.expand_pylon_arm_left  = pylon_expand[1];
+    claw_receive.data.expand_pylon_arm_left  = pylon_expand[0];
+    claw_receive.data.expand_pylon_arm_right = pylon_expand[1];
     struct can_frame claw_frame;
     std::memset (&claw_frame, 0, sizeof (struct can_frame));
     claw_frame.can_id  = 0x010;

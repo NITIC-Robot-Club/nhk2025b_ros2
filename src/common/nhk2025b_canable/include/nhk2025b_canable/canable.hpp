@@ -29,6 +29,7 @@ class canable : public rclcpp::Node {
     int  init_can_socket ();  // CANソケット初期化
     void read_can_socket ();  // CAN受信スレッド
     void timer_callback ();   // 10ms周期送信コールバック
+    void check_can_receive();  // CAN受信確認
 
     // === サブスクコールバック ===
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
@@ -55,6 +56,9 @@ class canable : public rclcpp::Node {
     bool       swerve_flag_[4] = {false, false, false, false};
     std::mutex data_mutex_;
 
+    int id_list[12] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x120, 0x121, 0x122, 0x123};
+    bool id_flag[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
+
     // === 構造体 ===
 
     union float_bytes {  // float byte変換
@@ -66,8 +70,8 @@ class canable : public rclcpp::Node {
         uint8_t raw;
         struct {
             uint8_t reset_swerve : 1;
-            uint8_t expand_pylon_arm_right : 1;
             uint8_t expand_pylon_arm_left : 1;
+            uint8_t expand_pylon_arm_right : 1;
             uint8_t : 5;
         } data;
     } claw_receive;
@@ -80,6 +84,28 @@ class canable : public rclcpp::Node {
         } data;
     } claw_transmit;
 
+    union wing_receive_union {
+        uint8_t raw;
+        struct {
+            uint8_t expand_left : 1;
+            uint8_t expand_right : 1;
+            uint8_t E_ready : 1;
+            uint8_t E_get : 1;
+            uint8_t : 4;
+        } data;
+    } wing_receive;
+
+    union wing_transmit_union {
+        uint8_t raw;
+        struct {
+            uint8_t expanded_left : 1;
+            uint8_t expanded_right : 1;
+            uint8_t E_ready : 1;
+            uint8_t E_got : 1;
+            uint8_t : 4;
+        } data;
+    } wing_transmit;
+
     // === ROS 通信 ===
     rclcpp::Subscription<nhk2025b_msgs::msg::Conveyor>::SharedPtr conveyor_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::PylonArm>::SharedPtr pylon_arm_sub_;
@@ -87,6 +113,7 @@ class canable : public rclcpp::Node {
     rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr      swerve_pub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr   swerve_sub_;
     rclcpp::TimerBase::SharedPtr                                  timer_;
+    rclcpp::TimerBase::SharedPtr                                  can_receive_timer_;
 };
 
 }  // namespace canable
