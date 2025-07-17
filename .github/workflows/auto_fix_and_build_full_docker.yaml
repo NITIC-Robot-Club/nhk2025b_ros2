@@ -48,7 +48,7 @@ jobs:
         id: build_test
         working-directory: /home/nitic-robot-club/nhk2025b_ros2
         run: |
-          . /opt/ros/humble/setup.sh && 
+          . /opt/ros/jazzy/setup.sh && 
           colcon build
         continue-on-error: true
     
