@@ -53,8 +53,8 @@ class canable : public rclcpp::Node {
     nhk2025b_msgs::msg::Conveyor::SharedPtr latest_conveyor_;
     nhk2025b_msgs::msg::PylonArm::SharedPtr latest_pylon_arm_;
 
-    bool       swerve_flag_[4] = {false, false, false, false};
-    bool robot_status_flag_ = false;
+    bool       swerve_flag_[4]    = {false, false, false, false};
+    bool       robot_status_flag_ = false;
     std::mutex data_mutex_;
 
     int  id_list[12] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x120, 0x121, 0x122, 0x123};

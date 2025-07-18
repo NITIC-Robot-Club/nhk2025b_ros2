@@ -86,21 +86,21 @@ void canable::read_can_socket () {
                     voltage.bytes[i] = frame.data[i + 1];
                 }
                 robot_status_.voltage[0] = voltage.value;
-                if(robot_status_flag_) {
+                if (robot_status_flag_) {
                     robot_status_pub_->publish (robot_status_);
                     robot_status_flag_ = false;
                 }
             }
 
-            if(frame.can_id = 0x101 && frame.len == 8) {
+            if (frame.can_id = 0x101 && frame.len == 8) {
                 float_bytes voltage[2];
                 for (int i = 0; i < 4; i++) {
                     voltage[0].bytes[i] = frame.data[i];
-                    voltage[1].bytes[i] = frame.data[i + 4];    
+                    voltage[1].bytes[i] = frame.data[i + 4];
                 }
                 robot_status_.voltage[1] = voltage[0].value;
                 robot_status_.voltage[2] = voltage[1].value;
-                robot_status_flag_ = true;
+                robot_status_flag_       = true;
             }
 
             if (0x111 <= frame.can_id && frame.can_id <= 0x114 && frame.len == 8) {
