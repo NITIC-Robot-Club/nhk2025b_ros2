@@ -54,6 +54,7 @@ class canable : public rclcpp::Node {
     nhk2025b_msgs::msg::PylonArm::SharedPtr latest_pylon_arm_;
 
     bool       swerve_flag_[4] = {false, false, false, false};
+    bool robot_status_flag_ = false;
     std::mutex data_mutex_;
 
     int  id_list[12] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x120, 0x121, 0x122, 0x123};
@@ -65,6 +66,22 @@ class canable : public rclcpp::Node {
         uint8_t bytes[4];
         float   value;
     };
+
+    union power_receive_union {
+        uint8_t raw;
+        struct {
+            uint8_t sig : 1;
+            uint8_t : 7;
+        } data;
+    } power_receive;
+
+    union power_transmit_union {
+        uint8_t raw;
+        struct {
+            uint8_t sig : 1;
+            uint8_t : 6;
+        } data;
+    } power_transmit;
 
     union claw_receive_union {
         uint8_t raw;

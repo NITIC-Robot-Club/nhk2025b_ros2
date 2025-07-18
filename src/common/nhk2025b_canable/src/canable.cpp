@@ -77,34 +77,50 @@ void canable::read_can_socket () {
                     break;
                 }
             }
-            switch (frame.can_id) {
-                case 0x100:
-                    robot_status_.signal       = (frame.data[0] >> 0) & 0x01;
-                    robot_status_.is_resetting = (frame.data[0] >> 1) & 0x01;
-                    std::memcpy (&robot_status_.voltage, frame.data + 1, sizeof (float));
+
+            if (frame.can_id == 0x100 && frame.len == 5) {
+                power_receive.raw    = frame.data[0];
+                robot_status_.signal = power_receive.data.sig;
+                float_bytes voltage;
+                for (int i = 0; i < 4; i++) {
+                    voltage.bytes[i] = frame.data[i + 1];
+                }
+                robot_status_.voltage[0] = voltage.value;
+                if(robot_status_flag_) {
                     robot_status_pub_->publish (robot_status_);
-                    break;
+                    robot_status_flag_ = false;
+                }
+            }
 
-                case 0x111:
-                case 0x112:
-                case 0x113:
-                case 0x114: {
-                    int i = frame.can_id - 0x111;
-                    std::memcpy (&swerve_cmd_.wheel_angle[i], frame.data, sizeof (float));
-                    std::memcpy (&swerve_cmd_.wheel_speed[i], frame.data + 4, sizeof (float));
-                    swerve_flag_[i] = true;
+            if(frame.can_id = 0x101 && frame.len == 8) {
+                float_bytes voltage[2];
+                for (int i = 0; i < 4; i++) {
+                    voltage[0].bytes[i] = frame.data[i];
+                    voltage[1].bytes[i] = frame.data[i + 4];    
+                }
+                robot_status_.voltage[1] = voltage[0].value;
+                robot_status_.voltage[2] = voltage[1].value;
+                robot_status_flag_ = true;
+            }
 
-                    if (swerve_flag_[0] && swerve_flag_[1] && swerve_flag_[2] && swerve_flag_[3]) {
-                        swerve_pub_->publish (swerve_cmd_);
-                        for (int j = 0; j < 4; j++) swerve_flag_[j] = false;
-                    }
-                    break;
+            if (0x111 <= frame.can_id && frame.can_id <= 0x114 && frame.len == 8) {
+                int               i = frame.can_id - 0x111;
+                union float_bytes swerve_angle, swerve_speed;
+                for (int b = 0; b < 4; ++b) {
+                    swerve_angle.bytes[b] = frame.data[b];
+                    swerve_speed.bytes[b] = frame.data[b + 4];
+                }
+                swerve_cmd_.wheel_angle[i] = swerve_angle.value;
+                swerve_cmd_.wheel_speed[i] = swerve_speed.value;
+                swerve_flag_[i]            = true;
+                if (swerve_flag_[0] && swerve_flag_[1] && swerve_flag_[2] && swerve_flag_[3]) {
+                    swerve_pub_->publish (swerve_cmd_);
+                    for (int j = 0; j < 4; j++) swerve_flag_[j] = false;
                 }
             }
         }
     }
 }
-
 void canable::check_can_receive () {
     std::ostringstream missing_ids;
     for (int i = 0; i < 12; i++) {
@@ -146,8 +162,13 @@ void canable::timer_callback () {
             std::memset (&frame, 0, sizeof (struct can_frame));
             frame.can_id  = 0x011 + i;
             frame.can_dlc = 8;
-            std::memcpy (frame.data, &latest_swerve_->wheel_angle[i], sizeof (float));
-            std::memcpy (frame.data + 4, &latest_swerve_->wheel_speed[i], sizeof (float));
+            union float_bytes swerve_angle, swerve_speed;
+            swerve_angle.value = latest_swerve_->wheel_angle[i];
+            swerve_speed.value = latest_swerve_->wheel_speed[i];
+            for (int b = 0; b < 4; ++b) {
+                frame.data[b]     = swerve_angle.bytes[b];
+                frame.data[b + 4] = swerve_speed.bytes[b];
+            }
             if (!write (can_socket_, &frame, sizeof (struct can_frame))) {
                 RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
             }
@@ -161,8 +182,13 @@ void canable::timer_callback () {
             std::memset (&frame, 0, sizeof (struct can_frame));
             frame.can_id  = 0x015 + i;
             frame.can_dlc = 8;
-            std::memcpy (frame.data, &latest_pylon_arm_->height[i], sizeof (float));
-            std::memcpy (frame.data + 4, &latest_pylon_arm_->collect_rpm[i], sizeof (float));
+            union float_bytes pylon_height, pylon_rpm;
+            pylon_height.value = latest_pylon_arm_->height[i];
+            pylon_rpm.value    = latest_pylon_arm_->collect_rpm[i];
+            for (int b = 0; b < 4; ++b) {
+                frame.data[b]     = pylon_height.bytes[b];
+                frame.data[b + 4] = pylon_rpm.bytes[b];
+            }
             if (!write (can_socket_, &frame, sizeof (struct can_frame))) {
                 RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
             }
@@ -175,8 +201,13 @@ void canable::timer_callback () {
         std::memset (&frame, 0, sizeof (struct can_frame));
         frame.can_id  = 0x017;
         frame.can_dlc = 8;
-        std::memcpy (frame.data, &latest_conveyor_->conveyor_rpm[0], sizeof (float));
-        std::memcpy (frame.data + 4, &latest_conveyor_->conveyor_rpm[1], sizeof (float));
+        union float_bytes rpm_left, rpm_right;
+        rpm_left.value  = latest_conveyor_->conveyor_rpm[0];
+        rpm_right.value = latest_conveyor_->conveyor_rpm[1];
+        for (int b = 0; b < 4; ++b) {
+            frame.data[b]     = rpm_left.bytes[b];
+            frame.data[b + 4] = rpm_right.bytes[b];
+        }
         if (!write (can_socket_, &frame, sizeof (struct can_frame))) {
             RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
         }
