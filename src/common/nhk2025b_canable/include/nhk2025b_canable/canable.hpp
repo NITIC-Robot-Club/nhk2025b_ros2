@@ -3,6 +3,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include "nhk2025b_msgs/msg/box_arm.hpp"
+#include "nhk2025b_msgs/msg/command.hpp"
 #include "nhk2025b_msgs/msg/conveyor.hpp"
 #include "nhk2025b_msgs/msg/pylon_arm.hpp"
 #include "nhk2025b_msgs/msg/robot_status.hpp"
@@ -33,6 +35,8 @@ class canable : public rclcpp::Node {
 
     // === サブスクコールバック ===
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
+    void box_arm_callback (const nhk2025b_msgs::msg::BoxArm::SharedPtr msg);
+    void command_callback (const nhk2025b_msgs::msg::Command::SharedPtr msg);
     void conveyor_callback (const nhk2025b_msgs::msg::Conveyor::SharedPtr msg);
     void pylon_arm_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr msg);
 
@@ -47,14 +51,20 @@ class canable : public rclcpp::Node {
     struct ifreq        ifr_;
 
     // === 最新メッセージ保存用 ===
-    nhk2025b_msgs::msg::Swerve              swerve_cmd_;
-    nhk2025b_msgs::msg::RobotStatus         robot_status_;
-    nhk2025b_msgs::msg::Swerve::SharedPtr   latest_swerve_;
-    nhk2025b_msgs::msg::Conveyor::SharedPtr latest_conveyor_;
-    nhk2025b_msgs::msg::PylonArm::SharedPtr latest_pylon_arm_;
+    nhk2025b_msgs::msg::Command::SharedPtr  command_;
+    nhk2025b_msgs::msg::Swerve::SharedPtr   swerve_cmd_;
+    nhk2025b_msgs::msg::BoxArm::SharedPtr   box_arm_cmd_;
+    nhk2025b_msgs::msg::Conveyor::SharedPtr conveyor_cmd_;
+    nhk2025b_msgs::msg::PylonArm::SharedPtr pylon_arm_cmd_;
+
+    nhk2025b_msgs::msg::RobotStatus robot_status_;
+    nhk2025b_msgs::msg::Swerve      swerve_result_;
+    nhk2025b_msgs::msg::BoxArm      box_arm_result_;
+    nhk2025b_msgs::msg::PylonArm    pylon_arm_result_;
 
     bool       swerve_flag_[4]    = {false, false, false, false};
     bool       robot_status_flag_ = false;
+    bool       box_arm_flag_[2]   = {false, false};
     std::mutex data_mutex_;
 
     int  id_list[12] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x120, 0x121, 0x122, 0x123};
@@ -124,13 +134,19 @@ class canable : public rclcpp::Node {
     } wing_transmit;
 
     // === ROS 通信 ===
+    rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr   swerve_sub_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::Command>::SharedPtr  command_sub_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::BoxArm>::SharedPtr   box_arm_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::Conveyor>::SharedPtr conveyor_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::PylonArm>::SharedPtr pylon_arm_sub_;
-    rclcpp::Publisher<nhk2025b_msgs::msg::RobotStatus>::SharedPtr robot_status_pub_;
+
     rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr      swerve_pub_;
-    rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr   swerve_sub_;
-    rclcpp::TimerBase::SharedPtr                                  timer_;
-    rclcpp::TimerBase::SharedPtr                                  can_receive_timer_;
+    rclcpp::Publisher<nhk2025b_msgs::msg::BoxArm>::SharedPtr      box_arm_pub_;
+    rclcpp::Publisher<nhk2025b_msgs::msg::PylonArm>::SharedPtr    pylon_arm_pub_;
+    rclcpp::Publisher<nhk2025b_msgs::msg::RobotStatus>::SharedPtr robot_status_pub_;
+
+    rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::TimerBase::SharedPtr can_receive_timer_;
 };
 
 }  // namespace canable

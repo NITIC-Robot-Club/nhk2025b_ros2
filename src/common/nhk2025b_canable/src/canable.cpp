@@ -20,7 +20,13 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
     pylon_arm_sub_ = this->create_subscription<nhk2025b_msgs::msg::PylonArm> (
         "/pylon_arm/cmd", 1, std::bind (&canable::pylon_arm_callback, this, std::placeholders::_1));
     robot_status_pub_ = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 1);
-    swerve_pub_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 1);
+    pylon_arm_pub_    = this->create_publisher<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/result", 1);
+    box_arm_pub_      = this->create_publisher<nhk2025b_msgs::msg::BoxArm> ("/box_arm/result", 1);
+    box_arm_sub_      = this->create_subscription<nhk2025b_msgs::msg::BoxArm> (
+        "/box_arm/cmd", 1, std::bind (&canable::box_arm_callback, this, std::placeholders::_1));
+    command_sub_ =
+        this->create_subscription<nhk2025b_msgs::msg::Command> ("/command", 1, std::bind (&canable::command_callback, this, std::placeholders::_1));
+    swerve_pub_ = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 1);
     swerve_sub_ =
         this->create_subscription<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1, std::bind (&canable::swerve_callback, this, std::placeholders::_1));
 
@@ -92,31 +98,72 @@ void canable::read_can_socket () {
                 }
             }
 
-            if (frame.can_id = 0x101 && frame.len == 8) {
+            if (frame.can_id == 0x101 && frame.len == 8) {
                 float_bytes voltage[2];
                 for (int i = 0; i < 4; i++) {
                     voltage[0].bytes[i] = frame.data[i];
                     voltage[1].bytes[i] = frame.data[i + 4];
                 }
+
                 robot_status_.voltage[1] = voltage[0].value;
                 robot_status_.voltage[2] = voltage[1].value;
                 robot_status_flag_       = true;
             }
 
             if (0x111 <= frame.can_id && frame.can_id <= 0x114 && frame.len == 8) {
-                int               i = frame.can_id - 0x111;
+                int id = frame.can_id - 0x111;
+
                 union float_bytes swerve_angle, swerve_speed;
-                for (int b = 0; b < 4; ++b) {
-                    swerve_angle.bytes[b] = frame.data[b];
-                    swerve_speed.bytes[b] = frame.data[b + 4];
+                for (int i = 0; i < 4; ++i) {
+                    swerve_angle.bytes[i] = frame.data[i];
+                    swerve_speed.bytes[i] = frame.data[i + 4];
                 }
-                swerve_cmd_.wheel_angle[i] = swerve_angle.value;
-                swerve_cmd_.wheel_speed[i] = swerve_speed.value;
-                swerve_flag_[i]            = true;
+                swerve_result_.wheel_angle[id] = swerve_angle.value;
+                swerve_result_.wheel_speed[id] = swerve_speed.value;
+                swerve_flag_[id]               = true;
                 if (swerve_flag_[0] && swerve_flag_[1] && swerve_flag_[2] && swerve_flag_[3]) {
-                    swerve_pub_->publish (swerve_cmd_);
-                    for (int j = 0; j < 4; j++) swerve_flag_[j] = false;
+                    swerve_pub_->publish (swerve_result_);
+                    for (int i = 0; i < 4; i++) swerve_flag_[i] = false;
                 }
+            }
+
+            if (frame.can_id == 0x115 && frame.len == 8) {
+                union float_bytes height_left, height_right;
+                for (int i = 0; i < 4; ++i) {
+                    height_left.bytes[i]  = frame.data[i];
+                    height_right.bytes[i] = frame.data[i + 4];
+                }
+                pylon_arm_result_.height[0] = height_left.value;
+                pylon_arm_result_.height[1] = height_right.value;
+                pylon_arm_pub_->publish (pylon_arm_result_);
+            }
+
+            continue;
+
+            if (frame.can_id == 0x121 && frame.len == 8) {
+                union float_bytes height_left, height_right;
+                for (int i = 0; i < 4; ++i) {
+                    height_left.bytes[i]  = frame.data[i];
+                    height_right.bytes[i] = frame.data[i + 4];
+                }
+                box_arm_result_.height[0] = height_left.value;
+                box_arm_result_.height[1] = height_right.value;
+                if (box_arm_flag_[0] && box_arm_flag_[1]) {
+                    box_arm_pub_->publish (box_arm_result_);
+                    for (int i = 0; i < 2; i++) box_arm_flag_[i] = false;
+                }
+            }
+
+            if (0x122 <= frame.can_id && frame.can_id <= 0x123 && frame.len == 8) {
+                union float_bytes arm_position_strong, arm_position_weak;
+                for (int i = 0; i < 4; ++i) {
+                    arm_position_strong.bytes[i] = frame.data[i];
+                    arm_position_weak.bytes[i]   = frame.data[i + 4];
+                }
+                int id                                  = frame.can_id - 0x122;
+                box_arm_result_.arm_position_strong[id] = arm_position_strong.value;
+                box_arm_result_.arm_position_weak[id]   = arm_position_weak.value;
+                box_arm_flag_[id]                       = true;
             }
         }
     }
@@ -139,32 +186,43 @@ void canable::check_can_receive () {
 
 void canable::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
     std::lock_guard<std::mutex> lock (data_mutex_);
-    latest_swerve_ = msg;
+    swerve_cmd_ = msg;
+}
+
+void canable::box_arm_callback (const nhk2025b_msgs::msg::BoxArm::SharedPtr msg) {
+    std::lock_guard<std::mutex> lock (data_mutex_);
+    box_arm_cmd_ = msg;
+}
+
+void canable::command_callback (const nhk2025b_msgs::msg::Command::SharedPtr msg) {
+    std::lock_guard<std::mutex> lock (data_mutex_);
+    command_ = msg;
 }
 
 void canable::conveyor_callback (const nhk2025b_msgs::msg::Conveyor::SharedPtr msg) {
     std::lock_guard<std::mutex> lock (data_mutex_);
-    latest_conveyor_ = msg;
+    conveyor_cmd_ = msg;
 }
 
 void canable::pylon_arm_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr msg) {
     std::lock_guard<std::mutex> lock (data_mutex_);
-    latest_pylon_arm_ = msg;
+    pylon_arm_cmd_ = msg;
 }
+
 
 void canable::timer_callback () {
     std::lock_guard<std::mutex> lock (data_mutex_);
     bool                        pylon_expand[2] = {false, false};  // 0: right, 1: left
 
-    if (latest_swerve_) {
+    if (swerve_cmd_) {
         for (int i = 0; i < 4; i++) {
             struct can_frame frame;
             std::memset (&frame, 0, sizeof (struct can_frame));
             frame.can_id  = 0x011 + i;
             frame.can_dlc = 8;
             union float_bytes swerve_angle, swerve_speed;
-            swerve_angle.value = latest_swerve_->wheel_angle[i];
-            swerve_speed.value = latest_swerve_->wheel_speed[i];
+            swerve_angle.value = swerve_cmd_->wheel_angle[i];
+            swerve_speed.value = swerve_cmd_->wheel_speed[i];
             for (int b = 0; b < 4; ++b) {
                 frame.data[b]     = swerve_angle.bytes[b];
                 frame.data[b + 4] = swerve_speed.bytes[b];
@@ -175,16 +233,16 @@ void canable::timer_callback () {
             std::this_thread::sleep_for (std::chrono::microseconds (500));
         }
     }
-    if (latest_pylon_arm_) {
+    if (pylon_arm_cmd_) {
         for (int i = 0; i < 2; i++) {
-            pylon_expand[i] = latest_pylon_arm_->expand[i];
+            pylon_expand[i] = pylon_arm_cmd_->expand[i];
             struct can_frame frame;
             std::memset (&frame, 0, sizeof (struct can_frame));
             frame.can_id  = 0x015 + i;
             frame.can_dlc = 8;
             union float_bytes pylon_height, pylon_rpm;
-            pylon_height.value = latest_pylon_arm_->height[i];
-            pylon_rpm.value    = latest_pylon_arm_->collect_rpm[i];
+            pylon_height.value = pylon_arm_cmd_->height[i];
+            pylon_rpm.value    = pylon_arm_cmd_->collect_rpm[i];
             for (int b = 0; b < 4; ++b) {
                 frame.data[b]     = pylon_height.bytes[b];
                 frame.data[b + 4] = pylon_rpm.bytes[b];
@@ -196,14 +254,14 @@ void canable::timer_callback () {
         }
     }
 
-    if (latest_conveyor_) {
+    if (conveyor_cmd_) {
         struct can_frame frame;
         std::memset (&frame, 0, sizeof (struct can_frame));
         frame.can_id  = 0x017;
         frame.can_dlc = 8;
         union float_bytes rpm_left, rpm_right;
-        rpm_left.value  = latest_conveyor_->conveyor_rpm[0];
-        rpm_right.value = latest_conveyor_->conveyor_rpm[1];
+        rpm_left.value  = conveyor_cmd_->conveyor_rpm[0];
+        rpm_right.value = conveyor_cmd_->conveyor_rpm[1];
         for (int b = 0; b < 4; ++b) {
             frame.data[b]     = rpm_left.bytes[b];
             frame.data[b + 4] = rpm_right.bytes[b];
