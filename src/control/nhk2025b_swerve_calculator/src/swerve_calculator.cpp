@@ -2,8 +2,7 @@
 
 namespace swerve_calculator {
 swerve_calculator::swerve_calculator (const rclcpp::NodeOptions& options) : Node ("swerve_calculator", options) {
-    twist_sub_ = create_subscription<geometry_msgs::msg::TwistStamped> (
-        "/cmd_vel", 1, std::bind (&swerve_calculator::twist_callback, this, std::placeholders::_1));
+    twist_sub_   = create_subscription<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1, std::bind (&swerve_calculator::twist_callback, this, std::placeholders::_1));
     swerve_pub_  = create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1);
     robot_width  = this->declare_parameter<double> ("robot_width", 0.8);
     robot_length = this->declare_parameter<double> ("robot_length", 0.6);

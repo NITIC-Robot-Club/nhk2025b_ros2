@@ -3,17 +3,15 @@
 namespace lidar_simulation {
 
 lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options) : Node ("lidar_simulation", options) {
-    map_subscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
-        "/behavior/map", 1, std::bind (&lidar_simulation::map_callback, this, std::placeholders::_1));
-    pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/simulation/pose", 1, std::bind (&lidar_simulation::pose_callback, this, std::placeholders::_1));
+    map_subscriber  = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&lidar_simulation::map_callback, this, std::placeholders::_1));
+    pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/simulation/pose", 1, std::bind (&lidar_simulation::pose_callback, this, std::placeholders::_1));
     laser_publisher = this->create_publisher<sensor_msgs::msg::LaserScan> ("/sensor/scan", rclcpp::SensorDataQoS ());
     lidar_x         = this->declare_parameter<double> ("lidar_x", 0);
     lidar_y         = this->declare_parameter<double> ("lidar_y", 0);
     lidar_z         = this->declare_parameter<double> ("lidar_z", 0);
     lidar_frequency = this->declare_parameter<double> ("lidar_frequency", 12.0);
     frame_name      = this->declare_parameter<std::string> ("frame_name", "lidar");
-    timer = this->create_wall_timer (std::chrono::milliseconds (int (1000 / lidar_frequency)), std::bind (&lidar_simulation::timer_callback, this));
+    timer           = this->create_wall_timer (std::chrono::milliseconds (int (1000 / lidar_frequency)), std::bind (&lidar_simulation::timer_callback, this));
 }
 
 void lidar_simulation::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {

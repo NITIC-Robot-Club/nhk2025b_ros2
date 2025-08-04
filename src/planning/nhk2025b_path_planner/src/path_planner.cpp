@@ -16,15 +16,11 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     grad_step_size   = this->declare_parameter<double> ("grad_step_size", 0.1);
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 1);
-    current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/localization/current_pose", 1, std::bind (&path_planner::current_pose_callback, this, std::placeholders::_1));
-    goal_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/behavior/goal_pose", 1, std::bind (&path_planner::goal_pose_callback, this, std::placeholders::_1));
-    map_subscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
-        "/behavior/map", 1, std::bind (&path_planner::map_callback, this, std::placeholders::_1));
-    vel_subscriber = this->create_subscription<geometry_msgs::msg::TwistStamped> (
-        "/cmd_vel", 1, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
-    timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
+    current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&path_planner::current_pose_callback, this, std::placeholders::_1));
+    goal_pose_subscriber    = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/goal_pose", 1, std::bind (&path_planner::goal_pose_callback, this, std::placeholders::_1));
+    map_subscriber          = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&path_planner::map_callback, this, std::placeholders::_1));
+    vel_subscriber          = this->create_subscription<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
+    timer_                  = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 
     inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 1);
     theta_map_publisher   = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/thetamap", 1);
@@ -358,10 +354,8 @@ void path_planner::init_rotated_footprint () {
     double half_radius  = std::hypot (robot_width_mm / 2000.0, robot_height_mm / 2000.0) / map_resolution;
     for (int i = 0; i < num_rotations; ++i) {
         double angle            = i * theta_resolution * M_PI / 180.0;
-        rotated_footprint[i][0] = {
-            static_cast<int> (half_radius * std::cos (angle + inital_angle)), static_cast<int> (half_radius * std::sin (angle + inital_angle))};
-        rotated_footprint[i][1] = {
-            static_cast<int> (half_radius * std::cos (angle - inital_angle)), static_cast<int> (half_radius * std::sin (angle - inital_angle))};
+        rotated_footprint[i][0] = {static_cast<int> (half_radius * std::cos (angle + inital_angle)), static_cast<int> (half_radius * std::sin (angle + inital_angle))};
+        rotated_footprint[i][1] = {static_cast<int> (half_radius * std::cos (angle - inital_angle)), static_cast<int> (half_radius * std::sin (angle - inital_angle))};
         rotated_footprint[i][2] = {-rotated_footprint[i][0].first, -rotated_footprint[i][0].second};
         rotated_footprint[i][3] = {-rotated_footprint[i][1].first, -rotated_footprint[i][1].second};
     }

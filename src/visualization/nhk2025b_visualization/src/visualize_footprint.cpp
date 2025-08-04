@@ -3,10 +3,8 @@
 namespace visualize_footprint {
 
 visualize_footprint::visualize_footprint (const rclcpp::NodeOptions &options) : Node ("visualize_footprint", options) {
-    pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/localization/current_pose", 1, std::bind (&visualize_footprint::pose_callback, this, std::placeholders::_1));
-    map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
-        "/behavior/map", 1, std::bind (&visualize_footprint::map_callback, this, std::placeholders::_1));
+    pose_sub_   = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&visualize_footprint::pose_callback, this, std::placeholders::_1));
+    map_sub_    = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&visualize_footprint::map_callback, this, std::placeholders::_1));
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/robot_footprint", 1);
 
     // Robot dimensions (in meters)

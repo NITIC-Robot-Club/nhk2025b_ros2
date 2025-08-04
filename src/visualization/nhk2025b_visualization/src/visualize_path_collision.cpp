@@ -3,10 +3,8 @@
 namespace visualize_path_collision {
 
 visualize_path_collision::visualize_path_collision (const rclcpp::NodeOptions &options) : Node ("visualize_path_collision", options) {
-    path_sub_ = this->create_subscription<nav_msgs::msg::Path> (
-        "/planning/path", 1, std::bind (&visualize_path_collision::path_callback, this, std::placeholders::_1));
-    map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid> (
-        "/behavior/map", 1, std::bind (&visualize_path_collision::map_callback, this, std::placeholders::_1));
+    path_sub_   = this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 1, std::bind (&visualize_path_collision::path_callback, this, std::placeholders::_1));
+    map_sub_    = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&visualize_path_collision::map_callback, this, std::placeholders::_1));
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/path_collision", 1);
     timer_      = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&visualize_path_collision::timer_callback, this));
 
@@ -58,10 +56,8 @@ void visualize_path_collision::timer_callback () {
         // ロボットの四隅の点を追加
         for (const auto &pos : wheel_positions) {
             geometry_msgs::msg::Point point;
-            point.x = pose.pose.position.x + pos[0] * cos (nhk2025b_utils::get_yaw_2d (pose.pose.orientation)) -
-                      pos[1] * sin (nhk2025b_utils::get_yaw_2d (pose.pose.orientation));
-            point.y = pose.pose.position.y + pos[0] * sin (nhk2025b_utils::get_yaw_2d (pose.pose.orientation)) +
-                      pos[1] * cos (nhk2025b_utils::get_yaw_2d (pose.pose.orientation));
+            point.x = pose.pose.position.x + pos[0] * cos (nhk2025b_utils::get_yaw_2d (pose.pose.orientation)) - pos[1] * sin (nhk2025b_utils::get_yaw_2d (pose.pose.orientation));
+            point.y = pose.pose.position.y + pos[0] * sin (nhk2025b_utils::get_yaw_2d (pose.pose.orientation)) + pos[1] * cos (nhk2025b_utils::get_yaw_2d (pose.pose.orientation));
             point.z = pose.pose.position.z;  // Z軸はそのまま
             marker.points.push_back (point);
         }

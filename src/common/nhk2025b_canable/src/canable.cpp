@@ -15,12 +15,12 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
         return;
     }
 
-    e_arm_sub_        = this->create_subscription<nhk2025b_msgs::msg::EArm> ("/e_arm/cmd", 1, std::bind(&canable::e_arm_callback, this, std::placeholders::_1));
-    swerve_sub_       = this->create_subscription<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1, std::bind (&canable::swerve_callback, this, std::placeholders::_1));
-    box_arm_sub_      = this->create_subscription<nhk2025b_msgs::msg::BoxArm> ("/box_arm/cmd", 1, std::bind (&canable::box_arm_callback, this, std::placeholders::_1));
-    command_sub_      = this->create_subscription<nhk2025b_msgs::msg::Command> ("/command", 1, std::bind (&canable::command_callback, this, std::placeholders::_1));
-    conveyor_sub_     = this->create_subscription<nhk2025b_msgs::msg::Conveyor> ("/conveyor/cmd", 1, std::bind (&canable::conveyor_callback, this, std::placeholders::_1));
-    pylon_arm_sub_    = this->create_subscription<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/cmd", 1, std::bind (&canable::pylon_arm_callback, this, std::placeholders::_1));
+    e_arm_sub_     = this->create_subscription<nhk2025b_msgs::msg::EArm> ("/e_arm/cmd", 1, std::bind (&canable::e_arm_callback, this, std::placeholders::_1));
+    swerve_sub_    = this->create_subscription<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1, std::bind (&canable::swerve_callback, this, std::placeholders::_1));
+    box_arm_sub_   = this->create_subscription<nhk2025b_msgs::msg::BoxArm> ("/box_arm/cmd", 1, std::bind (&canable::box_arm_callback, this, std::placeholders::_1));
+    command_sub_   = this->create_subscription<nhk2025b_msgs::msg::Command> ("/command", 1, std::bind (&canable::command_callback, this, std::placeholders::_1));
+    conveyor_sub_  = this->create_subscription<nhk2025b_msgs::msg::Conveyor> ("/conveyor/cmd", 1, std::bind (&canable::conveyor_callback, this, std::placeholders::_1));
+    pylon_arm_sub_ = this->create_subscription<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/cmd", 1, std::bind (&canable::pylon_arm_callback, this, std::placeholders::_1));
 
     e_arm_pub_        = this->create_publisher<nhk2025b_msgs::msg::EArm> ("/e_arm/result", 1);
     swerve_pub_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 1);
@@ -179,7 +179,6 @@ void canable::check_can_receive () {
     }
 }
 
-
 void canable::e_arm_callback (const nhk2025b_msgs::msg::EArm::SharedPtr msg) {
     std::lock_guard<std::mutex> lock (data_mutex_);
     e_arm_cmd_ = msg;
@@ -217,8 +216,8 @@ void canable::timer_callback () {
     if (command_) {
         struct can_frame frame;
         std::memset (&frame, 0, sizeof (struct can_frame));
-        frame.can_id  = 0x000;
-        frame.can_dlc = 1;
+        frame.can_id           = 0x000;
+        frame.can_dlc          = 1;
         power_receive.data.sig = command_->signal;
         frame.data[0]          = power_receive.raw;
         if (!write (can_socket_, &frame, sizeof (struct can_frame))) {

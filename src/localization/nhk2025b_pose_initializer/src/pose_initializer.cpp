@@ -7,8 +7,7 @@ pose_initializer::pose_initializer (const rclcpp::NodeOptions& options) : Node (
     this->declare_parameter<double> ("distance_threshold", 0.1);
     this->declare_parameter<int> ("max_iterations", 100);
 
-    lidar_subscriber = this->create_subscription<sensor_msgs::msg::PointCloud2> (
-        "/sensor/lidar", rclcpp::SensorDataQoS (), std::bind (&pose_initializer::lidar_callback, this, std::placeholders::_1));
+    lidar_subscriber = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", rclcpp::SensorDataQoS (), std::bind (&pose_initializer::lidar_callback, this, std::placeholders::_1));
 
     pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/initialpose", 1);
 }
@@ -17,8 +16,7 @@ double pose_initializer::point_line_distance (const Point& pt, double a, double 
     return std::fabs (a * pt.first + b * pt.second + c) / std::sqrt (a * a + b * b);
 }
 
-std::optional<pose_initializer::Point> pose_initializer::compute_intersection (
-    const std::tuple<double, double, double>& l1, const std::tuple<double, double, double>& l2) {
+std::optional<pose_initializer::Point> pose_initializer::compute_intersection (const std::tuple<double, double, double>& l1, const std::tuple<double, double, double>& l2) {
     auto [a1, b1, c1] = l1;
     auto [a2, b2, c2] = l2;
 
@@ -41,8 +39,7 @@ bool pose_initializer::is_horizontal (const std::tuple<double, double, double>& 
     return abs (deg) < 45.0;
 };
 
-std::tuple<double, double, double> pose_initializer::compute_yaw_and_position (
-    const std::tuple<double, double, double>& line1, const std::tuple<double, double, double>& line2, const Point& intersection) {
+std::tuple<double, double, double> pose_initializer::compute_yaw_and_position (const std::tuple<double, double, double>& line1, const std::tuple<double, double, double>& line2, const Point& intersection) {
     const auto& horizontal = is_horizontal (line1) ? line1 : line2;
     double      a          = std::get<0> (horizontal);
     double      b          = std::get<1> (horizontal);

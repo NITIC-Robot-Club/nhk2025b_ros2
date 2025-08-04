@@ -2,13 +2,12 @@
 
 namespace wheel_odometry {
 wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("wheel_odometry", options) {
-    swerve_subscriber = this->create_subscription<nhk2025b_msgs::msg::Swerve> (
-        "/swerve/result", 1, std::bind (&wheel_odometry::swerve_callback, this, std::placeholders::_1));
-    odom_publisher = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 1);
-    pose_publisher = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/wheel_odometry_pose", 1);
-    wheel_radius   = this->declare_parameter ("wheel_radius", 0.0325);
-    robot_width    = this->declare_parameter ("robot_width", 0.8);
-    robot_length   = this->declare_parameter ("robot_length", 0.6);
+    swerve_subscriber = this->create_subscription<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 1, std::bind (&wheel_odometry::swerve_callback, this, std::placeholders::_1));
+    odom_publisher    = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 1);
+    pose_publisher    = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/wheel_odometry_pose", 1);
+    wheel_radius      = this->declare_parameter ("wheel_radius", 0.0325);
+    robot_width       = this->declare_parameter ("robot_width", 0.8);
+    robot_length      = this->declare_parameter ("robot_length", 0.6);
 
     bool   is_red         = this->declare_parameter<bool> ("is_red", false);
     double initial_x_blue = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);

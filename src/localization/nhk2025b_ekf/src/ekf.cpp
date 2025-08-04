@@ -10,8 +10,7 @@ ekf::ekf (const rclcpp::NodeOptions& options) : Node ("ekf", options), tf_buffer
 
     imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu> ("/sensor/imu", 1, std::bind (&ekf::imu_callback, this, std::placeholders::_1));
 
-    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> (
-        "/localization/wheel_odometry", 1, std::bind (&ekf::odom_callback, this, std::placeholders::_1));
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 1, std::bind (&ekf::odom_callback, this, std::placeholders::_1));
 
     last_time_ = this->get_clock ()->now ();
 }

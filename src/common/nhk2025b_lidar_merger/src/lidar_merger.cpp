@@ -1,21 +1,16 @@
 #include "nhk2025b_lidar_merger/lidar_mermer.hpp"
 
 namespace lidar_merger {
-lidar_merger::lidar_merger (const rclcpp::NodeOptions &options)
-    : Node ("lidar_merger", options),
-      tf_buffer_ (std::make_shared<tf2_ros::Buffer> (this->get_clock ())),
-      tf_listener_ (std::make_shared<tf2_ros::TransformListener> (*tf_buffer_)) {
-    scan1_sub = this->create_subscription<sensor_msgs::msg::LaserScan> (
-        "/sensor/lidar/front/scan", rclcpp::SensorDataQoS (), [this] (const sensor_msgs::msg::LaserScan::SharedPtr scan1_msg) {
-            scan1 = *scan1_msg;
-            publish_merged_point_cloud2 ();
-        });
+lidar_merger::lidar_merger (const rclcpp::NodeOptions &options) : Node ("lidar_merger", options), tf_buffer_ (std::make_shared<tf2_ros::Buffer> (this->get_clock ())), tf_listener_ (std::make_shared<tf2_ros::TransformListener> (*tf_buffer_)) {
+    scan1_sub = this->create_subscription<sensor_msgs::msg::LaserScan> ("/sensor/lidar/front/scan", rclcpp::SensorDataQoS (), [this] (const sensor_msgs::msg::LaserScan::SharedPtr scan1_msg) {
+        scan1 = *scan1_msg;
+        publish_merged_point_cloud2 ();
+    });
 
-    scan2_sub = this->create_subscription<sensor_msgs::msg::LaserScan> (
-        "/sensor/lidar/rear/scan", rclcpp::SensorDataQoS (), [this] (const sensor_msgs::msg::LaserScan::SharedPtr scan2_msg) {
-            scan2 = *scan2_msg;
-            publish_merged_point_cloud2 ();
-        });
+    scan2_sub       = this->create_subscription<sensor_msgs::msg::LaserScan> ("/sensor/lidar/rear/scan", rclcpp::SensorDataQoS (), [this] (const sensor_msgs::msg::LaserScan::SharedPtr scan2_msg) {
+        scan2 = *scan2_msg;
+        publish_merged_point_cloud2 ();
+    });
     pointcloud2_pub = this->create_publisher<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", rclcpp::SensorDataQoS ());
 }
 
@@ -53,8 +48,7 @@ void lidar_merger::publish_merged_point_cloud2 () {
                 point_in.point.y = y;
                 point_in.point.z = z;
                 tf2::doTransform (point_in, point_out, transform1);
-                if ((point_out.point.x > -robot_length / 2.0 && point_out.point.x < robot_length / 2.0) &&
-                    (point_out.point.y > -robot_width / 2.0 && point_out.point.y < robot_width / 2.0)) {
+                if ((point_out.point.x > -robot_length / 2.0 && point_out.point.x < robot_length / 2.0) && (point_out.point.y > -robot_width / 2.0 && point_out.point.y < robot_width / 2.0)) {
                     continue;
                 }
                 valid_points.push_back (std::make_tuple (point_out.point.x, point_out.point.y, point_out.point.z));
@@ -84,8 +78,7 @@ void lidar_merger::publish_merged_point_cloud2 () {
                 point_in.point.y = y;
                 point_in.point.z = z;
                 tf2::doTransform (point_in, point_out, transform2);
-                if ((point_out.point.x > -robot_length / 2.0 && point_out.point.x < robot_length / 2.0) &&
-                    (point_out.point.y > -robot_width / 2.0 && point_out.point.y < robot_width / 2.0)) {
+                if ((point_out.point.x > -robot_length / 2.0 && point_out.point.x < robot_length / 2.0) && (point_out.point.y > -robot_width / 2.0 && point_out.point.y < robot_width / 2.0)) {
                     continue;
                 }
                 valid_points.push_back (std::make_tuple (point_out.point.x, point_out.point.y, point_out.point.z));

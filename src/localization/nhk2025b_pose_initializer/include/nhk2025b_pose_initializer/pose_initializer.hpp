@@ -27,8 +27,7 @@ class pose_initializer : public rclcpp::Node {
 
     std::optional<Point> compute_intersection (const std::tuple<double, double, double>& line1, const std::tuple<double, double, double>& line2);
 
-    std::tuple<double, double, double> compute_yaw_and_position (
-        const std::tuple<double, double, double>& line1, const std::tuple<double, double, double>& line2, const Point& intersection);
+    std::tuple<double, double, double> compute_yaw_and_position (const std::tuple<double, double, double>& line1, const std::tuple<double, double, double>& line2, const Point& intersection);
 
     double point_line_distance (const Point& pt, double a, double b, double c);
     bool   is_horizontal (const std::tuple<double, double, double>& line);

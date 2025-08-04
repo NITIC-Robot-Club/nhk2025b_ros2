@@ -60,9 +60,7 @@ class mcl : public rclcpp::Node {
     // ユーティリティ
     bool   is_pose_valid (double x, double y) const;
     double compute_likelihood (const Particle &p, const sensor_msgs::msg::PointCloud2 &cloud) const;
-    bool   get_transform (
-          const std::string &target_frame, const std::string &source_frame, const rclcpp::Time &time,
-          geometry_msgs::msg::TransformStamped &transform_out) const;
+    bool   get_transform (const std::string &target_frame, const std::string &source_frame, const rclcpp::Time &time, geometry_msgs::msg::TransformStamped &transform_out) const;
 
     // ノード内変数
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr                 cloud_sub_;

@@ -6,10 +6,8 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     cmd_vel_publisher_            = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1);
     lookahead_position_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_position", 1);
     lookahead_angle_publisher_    = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_angle", 1);
-    pose_subscriber_              = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/localization/current_pose", 1, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
-    path_subscriber_ =
-        this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 1, std::bind (&pure_pursuit::path_callback, this, std::placeholders::_1));
+    pose_subscriber_              = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
+    path_subscriber_              = this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 1, std::bind (&pure_pursuit::path_callback, this, std::placeholders::_1));
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&pure_pursuit::timer_callback, this));
 
@@ -67,8 +65,7 @@ void pure_pursuit::timer_callback () {
     double min_distance  = std::numeric_limits<double>::max ();
     int    closest_index = -1;
     for (int i = 0; i < path_.poses.size (); i++) {
-        double dist = std::hypot (
-            path_.poses[i].pose.position.x - current_pose_.pose.position.x, path_.poses[i].pose.position.y - current_pose_.pose.position.y);
+        double dist = std::hypot (path_.poses[i].pose.position.x - current_pose_.pose.position.x, path_.poses[i].pose.position.y - current_pose_.pose.position.y);
         if (dist < min_distance) {
             min_distance  = dist;
             closest_index = i;
@@ -79,15 +76,14 @@ void pure_pursuit::timer_callback () {
     if (closest_index + 1 >= path_.poses.size ()) closest_index = path_.poses.size () - 2;
 
     // ゴール位置
-    geometry_msgs::msg::Pose goal_pose = path_.poses.back ().pose;
-    double goal_distance = std::hypot (goal_pose.position.x - current_pose_.pose.position.x, goal_pose.position.y - current_pose_.pose.position.y);
+    geometry_msgs::msg::Pose goal_pose     = path_.poses.back ().pose;
+    double                   goal_distance = std::hypot (goal_pose.position.x - current_pose_.pose.position.x, goal_pose.position.y - current_pose_.pose.position.y);
 
     // lookahead点の探索
     int    lookahead_index     = closest_index;
     double min_lookahead_error = 1e9;
     for (int i = closest_index; i < path_.poses.size (); i++) {
-        double dist = std::hypot (
-            path_.poses[i].pose.position.x - current_pose_.pose.position.x, path_.poses[i].pose.position.y - current_pose_.pose.position.y);
+        double dist  = std::hypot (path_.poses[i].pose.position.x - current_pose_.pose.position.x, path_.poses[i].pose.position.y - current_pose_.pose.position.y);
         double error = std::abs (dist - lookahead_distance_);
         if (error < min_lookahead_error) {
             min_lookahead_error = error;
@@ -120,12 +116,9 @@ void pure_pursuit::timer_callback () {
     int p2 = (lookahead_index + closest_index) / 2;
     int p3 = lookahead_index;
 
-    double a = std::hypot (
-        path_.poses[p1].pose.position.x - path_.poses[p2].pose.position.x, path_.poses[p1].pose.position.y - path_.poses[p2].pose.position.y);
-    double b = std::hypot (
-        path_.poses[p2].pose.position.x - path_.poses[p3].pose.position.x, path_.poses[p2].pose.position.y - path_.poses[p3].pose.position.y);
-    double c = std::hypot (
-        path_.poses[p1].pose.position.x - path_.poses[p3].pose.position.x, path_.poses[p1].pose.position.y - path_.poses[p3].pose.position.y);
+    double a         = std::hypot (path_.poses[p1].pose.position.x - path_.poses[p2].pose.position.x, path_.poses[p1].pose.position.y - path_.poses[p2].pose.position.y);
+    double b         = std::hypot (path_.poses[p2].pose.position.x - path_.poses[p3].pose.position.x, path_.poses[p2].pose.position.y - path_.poses[p3].pose.position.y);
+    double c         = std::hypot (path_.poses[p1].pose.position.x - path_.poses[p3].pose.position.x, path_.poses[p1].pose.position.y - path_.poses[p3].pose.position.y);
     double s         = (a + b + c) / 2.0;
     double area      = std::sqrt (s * (s - a) * (s - b) * (s - c));
     double curvature = 0.0;
@@ -144,8 +137,7 @@ void pure_pursuit::timer_callback () {
 
     int angle_lookahead_index = closest_index;
     for (int i = closest_index; i < path_.poses.size (); i++) {
-        double dist = std::hypot (
-            path_.poses[i].pose.position.x - current_pose_.pose.position.x, path_.poses[i].pose.position.y - current_pose_.pose.position.y);
+        double dist = std::hypot (path_.poses[i].pose.position.x - current_pose_.pose.position.x, path_.poses[i].pose.position.y - current_pose_.pose.position.y);
         if (dist > angle_lookahead_distance_) {
             break;
         }

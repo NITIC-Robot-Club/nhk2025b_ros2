@@ -15,22 +15,17 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     gaussian_stddev_angle_   = this->declare_parameter ("gaussian_stddev_angle", 1.0);
     random_particle_map_num_ = this->declare_parameter ("random_particle_map_num", 100);
 
-    cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2> (
-        "/sensor/lidar", rclcpp::SensorDataQoS (), std::bind (&mcl::cloud_callback, this, std::placeholders::_1));
-    map_sub_ =
-        this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&mcl::map_callback, this, std::placeholders::_1));
-    pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> (
-        "/localization/initialpose", 1, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
-    ekf_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped> (
-        "/localization/ekf/pose", 1, std::bind (&mcl::ekf_callback, this, std::placeholders::_1));
+    cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", rclcpp::SensorDataQoS (), std::bind (&mcl::cloud_callback, this, std::placeholders::_1));
+    map_sub_   = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&mcl::map_callback, this, std::placeholders::_1));
+    pose_sub_  = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/initialpose", 1, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
+    ekf_sub_   = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/ekf/pose", 1, std::bind (&mcl::ekf_callback, this, std::placeholders::_1));
 
-    distance_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 1);
-    pose_pub_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1);
-    pose_with_covariance_pub_ =
-        this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/current_pose_with_covariance", 1);
-    particles_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 1);
-    twist_pub_     = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 1);
-    odom_pub_      = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/odometry", 1);
+    distance_map_pub_         = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/localization/distance_map", 1);
+    pose_pub_                 = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1);
+    pose_with_covariance_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/current_pose_with_covariance", 1);
+    particles_pub_            = this->create_publisher<geometry_msgs::msg::PoseArray> ("/localization/mcl_particles", 1);
+    twist_pub_                = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/localization/velocity", 1);
+    odom_pub_                 = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/odometry", 1);
 
     timer = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&mcl::timer_callback, this));
 }
@@ -286,15 +281,10 @@ double mcl::compute_likelihood (const Particle& p, const sensor_msgs::msg::Point
     size_t num_points = cloud.width * cloud.height;
     for (size_t i = 0; i < num_points; ++i) {
         // double range = scan.ranges[i];
-        double range = std::hypot (
-            *reinterpret_cast<const float*> (&cloud.data[i * point_step + x_offset]),
-            *reinterpret_cast<const float*> (&cloud.data[i * point_step + y_offset]));
+        double range = std::hypot (*reinterpret_cast<const float*> (&cloud.data[i * point_step + x_offset]), *reinterpret_cast<const float*> (&cloud.data[i * point_step + y_offset]));
 
         if (std::isnan (range) || range > max_range) continue;
-        double angle = std::atan2 (
-                           *reinterpret_cast<const float*> (&cloud.data[i * point_step + y_offset]),
-                           *reinterpret_cast<const float*> (&cloud.data[i * point_step + x_offset])) +
-                       p.theta;
+        double angle = std::atan2 (*reinterpret_cast<const float*> (&cloud.data[i * point_step + y_offset]), *reinterpret_cast<const float*> (&cloud.data[i * point_step + x_offset])) + p.theta;
 
         double hit_x = p.x + range * cos (angle);
         double hit_y = p.y + range * sin (angle);
@@ -338,10 +328,8 @@ void mcl::resample_particles () {
 
     random_particle_map_num_ = 0;
 
-    std::uniform_real_distribution<double> dist_map_x (
-        map_->info.origin.position.x, map_->info.origin.position.x + map_->info.resolution * map_->info.width);
-    std::uniform_real_distribution<double> dist_map_y (
-        map_->info.origin.position.y, map_->info.origin.position.y + map_->info.resolution * map_->info.height);
+    std::uniform_real_distribution<double> dist_map_x (map_->info.origin.position.x, map_->info.origin.position.x + map_->info.resolution * map_->info.width);
+    std::uniform_real_distribution<double> dist_map_y (map_->info.origin.position.y, map_->info.origin.position.y + map_->info.resolution * map_->info.height);
 
     for (int i = 0; i < random_particle_map_num_; ++i) {
         for (int j = 0; j < 4; j++) {
@@ -427,9 +415,7 @@ bool mcl::is_pose_valid (double x, double y) const {
     return map_->data[index] < 50;
 }
 
-bool mcl::get_transform (
-    const std::string& target_frame, const std::string& source_frame, const rclcpp::Time& time,
-    geometry_msgs::msg::TransformStamped& transform_out) const {
+bool mcl::get_transform (const std::string& target_frame, const std::string& source_frame, const rclcpp::Time& time, geometry_msgs::msg::TransformStamped& transform_out) const {
     try {
         transform_out = tf_buffer_->lookupTransform (target_frame, source_frame, time, rclcpp::Duration::from_seconds (0.1));
         return true;
