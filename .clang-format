@@ -1,6 +1,6 @@
 Language: Cpp                               # C++
 BasedOnStyle: Google                        # Googleの思想
-ColumnLimit: 150                            # 1行の最大文字数
+ColumnLimit: 250                            # 1行の最大文字数
 IndentWidth: 4                              # インデント幅
 
 SpaceBeforeParens: Always                   # () の前にスペース

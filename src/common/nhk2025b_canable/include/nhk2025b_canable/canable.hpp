@@ -6,6 +6,7 @@
 #include "nhk2025b_msgs/msg/box_arm.hpp"
 #include "nhk2025b_msgs/msg/command.hpp"
 #include "nhk2025b_msgs/msg/conveyor.hpp"
+#include "nhk2025b_msgs/msg/e_arm.hpp"
 #include "nhk2025b_msgs/msg/pylon_arm.hpp"
 #include "nhk2025b_msgs/msg/robot_status.hpp"
 #include "nhk2025b_msgs/msg/swerve.hpp"
@@ -34,6 +35,7 @@ class canable : public rclcpp::Node {
     void check_can_receive ();  // CAN受信確認
 
     // === サブスクコールバック ===
+    void e_arm_callback (const nhk2025b_msgs::msg::EArm::SharedPtr msg);
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
     void box_arm_callback (const nhk2025b_msgs::msg::BoxArm::SharedPtr msg);
     void command_callback (const nhk2025b_msgs::msg::Command::SharedPtr msg);
@@ -52,12 +54,14 @@ class canable : public rclcpp::Node {
 
     // === 最新メッセージ保存用 ===
     nhk2025b_msgs::msg::Command::SharedPtr  command_;
+    nhk2025b_msgs::msg::EArm::SharedPtr     e_arm_cmd_;
     nhk2025b_msgs::msg::Swerve::SharedPtr   swerve_cmd_;
     nhk2025b_msgs::msg::BoxArm::SharedPtr   box_arm_cmd_;
     nhk2025b_msgs::msg::Conveyor::SharedPtr conveyor_cmd_;
     nhk2025b_msgs::msg::PylonArm::SharedPtr pylon_arm_cmd_;
 
     nhk2025b_msgs::msg::RobotStatus robot_status_;
+    nhk2025b_msgs::msg::EArm        e_arm_result_;
     nhk2025b_msgs::msg::Swerve      swerve_result_;
     nhk2025b_msgs::msg::BoxArm      box_arm_result_;
     nhk2025b_msgs::msg::PylonArm    pylon_arm_result_;
@@ -134,12 +138,14 @@ class canable : public rclcpp::Node {
     } wing_transmit;
 
     // === ROS 通信 ===
+    rclcpp::Subscription<nhk2025b_msgs::msg::EArm>::SharedPtr     e_arm_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr   swerve_sub_;
-    rclcpp::Subscription<nhk2025b_msgs::msg::Command>::SharedPtr  command_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::BoxArm>::SharedPtr   box_arm_sub_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::Command>::SharedPtr  command_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::Conveyor>::SharedPtr conveyor_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::PylonArm>::SharedPtr pylon_arm_sub_;
 
+    rclcpp::Publisher<nhk2025b_msgs::msg::EArm>::SharedPtr        e_arm_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr      swerve_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::BoxArm>::SharedPtr      box_arm_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::PylonArm>::SharedPtr    pylon_arm_pub_;
