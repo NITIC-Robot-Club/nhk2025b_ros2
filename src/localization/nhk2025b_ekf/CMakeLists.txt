@@ -19,6 +19,8 @@ rclcpp_components_register_node(${PROJECT_NAME}
     EXECUTABLE ekf
 )
 
-ament_auto_package(
-    USE_SCOPED_HEADER_INSTALL_DIR
-)
+if($ENV{ROS_DISTRO} STREQUAL "iron" OR $ENV{ROS_DISTRO} STREQUAL "jazzy" OR $ENV{ROS_DISTRO} STREQUAL "rolling")
+  ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)
+else()
+  ament_auto_package(INSTALL_TO_SHARE)
+endif()
