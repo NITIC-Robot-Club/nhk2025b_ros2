@@ -185,7 +185,7 @@ void canable::read_can_socket () {
                 robomas_current_[0]      = robomas_current.get_value ();
                 robomas_current_flag_[0] = true;
             }
-            
+
             if (frame.can_id == 0x120 && frame.len == 4) {
                 wing_transmit.raw = frame.data[0];
                 UInt24 robomas_current;
