@@ -22,11 +22,13 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
     conveyor_sub_  = this->create_subscription<nhk2025b_msgs::msg::Conveyor> ("/conveyor/cmd", 1, std::bind (&canable::conveyor_callback, this, std::placeholders::_1));
     pylon_arm_sub_ = this->create_subscription<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/cmd", 1, std::bind (&canable::pylon_arm_callback, this, std::placeholders::_1));
 
-    e_arm_pub_        = this->create_publisher<nhk2025b_msgs::msg::EArm> ("/e_arm/result", 1);
-    swerve_pub_       = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 1);
-    box_arm_pub_      = this->create_publisher<nhk2025b_msgs::msg::BoxArm> ("/box_arm/result", 1);
-    pylon_arm_pub_    = this->create_publisher<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/result", 1);
-    robot_status_pub_ = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 1);
+    bno_yaw_pub_         = this->create_publisher<std_msgs::msg::Float32> ("/bno_yaw", 1);
+    robomas_current_pub_ = this->create_publisher<std_msgs::msg::Int32> ("/robomas_current", 1);
+    e_arm_pub_           = this->create_publisher<nhk2025b_msgs::msg::EArm> ("/e_arm/result", 1);
+    swerve_pub_          = this->create_publisher<nhk2025b_msgs::msg::Swerve> ("/swerve/result", 1);
+    box_arm_pub_         = this->create_publisher<nhk2025b_msgs::msg::BoxArm> ("/box_arm/result", 1);
+    pylon_arm_pub_       = this->create_publisher<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/result", 1);
+    robot_status_pub_    = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 1);
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&canable::timer_callback, this));
 
@@ -93,6 +95,7 @@ void canable::read_can_socket () {
                     robot_status_pub_->publish (robot_status_);
                     robot_status_flag_ = false;
                 }
+                continue;
             }
 
             if (frame.can_id == 0x101 && frame.len == 8) {
@@ -105,6 +108,7 @@ void canable::read_can_socket () {
                 robot_status_.voltage[1] = voltage[0].value;
                 robot_status_.voltage[2] = voltage[1].value;
                 robot_status_flag_       = true;
+                continue;
             }
 
             if (0x111 <= frame.can_id && frame.can_id <= 0x114 && frame.len == 8) {
@@ -122,6 +126,7 @@ void canable::read_can_socket () {
                     swerve_pub_->publish (swerve_result_);
                     for (int i = 0; i < 4; i++) swerve_flag_[i] = false;
                 }
+                continue;
             }
 
             if (frame.can_id == 0x115 && frame.len == 8) {
@@ -133,6 +138,7 @@ void canable::read_can_socket () {
                 pylon_arm_result_.height[0] = height_left.value;
                 pylon_arm_result_.height[1] = height_right.value;
                 pylon_arm_pub_->publish (pylon_arm_result_);
+                continue;
             }
 
             if (frame.can_id == 0x121 && frame.len == 8) {
@@ -147,6 +153,7 @@ void canable::read_can_socket () {
                     box_arm_pub_->publish (box_arm_result_);
                     for (int i = 0; i < 2; i++) box_arm_flag_[i] = false;
                 }
+                continue;
             }
 
             if (0x122 <= frame.can_id && frame.can_id <= 0x123 && frame.len == 8) {
@@ -159,6 +166,43 @@ void canable::read_can_socket () {
                 box_arm_result_.arm_position_strong[id] = arm_position_strong.value;
                 box_arm_result_.arm_position_weak[id]   = arm_position_weak.value;
                 box_arm_flag_[id]                       = true;
+                continue;
+            }
+
+            if (frame.can_id == 0x110 && frame.len == 8) {
+                claw_transmit.raw = frame.data[0];
+                union float_bytes bno_yaw;
+                for (int b = 0; b < 4; b++) {
+                    bno_yaw.bytes[b] = frame.data[b + 1];
+                }
+                std_msgs::msg::Float32 bno_yaw_msg;
+                bno_yaw_msg.data = bno_yaw.value;
+                bno_yaw_pub_->publish (bno_yaw_msg);
+                UInt24 robomas_current;
+                for (int b = 0; b < 3; b++) {
+                    robomas_current.set_byte (b, frame.data[b + 5]);
+                }
+                robomas_current_[0]      = robomas_current.get_value ();
+                robomas_current_flag_[0] = true;
+            }
+            
+            if (frame.can_id == 0x120 && frame.len == 4) {
+                wing_transmit.raw = frame.data[0];
+                UInt24 robomas_current;
+                for (int b = 0; b < 3; b++) {
+                    robomas_current.set_byte (b, frame.data[b + 1]);
+                }
+                robomas_current_[1]      = robomas_current.get_value ();
+                robomas_current_flag_[1] = true;
+            }
+
+            if (robomas_current_flag_[0] && robomas_current_flag_[1]) {
+                robomas_current_flag_[0] = false;
+                robomas_current_flag_[1] = false;
+                std_msgs::msg::Int32 robomas_current_msg;
+                robomas_current_msg.data = robomas_current_[0] + robomas_current_[1];
+                robomas_current_pub_->publish (robomas_current_msg);
+                continue;
             }
         }
     }

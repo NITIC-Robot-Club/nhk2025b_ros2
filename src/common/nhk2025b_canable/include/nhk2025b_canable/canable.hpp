@@ -10,6 +10,8 @@
 #include "nhk2025b_msgs/msg/pylon_arm.hpp"
 #include "nhk2025b_msgs/msg/robot_status.hpp"
 #include "nhk2025b_msgs/msg/swerve.hpp"
+#include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/int32.hpp"
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -66,9 +68,11 @@ class canable : public rclcpp::Node {
     nhk2025b_msgs::msg::BoxArm      box_arm_result_;
     nhk2025b_msgs::msg::PylonArm    pylon_arm_result_;
 
-    bool       swerve_flag_[4]    = {false, false, false, false};
-    bool       robot_status_flag_ = false;
-    bool       box_arm_flag_[2]   = {false, false};
+    bool       swerve_flag_[4]          = {false, false, false, false};
+    bool       robot_status_flag_       = false;
+    bool       box_arm_flag_[2]         = {false, false};
+    int        robomas_current_[2]      = {0, 0};
+    bool       robomas_current_flag_[2] = {false, false};
     std::mutex data_mutex_;
 
     int  id_list[12] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x120, 0x121, 0x122, 0x123};
@@ -137,6 +141,39 @@ class canable : public rclcpp::Node {
         } data;
     } wing_transmit;
 
+    class UInt24 {
+       private:
+        uint32_t value_;
+
+       public:
+        UInt24 () : value_ (0) {}
+        void set_value (uint32_t v) {
+            value_ = v & 0xFFFFFF;
+        }
+        uint32_t get_value () const {
+            return value_;
+        }
+        void set_byte (int i, uint8_t b) {
+            if (i < 0 || i > 2) return;
+            value_ &= ~(0xFF << (8 * i));
+            value_ |= (uint32_t (b) << (8 * i));
+        }
+        uint8_t get_byte (int i) const {
+            if (i < 0 || i > 2) return 0;
+            return (value_ >> (8 * i)) & 0xFF;
+        }
+        void set_bytes (const uint8_t b[3]) {
+            set_byte (0, b[0]);
+            set_byte (1, b[1]);
+            set_byte (2, b[2]);
+        }
+        void get_bytes (uint8_t b[3]) const {
+            b[0] = get_byte (0);
+            b[1] = get_byte (1);
+            b[2] = get_byte (2);
+        }
+    };
+
     // === ROS 通信 ===
     rclcpp::Subscription<nhk2025b_msgs::msg::EArm>::SharedPtr     e_arm_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr   swerve_sub_;
@@ -145,6 +182,8 @@ class canable : public rclcpp::Node {
     rclcpp::Subscription<nhk2025b_msgs::msg::Conveyor>::SharedPtr conveyor_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::PylonArm>::SharedPtr pylon_arm_sub_;
 
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr            robomas_current_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr          bno_yaw_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::EArm>::SharedPtr        e_arm_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr      swerve_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::BoxArm>::SharedPtr      box_arm_pub_;
