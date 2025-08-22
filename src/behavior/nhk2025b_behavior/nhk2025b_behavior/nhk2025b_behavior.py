@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped
-from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command
+from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command, EArm, BoxArm, Conveyor, PylonArm
 import math
 import re
 import time
@@ -17,6 +17,7 @@ def parse_labels_and_positions(md_path):
 
     label_to_state = {}
     state_to_pose = {}
+    state_to_actions = {}
     state_id_map = {}
     state_counter = 0
     transitions = []
@@ -36,12 +37,21 @@ def parse_labels_and_positions(md_path):
             raw_args = m_pos.group(2).split(",")
             args = [float(a.strip()) for a in raw_args]
             state_to_pose[state] = args
+            continue
+        m_action = re.match(r'\s*([a-zA-Z0-9_]+)\s*:\s*(set_\w+\(.*\))', line)
+        if m_action:
+            state = m_action.group(1)
+            action_str = m_action.group(2)
+            if state not in state_to_actions:
+                state_to_actions[state] = []
+            state_to_actions[state].append(action_str)
+            continue
         m_tr = re.match(r'\s*([a-zA-Z0-9_\[\]\*]+)\s*-->\s*([a-zA-Z0-9_\[\]\*]+)\s*(?::\s*(.+))?', line)
         if m_tr:
             src, dst, cond = m_tr.groups()
             transitions.append((src, dst, cond.strip() if cond else None))
 
-    return label_to_state, state_to_pose, state_id_map, transitions
+    return label_to_state, state_to_pose, state_to_actions, state_id_map, transitions
 
 class nhk2025b_behavior(Node):
     def __init__(self):
@@ -60,13 +70,27 @@ class nhk2025b_behavior(Node):
             self.md_name = self.md_name.split('.')[0]  # 拡張子を除去
         self.is_red = self.get_parameter('is_red').get_parameter_value().bool_value
 
-        self.label_to_state, self.state_to_pose, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
+        self.function_dict = {
+            "set_e_arm": self.set_e_arm,
+            "set_box_arm_expand": self.set_box_arm_expand,
+            "set_box_arm_next_box": self.set_box_arm_next_box,
+            "set_conveyor_rpm": self.set_conveyor_rpm,
+            "set_pylon_arm_height": self.set_pylon_arm_height,
+            "set_pylon_arm_expand": self.set_pylon_arm_expand,
+            "set_pylon_arm_rpm": self.set_pylon_arm_rpm,
+        }
+
+        self.label_to_state, self.state_to_pose, self.state_to_actions, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
         self.id_to_label = {v: k for k, v in self.label_to_state.items()}
         self.id_to_state = {v: s for s, v in self.state_id_map.items()}
 
         self.state_array_pub = self.create_publisher(StateArray, '/behavior/avaiable_state_array', 1)
         self.pose_pub = self.create_publisher(PoseStamped, '/behavior/goal_pose', 1)
         self.state_pub = self.create_publisher(State, '/behavior/state_now', 1)
+        self.e_arm_pub = self.create_publisher(EArm, '/e_arm/cmd', 1)
+        self.box_arm_pub = self.create_publisher(BoxArm, '/box_arm/cmd', 1)
+        self.conveyor_pub = self.create_publisher(Conveyor, '/conveyor/cmd', 1)
+        self.pylon_arm_pub = self.create_publisher(PylonArm, '/pylon_arm/cmd', 1)
 
         self.create_subscription(PoseStamped, '/localization/current_pose', self.current_pose_callback, 1)
         self.create_subscription(RobotStatus, '/robot_status', self.robot_status_callback, 1)
@@ -80,6 +104,10 @@ class nhk2025b_behavior(Node):
         self.current_pose = None
         self.robot_status = None
         self.goal_pose = PoseStamped()
+        self.e_arm_target = EArm()
+        self.box_arm_target = BoxArm()
+        self.conveyor_target = Conveyor()
+        self.pylon_arm_target = PylonArm()
         self.command = Command()
         self.waiting_for_goal = False
 
@@ -90,6 +118,7 @@ class nhk2025b_behavior(Node):
 
         self.state_array_timer = self.create_timer(0.5, self.publish_state_array)
         self.automaton_timer = self.create_timer(0.05, self.automaton_step)
+        self.publish_target_timer = self.create_timer(0.1, self.publish_target) 
 
         self.last_state_name = None  # 直前のstate name
         self.last_state_id = None    # 直前のstate id
@@ -176,6 +205,13 @@ class nhk2025b_behavior(Node):
         else:
             advanced = True
 
+        if self.current_state in getattr(self, 'state_to_actions', {}):
+            for act in self.state_to_actions[self.current_state]:
+                try:
+                    eval(act, {}, self.function_dict)
+                except Exception as e:
+                    self.get_logger().warn(f"アクション eval 失敗: {act} ({e})")
+
         next_state = None
         cond_env = {
             "check_ready": self.check_ready
@@ -260,6 +296,48 @@ class nhk2025b_behavior(Node):
 
     def check_ready(self):
         return self.command.automate_ready
+
+    def publish_target(self):
+        self.e_arm_pub.publish(self.e_arm_target)
+        self.box_arm_pub.publish(self.box_arm_target)
+        self.conveyor_pub.publish(self.conveyor_target)
+        self.pylon_arm_pub.publish(self.pylon_arm_target)
+    
+    def set_e_arm(self, ready, get):
+        self.get_logger().info(f"Setting e-arm: ready={ready}, get={get}")
+        self.e_arm_target.ready = ready
+        self.e_arm_target.get = get
+
+    def set_box_arm_expand(self, left=False, right=False):
+        self.get_logger().info(f"Setting box arm expand: left={left}, right={right}")
+        self.box_arm_target.expand[0] = left
+        self.box_arm_target.expand[1] = right
+
+    def set_box_arm_next_box(self, left=0.5, right=0.5):
+        self.get_logger().info(f"Setting box arm next box: left={left}, right={right}")
+        self.box_arm_target.arm_position_weak[0] = left
+        self.box_arm_target.arm_position_weak[1] = right
+
+    def set_conveyor_rpm(self, left=0, right=0):
+        self.get_logger().info(f"Setting conveyor rpm: left={left}, right={right}")
+        self.conveyor_target.rpm[0] = left
+        self.conveyor_target.rpm[1] = right
+
+    def set_pylon_arm_height(self, left=0, right=0):
+        self.get_logger().info(f"Setting pylon arm height: left={left}, right={right}")
+        self.pylon_arm_target.height[0] = left
+        self.pylon_arm_target.height[1] = right
+
+    def set_pylon_arm_expand(self, left=False, right=False):
+        self.get_logger().info(f"Setting pylon arm expand: left={left}, right={right}")
+        self.pylon_arm_target.expand[0] = left
+        self.pylon_arm_target.expand[1] = right
+
+    def set_pylon_arm_rpm(self, left=0, right=0):
+        self.get_logger().info(f"Setting pylon arm rpm: left={left}, right={right}")
+        self.pylon_arm_target.rpm[0] = left
+        self.pylon_arm_target.rpm[1] = right
+
 
 def main(args=None):
     rclpy.init(args=args)
