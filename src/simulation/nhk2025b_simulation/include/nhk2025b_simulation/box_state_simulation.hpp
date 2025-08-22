@@ -12,16 +12,16 @@ class box_state_simulation : public rclcpp::Node {
     box_state_simulation (const rclcpp::NodeOptions &options);
 
    private:
-    double      box_size_x, box_size_y, box_size_z;
+    double box_size_x, box_size_y, box_size_z;
 
-    nhk2025b_msgs::msg::BoxArray    current_box_array;
+    nhk2025b_msgs::msg::BoxArray current_box_array;
 
     void point_callback (const geometry_msgs::msg::PointStamped::SharedPtr msg);
     void timer_callback ();
 
     rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr point_subscriber;
-    rclcpp::Publisher<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_publisher;
-    rclcpp::TimerBase::SharedPtr    timer;
+    rclcpp::Publisher<nhk2025b_msgs::msg::BoxArray>::SharedPtr        box_publisher;
+    rclcpp::TimerBase::SharedPtr                                      timer;
 };
 }  // namespace box_state_simulation
 
