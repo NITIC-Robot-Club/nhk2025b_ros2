@@ -23,6 +23,11 @@ rclcpp_components_register_node(${PROJECT_NAME}
     EXECUTABLE lidar_simulation
 )
 
+rclcpp_components_register_node(${PROJECT_NAME}
+    PLUGIN "box_state_simulation::box_state_simulation"
+    EXECUTABLE box_state_simulation  
+)
+
 if($ENV{ROS_DISTRO} STREQUAL "iron" OR $ENV{ROS_DISTRO} STREQUAL "jazzy" OR $ENV{ROS_DISTRO} STREQUAL "rolling")
   ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)
 else()
