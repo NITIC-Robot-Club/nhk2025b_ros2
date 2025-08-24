@@ -3,7 +3,7 @@
 namespace pure_pursuit {
 
 pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pursuit", options) {
-    cmd_vel_publisher_            = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1);
+    cmd_vel_publisher_            = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/control/cmd_vel", 1);
     lookahead_position_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_position", 1);
     lookahead_angle_publisher_    = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/control/lookahead_angle", 1);
     pose_subscriber_              = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
