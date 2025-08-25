@@ -305,9 +305,9 @@ class nhk2025b_behavior(Node):
     
     def set_e_arm(self, expand = None, get = None):
         self.get_logger().info(f"Setting e-arm: ready={expand}, get={get}")
-        if(expand != None):
+        if(expand is not None):
             self.e_arm_target.expand = expand / 180 * math.pi
-        if(get != None):
+        if(get is not None):
             self.e_arm_target.get = get / 180 * math.pi
 
     def set_box_arm_expand(self, left=0.0, right=0.0):
