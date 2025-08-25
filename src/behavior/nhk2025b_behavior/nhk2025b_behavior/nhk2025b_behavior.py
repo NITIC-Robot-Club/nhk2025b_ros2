@@ -303,15 +303,17 @@ class nhk2025b_behavior(Node):
         self.conveyor_pub.publish(self.conveyor_target)
         self.pylon_arm_pub.publish(self.pylon_arm_target)
     
-    def set_e_arm(self, expand, get):
+    def set_e_arm(self, expand = None, get = None):
         self.get_logger().info(f"Setting e-arm: ready={expand}, get={get}")
-        self.e_arm_target.expand = expand
-        self.e_arm_target.get = get
+        if(expand != None):
+            self.e_arm_target.expand = expand / 180 * math.pi
+        if(get != None):
+            self.e_arm_target.get = get / 180 * math.pi
 
-    def set_box_arm_expand(self, left=False, right=False):
+    def set_box_arm_expand(self, left=0.0, right=0.0):
         self.get_logger().info(f"Setting box arm expand: left={left}, right={right}")
-        self.box_arm_target.expand[0] = left
-        self.box_arm_target.expand[1] = right
+        self.box_arm_target.expand[0] = left / 180 * math.pi
+        self.box_arm_target.expand[1] = right / 180 * math.pi
 
     def set_box_arm_next_box(self, left=0.5, right=0.5):
         self.get_logger().info(f"Setting box arm next box: left={left}, right={right}")
@@ -328,10 +330,10 @@ class nhk2025b_behavior(Node):
         self.pylon_arm_target.height[0] = left
         self.pylon_arm_target.height[1] = right
 
-    def set_pylon_arm_expand(self, left=False, right=False):
+    def set_pylon_arm_expand(self, left=0.0, right=0.0):
         self.get_logger().info(f"Setting pylon arm expand: left={left}, right={right}")
-        self.pylon_arm_target.expand[0] = left
-        self.pylon_arm_target.expand[1] = right
+        self.pylon_arm_target.expand[0] = left / 180 * math.pi
+        self.pylon_arm_target.expand[1] = right / 180 * math.pi
 
     def set_pylon_arm_rpm(self, left=0, right=0):
         self.get_logger().info(f"Setting pylon arm rpm: left={left}, right={right}")
