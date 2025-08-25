@@ -17,8 +17,6 @@ void swerve_calculator::twist_callback (const geometry_msgs::msg::TwistStamped::
         {+robot_length / 2.0, -robot_width / 2.0}
     };
     nhk2025b_msgs::msg::Swerve swerve_msg;
-    swerve_msg.header.stamp    = this->now ();
-    swerve_msg.header.frame_id = "base_link";
 
     for (int i = 0; i < 4; i++) {
         double x = msg->twist.linear.x;

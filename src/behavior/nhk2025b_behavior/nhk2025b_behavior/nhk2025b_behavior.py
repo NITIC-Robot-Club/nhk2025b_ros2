@@ -303,9 +303,9 @@ class nhk2025b_behavior(Node):
         self.conveyor_pub.publish(self.conveyor_target)
         self.pylon_arm_pub.publish(self.pylon_arm_target)
     
-    def set_e_arm(self, ready, get):
-        self.get_logger().info(f"Setting e-arm: ready={ready}, get={get}")
-        self.e_arm_target.ready = ready
+    def set_e_arm(self, expand, get):
+        self.get_logger().info(f"Setting e-arm: ready={expand}, get={get}")
+        self.e_arm_target.expand = expand
         self.e_arm_target.get = get
 
     def set_box_arm_expand(self, left=False, right=False):
