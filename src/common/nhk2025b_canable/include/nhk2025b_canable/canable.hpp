@@ -56,11 +56,11 @@ class canable : public rclcpp::Node {
 
     // === 最新メッセージ保存用 ===
     nhk2025b_msgs::msg::Command  command_;
-    nhk2025b_msgs::msg::EArm      e_arm_cmd_;
-    nhk2025b_msgs::msg::Swerve    swerve_cmd_;
-    nhk2025b_msgs::msg::BoxArm    box_arm_cmd_;
-    nhk2025b_msgs::msg::Conveyor  conveyor_cmd_;
-    nhk2025b_msgs::msg::PylonArm  pylon_arm_cmd_;
+    nhk2025b_msgs::msg::EArm     e_arm_cmd_;
+    nhk2025b_msgs::msg::Swerve   swerve_cmd_;
+    nhk2025b_msgs::msg::BoxArm   box_arm_cmd_;
+    nhk2025b_msgs::msg::Conveyor conveyor_cmd_;
+    nhk2025b_msgs::msg::PylonArm pylon_arm_cmd_;
 
     nhk2025b_msgs::msg::RobotStatus robot_status_;
     nhk2025b_msgs::msg::EArm        e_arm_result_;

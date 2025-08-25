@@ -87,7 +87,7 @@ void simulation::timer_callback () {
     pose_publisher_->publish (pose);
 
     nhk2025b_msgs::msg::RobotStatus status;
-    status.signal       = sig_;
+    status.signal = sig_;
 
     x_sum_ = 0.0f;
     y_sum_ = 0.0f;
