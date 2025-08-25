@@ -55,28 +55,28 @@ class canable : public rclcpp::Node {
     struct ifreq        ifr_;
 
     // === 最新メッセージ保存用 ===
-    nhk2025b_msgs::msg::Command::SharedPtr  command_;
-    nhk2025b_msgs::msg::EArm::SharedPtr     e_arm_cmd_;
-    nhk2025b_msgs::msg::Swerve::SharedPtr   swerve_cmd_;
-    nhk2025b_msgs::msg::BoxArm::SharedPtr   box_arm_cmd_;
-    nhk2025b_msgs::msg::Conveyor::SharedPtr conveyor_cmd_;
-    nhk2025b_msgs::msg::PylonArm::SharedPtr pylon_arm_cmd_;
+    nhk2025b_msgs::msg::Command  command_;
+    nhk2025b_msgs::msg::EArm      e_arm_cmd_;
+    nhk2025b_msgs::msg::Swerve    swerve_cmd_;
+    nhk2025b_msgs::msg::BoxArm    box_arm_cmd_;
+    nhk2025b_msgs::msg::Conveyor  conveyor_cmd_;
+    nhk2025b_msgs::msg::PylonArm  pylon_arm_cmd_;
 
     nhk2025b_msgs::msg::RobotStatus robot_status_;
     nhk2025b_msgs::msg::EArm        e_arm_result_;
     nhk2025b_msgs::msg::Swerve      swerve_result_;
     nhk2025b_msgs::msg::BoxArm      box_arm_result_;
+    nhk2025b_msgs::msg::Conveyor    conveyor_result_;
     nhk2025b_msgs::msg::PylonArm    pylon_arm_result_;
 
     bool       swerve_flag_[4]          = {false, false, false, false};
     bool       robot_status_flag_       = false;
-    bool       box_arm_flag_[2]         = {false, false};
     int        robomas_current_[2]      = {0, 0};
     bool       robomas_current_flag_[2] = {false, false};
     std::mutex data_mutex_;
 
-    int  id_list[12] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x120, 0x121, 0x122, 0x123};
-    bool id_flag[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
+    int  id_list[17] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x116, 0x117, 0x118, 0x120, 0x121, 0x122, 0x123, 0x124, 0x125};
+    bool id_flag[17] = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
 
     // === 構造体 ===
 
@@ -97,24 +97,22 @@ class canable : public rclcpp::Node {
         uint8_t raw;
         struct {
             uint8_t sig : 1;
-            uint8_t : 6;
+            uint8_t : 7;
         } data;
     } power_transmit;
 
     union claw_receive_union {
         uint8_t raw;
         struct {
-            uint8_t reset_swerve : 1;
-            uint8_t expand_pylon_arm_left : 1;
-            uint8_t expand_pylon_arm_right : 1;
-            uint8_t : 5;
+            uint8_t reset : 1;
+            uint8_t : 7;
         } data;
     } claw_receive;
 
     union claw_transmit_union {
         uint8_t raw;
         struct {
-            uint8_t swerve_reset_success : 1;
+            uint8_t reset : 1;
             uint8_t : 7;
         } data;
     } claw_transmit;
@@ -122,22 +120,16 @@ class canable : public rclcpp::Node {
     union wing_receive_union {
         uint8_t raw;
         struct {
-            uint8_t expand_left : 1;
-            uint8_t expand_right : 1;
-            uint8_t E_ready : 1;
-            uint8_t E_get : 1;
-            uint8_t : 4;
+            uint8_t reset : 1;
+            uint8_t : 7;
         } data;
     } wing_receive;
 
     union wing_transmit_union {
         uint8_t raw;
         struct {
-            uint8_t expanded_left : 1;
-            uint8_t expanded_right : 1;
-            uint8_t E_ready : 1;
-            uint8_t E_got : 1;
-            uint8_t : 4;
+            uint8_t reset : 1;
+            uint8_t : 7;
         } data;
     } wing_transmit;
 
@@ -187,6 +179,7 @@ class canable : public rclcpp::Node {
     rclcpp::Publisher<nhk2025b_msgs::msg::EArm>::SharedPtr        e_arm_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::Swerve>::SharedPtr      swerve_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::BoxArm>::SharedPtr      box_arm_pub_;
+    rclcpp::Publisher<nhk2025b_msgs::msg::Conveyor>::SharedPtr    conveyor_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::PylonArm>::SharedPtr    pylon_arm_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::RobotStatus>::SharedPtr robot_status_pub_;
 

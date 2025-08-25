@@ -1,2 +1,2 @@
-bool ready
-bool get
+float32 expand
+float32 get
