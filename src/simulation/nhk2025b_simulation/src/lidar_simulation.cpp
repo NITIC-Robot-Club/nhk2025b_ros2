@@ -5,7 +5,7 @@ namespace lidar_simulation {
 lidar_simulation::lidar_simulation (const rclcpp::NodeOptions &options) : Node ("lidar_simulation", options) {
     map_subscriber  = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&lidar_simulation::map_callback, this, std::placeholders::_1));
     pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/simulation/pose", 1, std::bind (&lidar_simulation::pose_callback, this, std::placeholders::_1));
-    laser_publisher = this->create_publisher<sensor_msgs::msg::LaserScan> ("/sensor/scan", rclcpp::SensorDataQoS ());
+    laser_publisher = this->create_publisher<sensor_msgs::msg::LaserScan> ("/sensor/scan", 1);
     lidar_x         = this->declare_parameter<double> ("lidar_x", 0);
     lidar_y         = this->declare_parameter<double> ("lidar_y", 0);
     lidar_z         = this->declare_parameter<double> ("lidar_z", 0);

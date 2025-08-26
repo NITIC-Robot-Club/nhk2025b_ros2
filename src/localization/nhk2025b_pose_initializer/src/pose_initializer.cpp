@@ -7,7 +7,7 @@ pose_initializer::pose_initializer (const rclcpp::NodeOptions& options) : Node (
     this->declare_parameter<double> ("distance_threshold", 0.1);
     this->declare_parameter<int> ("max_iterations", 100);
 
-    lidar_subscriber = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", rclcpp::SensorDataQoS (), std::bind (&pose_initializer::lidar_callback, this, std::placeholders::_1));
+    lidar_subscriber = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&pose_initializer::lidar_callback, this, std::placeholders::_1));
 
     pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/initialpose", 1);
 }

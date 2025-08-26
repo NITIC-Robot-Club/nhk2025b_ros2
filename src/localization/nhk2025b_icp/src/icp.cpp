@@ -109,7 +109,7 @@ void icp::apply_pose (geometry_msgs::msg::Pose& pose, double dx, double dy, doub
 // --- コールバック・ノード初期化 ---
 icp::icp (const rclcpp::NodeOptions& options) : Node ("icp", options) {
     icp_pose_pub_                    = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/icp_pose", 1);
-    lidar_sub_                       = this->create_subscription<sensor_msgs::msg::LaserScan> ("/sensor/scan", rclcpp::SensorDataQoS (), std::bind (&icp::lidar_callback, this, std::placeholders::_1));
+    lidar_sub_                       = this->create_subscription<sensor_msgs::msg::LaserScan> ("/sensor/scan", 1, std::bind (&icp::lidar_callback, this, std::placeholders::_1));
     map_sub_                         = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&icp::map_callback, this, std::placeholders::_1));
     current_pose_sub_                = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&icp::current_pose_callback, this, std::placeholders::_1));
     current_pose_.pose.orientation.w = 1.0;  // 初期化

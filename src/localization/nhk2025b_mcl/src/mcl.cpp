@@ -15,7 +15,7 @@ mcl::mcl (const rclcpp::NodeOptions& options)
     gaussian_stddev_angle_   = this->declare_parameter ("gaussian_stddev_angle", 1.0);
     random_particle_map_num_ = this->declare_parameter ("random_particle_map_num", 100);
 
-    cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", rclcpp::SensorDataQoS (), std::bind (&mcl::cloud_callback, this, std::placeholders::_1));
+    cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&mcl::cloud_callback, this, std::placeholders::_1));
     map_sub_   = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&mcl::map_callback, this, std::placeholders::_1));
     pose_sub_  = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped> ("/localization/initialpose", 1, std::bind (&mcl::pose_callback, this, std::placeholders::_1));
     ekf_sub_   = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/ekf/pose", 1, std::bind (&mcl::ekf_callback, this, std::placeholders::_1));

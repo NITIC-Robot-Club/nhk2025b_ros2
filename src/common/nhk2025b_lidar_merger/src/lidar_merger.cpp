@@ -2,16 +2,16 @@
 
 namespace lidar_merger {
 lidar_merger::lidar_merger (const rclcpp::NodeOptions &options) : Node ("lidar_merger", options), tf_buffer_ (std::make_shared<tf2_ros::Buffer> (this->get_clock ())), tf_listener_ (std::make_shared<tf2_ros::TransformListener> (*tf_buffer_)) {
-    scan1_sub = this->create_subscription<sensor_msgs::msg::LaserScan> ("/sensor/lidar/front/scan", rclcpp::SensorDataQoS (), [this] (const sensor_msgs::msg::LaserScan::SharedPtr scan1_msg) {
+    scan1_sub = this->create_subscription<sensor_msgs::msg::LaserScan> ("/sensor/lidar/front/scan", 1, [this] (const sensor_msgs::msg::LaserScan::SharedPtr scan1_msg) {
         scan1 = *scan1_msg;
         publish_merged_point_cloud2 ();
     });
 
-    scan2_sub       = this->create_subscription<sensor_msgs::msg::LaserScan> ("/sensor/lidar/rear/scan", rclcpp::SensorDataQoS (), [this] (const sensor_msgs::msg::LaserScan::SharedPtr scan2_msg) {
+    scan2_sub       = this->create_subscription<sensor_msgs::msg::LaserScan> ("/sensor/lidar/rear/scan", 1, [this] (const sensor_msgs::msg::LaserScan::SharedPtr scan2_msg) {
         scan2 = *scan2_msg;
         publish_merged_point_cloud2 ();
     });
-    pointcloud2_pub = this->create_publisher<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", rclcpp::SensorDataQoS ());
+    pointcloud2_pub = this->create_publisher<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1);
 }
 
 void lidar_merger::publish_merged_point_cloud2 () {

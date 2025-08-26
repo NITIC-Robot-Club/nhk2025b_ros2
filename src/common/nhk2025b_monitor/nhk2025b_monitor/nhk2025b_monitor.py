@@ -9,7 +9,7 @@ import socket
 class nhk2025b_monitor(Node):
     def __init__(self):
         super().__init__('pc_state_publisher')
-        self.publisher_ = self.create_publisher(PcState, 'pc_state', 10)
+        self.publisher_ = self.create_publisher(PcState, '/pc_state', 1)
         self.timer = self.create_timer(1.0, self.timer_callback)
 
         self.hostname = socket.gethostname()  # PC名を取得
