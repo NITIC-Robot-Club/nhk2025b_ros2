@@ -181,7 +181,7 @@ void canable::read_can_socket () {
             }
 
             if (frame.can_id == 0x110 && frame.len == 8) {
-                claw_transmit.raw = frame.data[0];
+                claw_transmit.raw        = frame.data[0];
                 robot_status_.reset_claw = claw_transmit.data.reset;
                 union float_bytes bno_yaw;
                 for (int b = 0; b < 4; b++) {
@@ -199,7 +199,7 @@ void canable::read_can_socket () {
             }
 
             if (frame.can_id == 0x120 && frame.len == 4) {
-                wing_transmit.raw = frame.data[0];
+                wing_transmit.raw        = frame.data[0];
                 robot_status_.reset_wing = wing_transmit.data.reset;
                 UInt24 robomas_current;
                 for (int b = 0; b < 3; b++) {
