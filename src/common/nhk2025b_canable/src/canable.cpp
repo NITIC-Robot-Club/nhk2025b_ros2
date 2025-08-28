@@ -182,6 +182,7 @@ void canable::read_can_socket () {
 
             if (frame.can_id == 0x110 && frame.len == 8) {
                 claw_transmit.raw = frame.data[0];
+                robot_status_.reset_claw = claw_transmit.data.reset;
                 union float_bytes bno_yaw;
                 for (int b = 0; b < 4; b++) {
                     bno_yaw.bytes[b] = frame.data[b + 1];
@@ -199,6 +200,7 @@ void canable::read_can_socket () {
 
             if (frame.can_id == 0x120 && frame.len == 4) {
                 wing_transmit.raw = frame.data[0];
+                robot_status_.reset_wing = wing_transmit.data.reset;
                 UInt24 robomas_current;
                 for (int b = 0; b < 3; b++) {
                     robomas_current.set_byte (b, frame.data[b + 1]);
@@ -266,6 +268,9 @@ void canable::pylon_arm_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr 
 
 void canable::timer_callback () {
     std::lock_guard<std::mutex> lock (data_mutex_);
+
+    claw_receive.data.reset = command_.reset;
+    wing_receive.data.reset = command_.reset;
 
     struct can_frame power;
     std::memset (&power, 0, sizeof (struct can_frame));
