@@ -180,14 +180,14 @@ void canable::read_can_socket () {
                 continue;
             }
 
-            if ( frame.can_id == 0x125 && frame.len == 8) {
+            if (frame.can_id == 0x125 && frame.len == 8) {
                 union float_bytes expand, get;
                 for (int b = 0; b < 4; b++) {
                     expand.bytes[b] = frame.data[b];
-                    get.bytes[b] = frame.data[b+4];
+                    get.bytes[b]    = frame.data[b + 4];
                 }
                 e_arm_result_.expand = expand.value;
-                e_arm_result_.get = get.value;
+                e_arm_result_.get    = get.value;
                 e_arm_pub_->publish (e_arm_result_);
                 continue;
             }
