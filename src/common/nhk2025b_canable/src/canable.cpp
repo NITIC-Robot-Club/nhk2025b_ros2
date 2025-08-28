@@ -180,6 +180,18 @@ void canable::read_can_socket () {
                 continue;
             }
 
+            if ( frame.can_id == 0x125 && frame.len == 8) {
+                union float_bytes expand, get;
+                for (int b = 0; b < 4; b++) {
+                    expand.bytes[b] = frame.data[b];
+                    get.bytes[b] = frame.data[b+4];
+                }
+                e_arm_result_.expand = expand.value;
+                e_arm_result_.get = get.value;
+                e_arm_pub_->publish (e_arm_result_);
+                continue;
+            }
+
             if (frame.can_id == 0x110 && frame.len == 8) {
                 claw_transmit.raw        = frame.data[0];
                 robot_status_.reset_claw = claw_transmit.data.reset;
@@ -376,6 +388,22 @@ void canable::timer_callback () {
         }
         std::this_thread::sleep_for (std::chrono::microseconds (500));
     }
+
+    struct can_frame e_arm;
+    std::memset (&e_arm, 0, sizeof (struct can_frame));
+    e_arm.can_id  = 0x025;
+    e_arm.can_dlc = 8;
+    union float_bytes e_arm_expand, e_arm_get;
+    e_arm_expand.value = e_arm_cmd_.expand;
+    e_arm_get.value    = e_arm_cmd_.get;
+    for (int b = 0; b < 4; b++) {
+        e_arm.data[b]     = e_arm_expand.bytes[b];
+        e_arm.data[b + 4] = e_arm_get.bytes[b];
+    }
+    if (!write (can_socket_, &e_arm, sizeof (struct can_frame))) {
+        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+    }
+    std::this_thread::sleep_for (std::chrono::microseconds (500));
 }
 
 }  // namespace canable
