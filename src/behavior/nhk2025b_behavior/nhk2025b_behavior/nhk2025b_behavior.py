@@ -79,6 +79,10 @@ class nhk2025b_behavior(Node):
             "set_pylon_arm_expand": self.set_pylon_arm_expand,
             "set_pylon_arm_rpm": self.set_pylon_arm_rpm,
         }
+        
+        self.cond_env = {
+            "check_ready": self.check_ready
+        }
 
         self.label_to_state, self.state_to_pose, self.state_to_actions, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
         self.id_to_label = {v: k for k, v in self.label_to_state.items()}
@@ -213,9 +217,6 @@ class nhk2025b_behavior(Node):
                     self.get_logger().warn(f"アクション eval 失敗: {act} ({e})")
 
         next_state = None
-        cond_env = {
-            "check_ready": self.check_ready
-        }
 
         if advanced:
             for src, dst, cond in self.transitions:
@@ -225,7 +226,7 @@ class nhk2025b_behavior(Node):
                         break
                     else:
                         try:
-                            if eval(cond, {}, cond_env):
+                            if eval(cond, {}, self.cond_env):
                                 next_state = dst
                                 break
                         except Exception as e:
@@ -256,8 +257,6 @@ class nhk2025b_behavior(Node):
         dyaw = abs((yaw - math.radians(goal_yaw) + math.pi) % (2*math.pi) - math.pi)
         deg = math.degrees(dyaw)
         return dist < 0.10 and deg < 5.0
-
-
 
     def set_position(self, x, y, yaw_deg):
         if self.is_red:
@@ -310,35 +309,47 @@ class nhk2025b_behavior(Node):
         if(get is not None):
             self.e_arm_target.get = get / 180 * math.pi
 
-    def set_box_arm_expand(self, left=0.0, right=0.0):
+    def set_box_arm_expand(self, left=None, right=None):
         self.get_logger().info(f"Setting box arm expand: left={left}, right={right}")
-        self.box_arm_target.expand[0] = left / 180 * math.pi
-        self.box_arm_target.expand[1] = right / 180 * math.pi
+        if left is not None:
+            self.box_arm_target.expand[0] = left / 180 * math.pi
+        if right is not None:
+            self.box_arm_target.expand[1] = right / 180 * math.pi
 
-    def set_box_arm_next_box(self, left=0.5, right=0.5):
+    def set_box_arm_next_box(self, left=None, right=None):
         self.get_logger().info(f"Setting box arm next box: left={left}, right={right}")
-        self.box_arm_target.arm_position_weak[0] = left
-        self.box_arm_target.arm_position_weak[1] = right
+        if left is not None:
+            self.box_arm_target.arm_position_weak[0] = left
+        if right is not None:
+            self.box_arm_target.arm_position_weak[1] = right
 
-    def set_conveyor_rpm(self, left=0, right=0):
+    def set_conveyor_rpm(self, left=None, right=None):
         self.get_logger().info(f"Setting conveyor rpm: left={left}, right={right}")
-        self.conveyor_target.rpm[0] = left
-        self.conveyor_target.rpm[1] = right
+        if left is not None:
+            self.conveyor_target.rpm[0] = left
+        if right is not None:
+                self.conveyor_target.rpm[1] = right
 
-    def set_pylon_arm_height(self, left=0, right=0):
+    def set_pylon_arm_height(self, left=None, right=None):
         self.get_logger().info(f"Setting pylon arm height: left={left}, right={right}")
-        self.pylon_arm_target.height[0] = left
-        self.pylon_arm_target.height[1] = right
+        if left is not None:
+            self.pylon_arm_target.height[0] = left
+        if right is not None:
+            self.pylon_arm_target.height[1] = right
 
-    def set_pylon_arm_expand(self, left=0.0, right=0.0):
+    def set_pylon_arm_expand(self, left=None, right=None):
         self.get_logger().info(f"Setting pylon arm expand: left={left}, right={right}")
-        self.pylon_arm_target.expand[0] = left / 180 * math.pi
-        self.pylon_arm_target.expand[1] = right / 180 * math.pi
+        if left is not None:
+            self.pylon_arm_target.expand[0] = left / 180 * math.pi
+        if right is not None:
+            self.pylon_arm_target.expand[1] = right / 180 * math.pi
 
-    def set_pylon_arm_rpm(self, left=0, right=0):
+    def set_pylon_arm_rpm(self, left=None, right=None):
         self.get_logger().info(f"Setting pylon arm rpm: left={left}, right={right}")
-        self.pylon_arm_target.rpm[0] = left
-        self.pylon_arm_target.rpm[1] = right
+        if left is not None:
+            self.pylon_arm_target.rpm[0] = left
+        if right is not None:
+            self.pylon_arm_target.rpm[1] = right
 
 
 def main(args=None):

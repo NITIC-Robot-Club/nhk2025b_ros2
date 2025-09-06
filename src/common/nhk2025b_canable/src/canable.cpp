@@ -305,6 +305,16 @@ void canable::timer_callback () {
     }
     std::this_thread::sleep_for (std::chrono::microseconds (500));
 
+    struct can_frame wing_frame;
+    std::memset (&wing_frame, 0, sizeof (struct can_frame));
+    wing_frame.can_id  = 0x020;
+    wing_frame.can_dlc = 1;
+    wing_frame.data[0] = wing_receive.raw;
+    if (!write (can_socket_, &wing_frame, sizeof (struct can_frame))) {
+        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+    }
+    std::this_thread::sleep_for (std::chrono::microseconds (500));
+
     for (int i = 0; i < 4; i++) {
         struct can_frame swerve;
         std::memset (&swerve, 0, sizeof (struct can_frame));
@@ -345,7 +355,7 @@ void canable::timer_callback () {
         pylon_conveyor.can_id  = 0x017 + i;
         pylon_conveyor.can_dlc = 8;
         union float_bytes pylon_speed, conveyor_speed;
-        pylon_speed.value    = pylon_arm_cmd_.collect_rpm[0];
+        pylon_speed.value    = pylon_arm_cmd_.collect_rpm[i];
         conveyor_speed.value = conveyor_cmd_.conveyor_rpm[i];
         for (int b = 0; b < 4; b++) {
             pylon_conveyor.data[b]     = pylon_speed.bytes[b];
