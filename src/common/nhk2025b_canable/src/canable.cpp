@@ -35,6 +35,13 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
 
     std::thread ([this] () { this->read_can_socket (); }).detach ();
     can_receive_timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&canable::check_can_receive, this));  // 100msごとにCAN受信確認
+
+    for(int i=0;i<2;i++){
+        box_arm_cmd_.height[i] = 0.1;
+        box_arm_cmd_.arm_position_strong[i] = 0.55;
+        box_arm_cmd_.arm_position_weak[i] = 0.55;
+    }
+    
 }
 
 canable::~canable () {
