@@ -199,8 +199,11 @@ void canable::read_can_socket () {
             }
 
             if (frame.can_id == 0x110 && frame.len == 8) {
-                claw_transmit.raw        = frame.data[0];
-                robot_status_.reset_claw = claw_transmit.data.reset;
+                claw_transmit.raw                   = frame.data[0];
+                robot_status_.reset_pylon_height[0] = claw_transmit.data.reset_height_0;
+                robot_status_.reset_pylon_height[1] = claw_transmit.data.reset_height_1;
+                robot_status_.reset_pylon_expand[0] = claw_transmit.data.reset_expand_0;
+                robot_status_.reset_pylon_expand[1] = claw_transmit.data.reset_expand_1;
                 union float_bytes bno_yaw;
                 for (int b = 0; b < 4; b++) {
                     bno_yaw.bytes[b] = frame.data[b + 1];
@@ -217,8 +220,15 @@ void canable::read_can_socket () {
             }
 
             if (frame.can_id == 0x120 && frame.len == 4) {
-                wing_transmit.raw        = frame.data[0];
-                robot_status_.reset_wing = wing_transmit.data.reset;
+                wing_transmit.raw                     = frame.data[0];
+                robot_status_.reset_box_arm_height[0] = wing_transmit.data.reset_height_0;
+                robot_status_.reset_box_arm_height[1] = wing_transmit.data.reset_height_1;
+                robot_status_.reset_box_arm_strong[0] = wing_transmit.data.reset_strong_0;
+                robot_status_.reset_box_arm_strong[1] = wing_transmit.data.reset_strong_1;
+                robot_status_.reset_box_arm_weak[0]   = wing_transmit.data.reset_weak_0;
+                robot_status_.reset_box_arm_weak[1]   = wing_transmit.data.reset_weak_1;
+                robot_status_.reset_e_arm_expand      = wing_transmit.data.reset_e_arm_expand;
+                robot_status_.reset_e_arm_get         = wing_transmit.data.reset_e_arm_get;
                 UInt24 robomas_current;
                 for (int b = 0; b < 3; b++) {
                     robomas_current.set_byte (b, frame.data[b + 1]);

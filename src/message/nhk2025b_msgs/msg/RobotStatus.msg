@@ -1,4 +1,9 @@
 bool signal
 float32[3] voltage
-bool reset_claw
-bool reset_wing
+bool[2] reset_pylon_height
+bool[2] reset_pylon_expand
+bool[2] reset_box_arm_height
+bool[2] reset_box_arm_strong
+bool[2] reset_box_arm_weak
+bool reset_e_arm_expand
+bool reset_e_arm_get
