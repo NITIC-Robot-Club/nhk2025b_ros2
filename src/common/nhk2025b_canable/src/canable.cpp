@@ -83,7 +83,7 @@ void canable::read_can_socket () {
     while (rclcpp::ok ()) {
         int nbytes = read (can_socket_, &frame, sizeof (struct can_frame));
         if (nbytes > 0) {
-            for (int i = 0; i < 12; i++) {
+            for (int i = 0; i < 17; i++) {
                 if (frame.can_id == id_list[i]) {
                     id_flag[i] = true;  // フラグを立てる
                     break;
