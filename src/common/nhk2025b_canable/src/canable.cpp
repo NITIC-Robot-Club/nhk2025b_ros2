@@ -250,7 +250,7 @@ void canable::read_can_socket () {
 }
 void canable::check_can_receive () {
     std::ostringstream missing_ids;
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 17; i++) {
         if (!id_flag[i]) {
             if (!missing_ids.str ().empty ()) {
                 missing_ids << ", ";
