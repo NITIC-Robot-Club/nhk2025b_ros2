@@ -8,6 +8,7 @@
       <param name="is_red" value="$(var is_red)"/>
     </composable_node>
     <composable_node pkg="nhk2025b_velocity_smoother" plugin="velocity_smoother::velocity_smoother" name="velocity_smoother">
+      <param from="$(find-pkg-share nhk2025b_launch)/param/control.yaml"/>
       <param name="allow_automate_always" value="true"/>
     </composable_node>
   </node_container>

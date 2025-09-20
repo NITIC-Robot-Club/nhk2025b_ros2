@@ -8,6 +8,7 @@ velocity_smoother::velocity_smoother (const rclcpp::NodeOptions& options) : Node
     command_sub_          = this->create_subscription<nhk2025b_msgs::msg::Command> ("/command", 1, std::bind (&velocity_smoother::command_callback, this, std::placeholders::_1));
     twist_pub_            = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1);
     timer_                = create_wall_timer (std::chrono::milliseconds (10), std::bind (&velocity_smoother::timer_callback, this));
+    this->declare_parameter ("max_acceleration", 1.0);
     this->declare_parameter ("allow_automate_always", false);
     bool allow_automate_always;
     this->get_parameter ("allow_automate_always", allow_automate_always);
@@ -33,11 +34,21 @@ void velocity_smoother::command_callback (const nhk2025b_msgs::msg::Command::Sha
 }
 
 void velocity_smoother::timer_callback () {
+    this->get_parameter ("max_acceleration", max_acceleration);
+    geometry_msgs::msg::TwistStamped send_twist = geometry_msgs::msg::TwistStamped ();
     if (current_twist_) {
-        twist_pub_->publish (*current_twist_);
+        send_twist = *current_twist_;
     } else {
-        twist_pub_->publish (geometry_msgs::msg::TwistStamped ());
     }
+    double delta_t            = 0.01f;
+    double acceleration_x     = (send_twist.twist.linear.x - last_twist_.twist.linear.x) / delta_t;
+    double acceleration_y     = (send_twist.twist.linear.y - last_twist_.twist.linear.y) / delta_t;
+    acceleration_x            = std::clamp (acceleration_x, -max_acceleration, max_acceleration);
+    acceleration_y            = std::clamp (acceleration_y, -max_acceleration, max_acceleration);
+    send_twist.twist.linear.x = last_twist_.twist.linear.x + acceleration_x * delta_t;
+    send_twist.twist.linear.y = last_twist_.twist.linear.y + acceleration_y * delta_t;
+    twist_pub_->publish (send_twist);
+    last_twist_ = send_twist;
 }
 
 }  // namespace velocity_smoother
