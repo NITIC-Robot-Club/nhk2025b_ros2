@@ -40,10 +40,7 @@ void velocity_smoother::timer_callback () {
         send_twist = *current_twist_;
     } else {
     }
-    // double angle = std::atan2 (send_twist.twist.linear.y, send_twist.twist.linear.x);
-    double delta_t = 0.01f;
-    // double last_speed = std::hypot (last_twist_.twist.linear.x, last_twist_.twist.linear.y);
-    // double current_speed = std::hypot (send_twist.twist.linear.x, send_twist.twist.linear.y);
+    double delta_t            = 0.01f;
     double acceleration_x     = (send_twist.twist.linear.x - last_twist_.twist.linear.x) / delta_t;
     double acceleration_y     = (send_twist.twist.linear.y - last_twist_.twist.linear.y) / delta_t;
     acceleration_x            = std::clamp (acceleration_x, -max_acceleration, max_acceleration);
