@@ -1,15 +1,11 @@
 <launch>
   <arg name="is_red" default="false"/>
-  <arg name="state_graph_path" default="$(find-pkg-share nhk2025b_launch)/state_graph/test_state.md"/>
+  <arg name="state_graph_path" default="$(find-pkg-share nhk2025b_launch)/state_graph/simulate.md"/>
   <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_default_container" namespace="">
     <composable_node pkg="nhk2025b_map_publisher" plugin="map_publisher::map_publisher" name="map_publisher">
       <param name="is_red" value="$(var is_red)"/>
       <param from="$(find-pkg-share nhk2025b_launch)/param/common.yaml"/>
     </composable_node>
   </node_container>
-  <include file="$(find-pkg-share nhk2025b_launch)/launch/tf.launch.xml"/>
-  <node pkg="nhk2025b_behavior" exec="behavior" name="behavior" output="screen">
-    <param name="state_graph_path" value="$(var state_graph_path)"/>
-    <param name="is_red" value="$(var is_red)"/>
-  </node>
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/tf.launch.xml"/>  
 </launch>

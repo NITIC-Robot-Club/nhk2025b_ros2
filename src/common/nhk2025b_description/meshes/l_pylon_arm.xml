@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urdf_part>
+    <material name="#FFFFFF">
+        <color rgba="1.000000 1.000000 1.000000 1.0" />
+    </material>
+    <link name="l_pylon_arm">
+        <visual>
+            <origin xyz="-0.008027 -0.151984 0.084944" rpy="0 0 0"/>
+            <material name="#FFFFFF" />
+        </visual>
+        <inertial>
+            <origin xyz="-0.008027 -0.151984 0.084944"/>
+            <mass value="0.000280406853"/>
+            <volume value="0.000280406853"/>
+            <inertia ixx="0.00214898" ixy="-0.00001989" ixz="-0.00000586" iyy="0.00135470" iyz="-0.00045254" izz="0.00081296"/>
+        </inertial>
+        <center_of_mass>-0.008027 -0.151984 0.084944</center_of_mass>
+    </link>
+    <point name="point1" type="fixed">
+        <point_xyz>0.000000 0.000000 0.000000</point_xyz>
+    </point>
+    <joint>
+        <axis xyz="0 1 0" />
+    </joint>
+</urdf_part>

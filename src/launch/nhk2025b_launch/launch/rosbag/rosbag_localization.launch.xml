@@ -1,12 +1,10 @@
 <launch>
-    <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_visualization_container" namespace="">
+    <arg name="is_red" default="false"/>
+    <node_container pkg="rclcpp_components" exec="component_container" name="rosbag_robot_viewer" namespace="">
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
-        <composable_node pkg="nhk2025b_visualization" plugin="visualize_box::visualize_box" name="visualize_box"/>
-        <composable_node pkg="nhk2025b_visualization" plugin="visualize_footprint::visualize_footprint" name="visualize_footprint">
-            <param from="$(find-pkg-share nhk2025b_launch)/param/visualization.yaml"/>
-        </composable_node>
-        <composable_node pkg="nhk2025b_visualization" plugin="visualize_path_collision::visualize_path_collision" name="visualize_path_collision">
-            <param from="$(find-pkg-share nhk2025b_launch)/param/visualization.yaml"/>
+        <composable_node pkg="nhk2025b_map_publisher" plugin="map_publisher::map_publisher" name="map_publisher">
+            <param name="is_red" value="$(var is_red)"/>
+            <param from="$(find-pkg-share nhk2025b_launch)/param/common.yaml"/>
         </composable_node>
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_stl::visualize_stl" name="visualize_field">
             <remap from="output/maker" to="/visualize/field"/>
@@ -19,8 +17,7 @@
             <param name="marker.meshpath" value="$(find-pkg-share nhk2025b_launch)/stl/robot.stl"/>
         </composable_node>
     </node_container>
-    <node
-        pkg="rviz2"
-        exec="rviz2"
-        args="-d $(find-pkg-share nhk2025b_launch)/rviz/simulate.rviz"/>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/tf.launch.xml"/>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/localization.launch.xml"/>
+    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nhk2025b_launch)/rviz/rosbag_robot.rviz"/>
 </launch>

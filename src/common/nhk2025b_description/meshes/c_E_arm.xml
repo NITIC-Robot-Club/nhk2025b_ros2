@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urdf_part>
+    <material name="#FFFFFF">
+        <color rgba="1.000000 1.000000 1.000000 1.0" />
+    </material>
+    <link name="c_E_arm">
+        <visual>
+            <origin xyz="0.051900 -0.003512 -0.069114" rpy="0 0 0"/>
+            <material name="#FFFFFF" />
+        </visual>
+        <inertial>
+            <origin xyz="0.051900 -0.003512 -0.069114"/>
+            <mass value="0.001189176661"/>
+            <volume value="0.001189176661"/>
+            <inertia ixx="0.00495794" ixy="-0.00022927" ixz="0.00603512" iyy="0.02236937" iyz="0.00008348" izz="0.01790521"/>
+        </inertial>
+        <center_of_mass>0.051900 -0.003512 -0.069114</center_of_mass>
+    </link>
+    <point name="point1" type="fixed">
+        <point_xyz>0.000000 0.000000 0.000000</point_xyz>
+    </point>
+    <joint>
+        <axis xyz="0 1 0" />
+    </joint>
+</urdf_part>

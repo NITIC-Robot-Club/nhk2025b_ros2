@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urdf_part>
+    <material name="#FFFFFF">
+        <color rgba="1.000000 1.000000 1.000000 1.0" />
+    </material>
+    <link name="c_nhk2025b">
+        <visual>
+            <origin xyz="0.020862 0.027978 0.158285" rpy="0 0 0"/>
+            <material name="#FFFFFF" />
+        </visual>
+        <inertial>
+            <origin xyz="0.020862 0.027978 0.158285"/>
+            <mass value="0.008084306601"/>
+            <volume value="0.008084306601"/>
+            <inertia ixx="0.49373678" ixy="-0.00290608" ixz="-0.09241076" iyy="0.36714380" iyz="-0.00002506" izz="0.43720784" />
+        </inertial>
+        <center_of_mass>0.020862 0.027978 0.158285</center_of_mass>
+    </link>
+    <point name="point2" type="fixed">
+        <point_xyz>0.150000 -0.350000 0.065000</point_xyz>
+    </point>
+    <point name="point3" type="fixed">
+        <point_xyz>0.150000 0.350000 0.065000</point_xyz>
+    </point>
+    <point name="point4" type="fixed">
+        <point_xyz>-0.225000 0.000000 0.225000</point_xyz>
+    </point>
+    <point name="point5" type="fixed">
+        <point_xyz>0.225000 0.270000 0.675000</point_xyz>
+    </point>
+    <point name="point6" type="fixed">
+        <point_xyz>0.225000 -0.270000 0.675000</point_xyz>
+    </point>
+    <joint>
+        <axis xyz="0 0 0" />
+    </joint>
+</urdf_part>
