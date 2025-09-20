@@ -10,3 +10,7 @@ pure_pursuit:
     goal_deceleration_p: 1.0
     max_acceleration_xy_m_s2_: 10.0
     max_speed_xy_m_s: 4.0
+
+velocity_smoother:
+  ros__parameters:
+    max_acceleration: 1.0

@@ -13,7 +13,10 @@ class velocity_smoother : public rclcpp::Node {
 
    private:
     geometry_msgs::msg::TwistStamped::SharedPtr current_twist_;
+    geometry_msgs::msg::TwistStamped  last_twist_;
     nhk2025b_msgs::msg::Command                 current_command_;
+
+    double max_acceleration; // m/s^2
 
     void twist_auto_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void twist_controller_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
