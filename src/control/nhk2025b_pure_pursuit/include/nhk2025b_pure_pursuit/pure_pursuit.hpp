@@ -17,19 +17,16 @@ class pure_pursuit : public rclcpp::Node {
 
    private:
     // パラメータ
-    double lookahead_time_;                // 速度スケーリング用の時間 [s]
-    double min_lookahead_distance_;        // 最小lookahead距離 [m]
-    double max_lookahead_distance_;        // 最大lookahead距離 [m]
-    double angle_lookahead_distance_;      // 角度スケーリング用の距離 [m]
-    double curvature_decceleration_p_;     // 曲率減速用の比例ゲイン
-    double goal_deceleration_distance_p_;  // ゴール減速距離 [m]
-    double goal_deceleration_p_;           // ゴール到達許容距離 [m]
-    double angle_p_;                       // 角度ゲイン
-    double max_speed_xy_m_s_;              // 最大並進速度
-    double max_speed_z_rad_s_;             // 最大回転速度
-    double max_acceleration_xy_m_s2_;      // 最大加速度
-    double max_acceleration_z_rad_s2_;     // 最大角加速度 [rad/s^2]
-    double angle_deceleration_p_;          // 角度減速用の比例ゲイン
+    double lookahead_time_;             // 速度スケーリング用の時間 [s]
+    double min_look_ahead_distance_;    // 最小lookahead距離 [m]
+    double max_look_ahead_distance_;    // 最大lookahead距離 [m]
+    double max_speed_xy_m_s_;           // 最大並進速度
+    double max_speed_z_rad_s_;          // 最大回転速度
+    double max_acceleration_xy_m_s2_;   // 最大加速度
+    double max_acceleration_z_rad_s2_;  // 最大角加速度 [rad/s^2]
+    double goal_deceleration_xy_m_s2_;
+
+    int delta_t_ms = 50;
 
     double lookahead_distance_;  // 現在のlookahead距離 [m]（動的に計算される）
     // 入力データ
@@ -42,11 +39,22 @@ class pure_pursuit : public rclcpp::Node {
     void pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void path_callback (const nav_msgs::msg::Path::SharedPtr msg);
 
+    // 関数
+    double calculate_speed (geometry_msgs::msg::Twist twist);
+    int    calculate_index (geometry_msgs::msg::Pose pose);
+    double calculate_look_ahead_distance ();
+    int    calculate_look_ahead_index (double look_ahead_distance);
+    double calculate_path_distance (int current_index);
+    double calculate_max_speed (double path_distance);
+    double calculate_z (double look_ahead_z);
+
+    geometry_msgs::msg::Pose  calculate_look_ahead_pose (int look_ahead_index);
+    geometry_msgs::msg::Twist calculate_xy (geometry_msgs::msg::Pose look_ahead_pose, double max_speed);
+
     // ROS2通信
     rclcpp::TimerBase::SharedPtr                                     timer_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr   cmd_vel_publisher_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    lookahead_position_publisher_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    lookahead_angle_publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    look_ahead_publisher_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subscriber_;
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr             path_subscriber_;
 };
