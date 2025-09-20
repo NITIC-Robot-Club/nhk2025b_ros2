@@ -40,15 +40,16 @@ void velocity_smoother::timer_callback () {
         send_twist = *current_twist_;
     } else {
     }
-    double angle              = std::atan2 (send_twist.twist.linear.y, send_twist.twist.linear.x);
-    double delta_t            = 0.01f;
-    double last_speed         = std::hypot (last_twist_.twist.linear.x, last_twist_.twist.linear.y);
-    double current_speed      = std::hypot (send_twist.twist.linear.x, send_twist.twist.linear.y);
-    double acceleration       = (current_speed - last_speed) / delta_t;
-    acceleration              = std::clamp (acceleration, -max_acceleration, max_acceleration);
-    double speed              = last_speed + acceleration * delta_t;
-    send_twist.twist.linear.x = speed * std::cos (angle);
-    send_twist.twist.linear.y = speed * std::sin (angle);
+    // double angle = std::atan2 (send_twist.twist.linear.y, send_twist.twist.linear.x);
+    double delta_t = 0.01f;
+    // double last_speed = std::hypot (last_twist_.twist.linear.x, last_twist_.twist.linear.y);
+    // double current_speed = std::hypot (send_twist.twist.linear.x, send_twist.twist.linear.y);
+    double acceleration_x = (send_twist.twist.linear.x - last_twist_.twist.linear.x) / delta_t;
+    double acceleration_y = (send_twist.twist.linear.y - last_twist_.twist.linear.y) / delta_t;
+    acceleration_x = std::clamp (acceleration_x, -max_acceleration, max_acceleration);
+    acceleration_y = std::clamp (acceleration_y, -max_acceleration, max_acceleration);
+    send_twist.twist.linear.x = last_twist_.twist.linear.x + acceleration_x * delta_t;
+    send_twist.twist.linear.y = last_twist_.twist.linear.y + acceleration_y * delta_t;
     twist_pub_->publish (send_twist);
     last_twist_ = send_twist;
 }
