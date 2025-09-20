@@ -1,6 +1,6 @@
 name: auto fix and build full docker
 on:
-  push:
+  # push:
   workflow_dispatch:
 
 
@@ -12,7 +12,7 @@ jobs:
     
     container:
       image: ghcr.io/nitic-robot-club/nhk2025b_ros2:latest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Fetch origin
@@ -48,7 +48,7 @@ jobs:
         id: build_test
         working-directory: /home/nitic-robot-club/nhk2025b_ros2
         run: |
-          . /opt/ros/jazzy/setup.sh && 
+          . /opt/ros/humble/setup.sh && 
           colcon build
         continue-on-error: true
     
