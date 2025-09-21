@@ -7,16 +7,16 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
     robot_status_publisher_ = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 1);
     pose_publisher_         = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/simulation/pose", 1);
     swerve_subscriber_      = this->create_subscription<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1, std::bind (&simulation::swerve_callback, this, std::placeholders::_1));
+    is_red_subscriber_      = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&simulation::is_red_callback, this, std::placeholders::_1));
     imu_publisher_          = this->create_publisher<sensor_msgs::msg::Imu> ("/sensor/imu", 1);
     timer_                  = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
     robot_length            = this->declare_parameter<double> ("robot_length", 0.6);
     robot_width             = this->declare_parameter<double> ("robot_width", 0.8);
     wheel_radius            = this->declare_parameter<double> ("wheel_radius", 0.0325);
-    bool   is_red           = this->declare_parameter<bool> ("is_red", false);
-    double initial_x_blue   = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
-    double initial_y_blue   = this->declare_parameter<double> ("initial_positions.blue.y", 1.0);
-    double initial_x_red    = this->declare_parameter<double> ("initial_positions.red.x", 1.0);
-    double initial_y_red    = this->declare_parameter<double> ("initial_positions.red.y", 1.0);
+    initial_x_blue          = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
+    initial_y_blue          = this->declare_parameter<double> ("initial_positions.blue.y", 1.0);
+    initial_x_red           = this->declare_parameter<double> ("initial_positions.red.x", 1.0);
+    initial_y_red           = this->declare_parameter<double> ("initial_positions.red.y", 1.0);
 
     if (is_red) {
         x_ = initial_x_red + 0.15;
@@ -36,6 +36,17 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
 }
 
 void simulation::timer_callback () {
+    if (last_is_red != is_red) {
+        if (is_red) {
+            x_ = initial_x_red + 0.15;
+            y_ = -initial_y_red - 0.15;
+        } else {
+            x_ = initial_x_blue + 0.15;
+            y_ = initial_y_blue + 0.15;
+        }
+    }
+    last_is_red = is_red;
+
     if (count_ != 0 && sig_) {
         z_ += z_sum_ / count_ * 0.1;
         double angle = std::atan2 (y_sum_ / count_, x_sum_ / count_) + z_;
@@ -164,6 +175,9 @@ void simulation::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr ms
     y_sum_ += x[1];
     z_sum_ += x[2];
     count_++;
+}
+void simulation::is_red_callback (const std_msgs::msg::Bool::SharedPtr msg) {
+    is_red = msg->data;
 }
 }  // namespace simulation
 

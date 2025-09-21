@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, Bool
 from geometry_msgs.msg import PoseStamped
 from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command, EArm, BoxArm, Conveyor, PylonArm
 import math
@@ -59,7 +59,6 @@ class nhk2025b_behavior(Node):
 
         # パラメータ宣言と取得
         self.declare_parameter('state_graph_path', 'state_graph.md')
-        self.declare_parameter('is_red', False)
         state_graph_path = self.get_parameter('state_graph_path').get_parameter_value().string_value
         self.md_name = state_graph_path.split('/')[-1]
         if not state_graph_path.endswith('.md'):
@@ -68,7 +67,7 @@ class nhk2025b_behavior(Node):
         else:
             self.get_logger().info(f'状態遷移グラフのファイル名: {self.md_name}')
             self.md_name = self.md_name.split('.')[0]  # 拡張子を除去
-        self.is_red = self.get_parameter('is_red').get_parameter_value().bool_value
+        self.is_red = False
 
         self.function_dict = {
             "set_e_arm": self.set_e_arm,
@@ -100,6 +99,7 @@ class nhk2025b_behavior(Node):
         self.create_subscription(RobotStatus, '/robot_status', self.robot_status_callback, 1)
         self.create_subscription(Int32, '/behavior/set_status_num', self.set_status_num_callback, 1)
         self.create_subscription(Command, '/command', self.command_callback, 1)
+        self.create_subscription(Bool, '/is_red', self.is_red_callback, 1)
 
         self.state_array = self.build_state_array()
         self.current_state = '[*]'  # 初期状態
@@ -144,6 +144,9 @@ class nhk2025b_behavior(Node):
     
     def command_callback(self, msg):
         self.command = msg
+
+    def is_red_callback(self, msg):
+        self.is_red = msg.data
 
     def publish_state(self, finished=False):
         if finished:

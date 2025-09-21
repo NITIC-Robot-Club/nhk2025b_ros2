@@ -3,21 +3,25 @@
 
 namespace map_publisher {
 map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_publisher", options) {
-    publisher_      = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1);
-    box_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::BoxArray> ("/box_state", 1, std::bind (&map_publisher::box_callback, this, std::placeholders::_1));
-    timer_          = this->create_wall_timer (std::chrono::milliseconds (1000), std::bind (&map_publisher::publish_map, this));
+    publisher_         = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1);
+    box_subscriber_    = this->create_subscription<nhk2025b_msgs::msg::BoxArray> ("/box_state", 1, std::bind (&map_publisher::box_callback, this, std::placeholders::_1));
+    is_red_subscriber_ = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&map_publisher::is_red_callback, this, std::placeholders::_1));
+    timer_             = this->create_wall_timer (std::chrono::milliseconds (1000), std::bind (&map_publisher::publish_map, this));
     this->declare_parameter<double> ("resolution", 0.05);  // 5cm
-    this->declare_parameter<bool> ("is_red", false);
-    this->get_parameter ("is_red", is_red);  // bool
-    if (is_red) {
-        for (int i = 0; i < 5; i++) {
-            // 赤のときはfield_dataのyを左右反転にする
+    for (int i = 0; i < 5; i++) {
+        // 赤のときはfield_dataのyを左右反転にする
+        if (is_red) {
             double field_data_y[2];
-            field_data_y[0]  = field_data[i][2];
-            field_data_y[1]  = field_data[i][3];
+            field_data_y[0]  = field_data_raw[i][2];
+            field_data_y[1]  = field_data_raw[i][3];
             field_data[i][2] = 5.4 - field_data_y[1];
             field_data[i][3] = 5.4 - field_data_y[0];
+        } else {
+            field_data[i][2] = field_data_raw[i][2];
+            field_data[i][3] = field_data_raw[i][3];
         }
+        field_data[i][0] = field_data_raw[i][0];
+        field_data[i][1] = field_data_raw[i][1];
     }
 }
 
@@ -132,6 +136,23 @@ void map_publisher::publish_map () {
 
 void map_publisher::box_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr msg) {
     boxes = *msg;
+    publish_map ();
+}
+void map_publisher::is_red_callback (const std_msgs::msg::Bool::SharedPtr msg) {
+    is_red = msg->data;
+    for (int i = 0; i < 5; i++) {
+        if (is_red) {
+            // 赤のときはfield_dataのyを左右反転にする
+            double field_data_y[2];
+            field_data_y[0]  = field_data[i][2];
+            field_data_y[1]  = field_data[i][3];
+            field_data[i][2] = 5.4 - field_data_y[1];
+            field_data[i][3] = 5.4 - field_data_y[0];
+        } else {
+            field_data[i][2] = field_data_raw[i][2];
+            field_data[i][3] = field_data_raw[i][3];
+        }
+    }
     publish_map ();
 }
 }  // namespace map_publisher
