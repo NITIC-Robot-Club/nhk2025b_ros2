@@ -2,8 +2,7 @@
   ros__parameters:
     initial_positions:
       blue:
-        x: 0.65
-        y: 0.65
-      red:
-        x: 0.65
-        y: 0.65
+        x: 0.4
+        y: 0.3
+    robot_width: 0.8
+    robot_length: 0.6

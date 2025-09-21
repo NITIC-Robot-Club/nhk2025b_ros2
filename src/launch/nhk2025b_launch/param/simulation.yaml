@@ -6,14 +6,14 @@
 
 lidar_simulation_front:
   ros__parameters:
-    lidar_x: 0.3
+    lidar_x: 0.249
     lidar_y: 0.0
     lidar_z: -1.57
     frame_name: "lidar_front"
 
 lidar_simulation_rear:
   ros__parameters:
-    lidar_x: -0.3
+    lidar_x: -0.249
     lidar_y: 0.0
     lidar_z: 1.57
     frame_name: "lidar_rear"

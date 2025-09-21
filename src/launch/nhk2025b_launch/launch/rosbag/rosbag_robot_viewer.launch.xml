@@ -1,0 +1,8 @@
+<launch>
+    <node_container pkg="rclcpp_components" exec="component_container" name="rosbag_robot_viewer" namespace="">
+        <composable_node pkg="nhk2025b_visualization" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
+        <composable_node pkg="nhk2025b_lidar_merger" plugin="lidar_merger::lidar_merger" name="lidar_merger"/>
+    </node_container>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/tf.launch.xml"/>
+    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nhk2025b_launch)/rviz/rosbag_robot.rviz"/>
+</launch>

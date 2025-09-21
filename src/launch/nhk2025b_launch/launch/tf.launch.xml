@@ -1,4 +1,4 @@
 <launch>
-    <node pkg="tf2_ros" exec="static_transform_publisher" name="base_link_to_lidar_front" args="0.3 0 0 0 0 -0.7071 0.7071 base_link lidar_front"/>
-    <node pkg="tf2_ros" exec="static_transform_publisher" name="base_link_to_lidar_rear" args="-0.3 0 0 0 0 0.7071 0.7071 base_link lidar_rear"/>
+    <node pkg="tf2_ros" exec="static_transform_publisher" name="base_link_to_lidar_front" args="0.249 0 0 0 0 0 1 base_link lidar_front"/>
+    <node pkg="tf2_ros" exec="static_transform_publisher" name="base_link_to_lidar_rear" args="-0.249 0 0 0 0 0.7071 0.7071 base_link lidar_rear"/>
 </launch>

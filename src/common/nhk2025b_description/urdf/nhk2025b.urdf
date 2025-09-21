@@ -1,0 +1,319 @@
+<?xml version="1.0"?>
+<robot name="nhk2025b">
+
+<!-- material color setting -->
+<material name="#ffffff">
+  <color rgba="1.000 1.000 1.000 1.0"/>
+</material>
+
+  <link name="base_link"/>
+
+  <joint name="base_link_to_c_nhk2025b" type="fixed">
+    <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
+    <parent link="base_link"/>
+    <child link="c_nhk2025b"/>
+  </joint>
+
+  <link name="c_nhk2025b">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.008084"/>
+      <inertia ixx="0.493737" ixy="-0.002906" ixz="-0.092411" iyy="0.367144" iyz="-0.000025" izz="0.437208"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/c_nhk2025b.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/c_nhk2025b.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="c_nhk2025b_to_r_box_arm" type="revolute">
+    <origin xyz="0.15 -0.35 0.065" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0 0 1"/>
+    <parent link="c_nhk2025b"/>
+    <child link="r_box_arm"/>
+    <limit lower="0" upper="1.570796" effort="0" velocity="0"/>
+  </joint>
+
+  <link name="r_box_arm">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.000489"/>
+      <inertia ixx="0.034793" ixy="-0.000064" ixz="0.000628" iyy="0.035137" iyz="-0.000889" izz="0.024262"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/r_box_arm.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/r_box_arm.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_box_arm_to_r_box_arm_height" type="prismatic">
+    <origin xyz="-0.1 0.045 0.0" rpy="0.0 0.0 0.0"/>
+    <limit effort="1000.0" lower="0" upper="1.0" velocity="0.5"/>
+    <axis xyz = "0 0 1"/>
+    <parent link="r_box_arm"/>
+    <child link="r_box_arm_height"/>
+  </joint>
+
+  <link name="r_box_arm_height">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.000241"/>
+      <inertia ixx="0.001619" ixy="0.000140" ixz="0.000021" iyy="0.001570" iyz="0.000035" izz="0.001710"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/r_box_arm_height.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/r_box_arm_height.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="r_box_arm_height_to_r_box_arm_strong" type="prismatic">
+    <origin xyz="0.255 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <limit effort="1000.0" lower="0" upper="0.3" velocity="0.5"/>
+    <axis xyz = "-1 0 0"/>
+    <parent link="r_box_arm_height"/>
+    <child link="r_box_arm_strong"/>
+  </joint>
+
+  <link name="r_box_arm_strong">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.000129"/>
+      <inertia ixx="0.001283" ixy="-0.000133" ixz="0.000008" iyy="0.001790" iyz="-0.000006" izz="0.001813"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/r_box_arm_strong.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/r_box_arm_strong.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="c_nhk2025b_to_l_box_arm" type="revolute">
+    <origin xyz="0.15 0.35 0.065" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0 0 -1"/>
+    <parent link="c_nhk2025b"/>
+    <child link="l_box_arm"/>
+    <limit lower="0" upper="1.570796" effort="0" velocity="0"/>
+  </joint>
+
+  <link name="l_box_arm">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.000489"/>
+      <inertia ixx="0.173930" ixy="-0.000562" ixz="0.005498" iyy="0.182804" iyz="0.007761" izz="0.011761"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/l_box_arm.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/l_box_arm.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="l_box_arm_to_l_box_arm_height" type="prismatic">
+    <origin xyz="-0.1 -0.045 0.0" rpy="0.0 0.0 0.0"/>
+    <limit effort="1000.0" lower="0" upper="1.0" velocity="0.5"/>
+    <axis xyz = "0 0 1"/>
+    <parent link="l_box_arm"/>
+    <child link="l_box_arm_height"/>
+  </joint>
+
+  <link name="l_box_arm_height">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.000241"/>
+      <inertia ixx="0.001837" ixy="0.000403" ixz="0.000061" iyy="0.001817" iyz="-0.000102" izz="0.002491"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/l_box_arm_height.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/l_box_arm_height.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="l_box_arm_height_to_l_box_arm_strong" type="prismatic">
+    <origin xyz="0.255 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <limit effort="1000.0" lower="0" upper="0.3" velocity="0.5"/>
+    <axis xyz = "-1 0 0"/>
+    <parent link="l_box_arm_height"/>
+    <child link="l_box_arm_strong"/>
+  </joint>
+
+  <link name="l_box_arm_strong">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.000129"/>
+      <inertia ixx="0.001302" ixy="-0.001162" ixz="0.000067" iyy="0.008836" iyz="0.000055" izz="0.009058"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/l_box_arm_strong.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/l_box_arm_strong.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="c_nhk2025b_to_c_E_arm" type="revolute">
+    <origin xyz="-0.225 0.0 0.225" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0 -1 0"/>
+    <parent link="c_nhk2025b"/>
+    <child link="c_E_arm"/>
+    <limit lower="0" upper="3.14159" effort="0" velocity="0"/>
+  </joint>
+
+  <link name="c_E_arm">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.001189"/>
+      <inertia ixx="0.004958" ixy="-0.000229" ixz="0.006035" iyy="0.022369" iyz="0.000083" izz="0.017905"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/c_E_arm.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/c_E_arm.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="c_nhk2025b_to_l_pylon_arm_height" type="prismatic">
+    <origin xyz="0.225 0.27 0.375" rpy="0.0 0.0 0.0"/>
+    <limit effort="1000.0" lower="0" upper="0.3" velocity="0.5"/>
+    <axis xyz = "0 0 1"/>
+    <parent link="c_nhk2025b"/>
+    <child link="l_pylon_arm_height"/>
+  </joint>
+
+  <link name = "l_pylon_arm_height"/>
+
+  <joint name="l_pylon_arm_height_to_l_pylon_arm" type="revolute">
+    <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="l_pylon_arm_height"/>
+    <child link="l_pylon_arm"/>
+    <limit lower="0" upper="1.570796" effort="0" velocity="0"/>
+  </joint>
+
+  <link name="l_pylon_arm">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.000280"/>
+      <inertia ixx="0.002149" ixy="-0.000020" ixz="-0.000006" iyy="0.001355" iyz="-0.000453" izz="0.000813"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/l_pylon_arm.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/l_pylon_arm.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="c_nhk2025b_to_r_pylon_arm_height" type="prismatic">
+    <origin xyz="0.225 -0.27 0.375" rpy="0.0 0.0 0.0"/>
+    <limit effort="1000.0" lower="0" upper="0.3" velocity="0.5"/>
+    <axis xyz = "0 0 1"/>
+    <parent link="c_nhk2025b"/>
+    <child link="r_pylon_arm_height"/>
+  </joint>
+
+  <link name = "r_pylon_arm_height"/>
+
+  <joint name="r_pylon_arm_height_to_r_pylon_arm" type="revolute">
+    <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="r_pylon_arm_height"/>
+    <child link="r_pylon_arm"/>
+    <limit lower="0" upper="1.570796" effort="0" velocity="0"/>
+  </joint>
+
+  <link name="r_pylon_arm">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.000280"/>
+      <inertia ixx="0.002200" ixy="-0.000012" ixz="-0.000004" iyy="0.002032" iyz="0.000277" izz="0.001922"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/r_pylon_arm.stl"/>
+      </geometry>
+      <material name="#ffffff"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2025b_description/meshes/r_pylon_arm.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+</robot>

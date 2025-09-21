@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urdf_part>
+    <material name="#FFFFFF">
+        <color rgba="1.000000 1.000000 1.000000 1.0" />
+    </material>
+    <link name="r_box_arm">
+        <visual>
+            <origin xyz="-0.138955 -0.026604 0.307871" rpy="0 0 0"/>
+            <material name="#FFFFFF" />
+        </visual>
+        <inertial>
+            <origin xyz="-0.138955 -0.026604 0.307871"/>
+            <mass value="0.000488982554"/>
+            <volume value="0.000488982554"/>
+            <inertia ixx="0.03479348" ixy="-0.00006430" ixz="0.00062818" iyy="0.03513727" iyz="-0.00088917" izz="0.02426201"/>
+        </inertial>
+        <center_of_mass>-0.138955 -0.026604 0.307871</center_of_mass>
+    </link>
+    <point name="point2" type="fixed">
+        <point_xyz>-0.100000 0.045000 0.000000</point_xyz>
+    </point>
+    <joint>
+        <axis xyz="0.0 0.0 1.0" />
+    </joint>
+</urdf_part>
