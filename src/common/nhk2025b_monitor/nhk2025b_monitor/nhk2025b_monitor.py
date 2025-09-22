@@ -71,9 +71,15 @@ class nhk2025b_monitor(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = nhk2025b_monitor()
-    rclpy.spin(node)
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
     node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.shutdown()
+    except Exception:
+        pass
 
 
 if __name__ == '__main__':
