@@ -7,6 +7,7 @@
 
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nhk2025b_msgs/msg/box_array.hpp>
+#include <std_msgs/msg/bool.hpp>
 
 #include <algorithm>
 
@@ -19,11 +20,12 @@ class map_publisher : public rclcpp::Node {
     nhk2025b_msgs::msg::BoxArray boxes;
 
     void   box_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr msg);
+    void   is_red_callback (const std_msgs::msg::Bool::SharedPtr msg);
     void   publish_map ();
     bool   is_red;
     double resolution_;
 
-    double field_data[5][4] = {
+    double field_data_raw[5][4] = {
         // {x0,x1,y0,y1}
         // 青ゾーン前提で設定
         {  0.0, 0.15,   0.0,  5.4}, // 手前
@@ -32,9 +34,11 @@ class map_publisher : public rclcpp::Node {
         { 6.95, 10.8, 5.175,  5.4}, //  共有
         {  0.0, 10.8,  5.37,  5.4}, // 左
     };
+    double field_data[5][4]; // x0,x1,y0,y1
 
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr    publisher_;
     rclcpp::Subscription<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_subscriber_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr          is_red_subscriber_;
     rclcpp::TimerBase::SharedPtr                                  timer_;
 };
 }  // namespace map_publisher

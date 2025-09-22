@@ -1,9 +1,7 @@
 <launch>
-  <arg name="is_red" default="false"/>
   <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_simulation_container" namespace="">
     <composable_node pkg="nhk2025b_simulation" plugin="simulation::simulation" name="simulation">
       <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
-      <param name="is_red" value="$(var is_red)"/>
     </composable_node>
     <composable_node pkg="nhk2025b_simulation" plugin="lidar_simulation::lidar_simulation" name="lidar_simulation_front">
       <param from="$(find-pkg-share nhk2025b_launch)/param/simulation.yaml"/>
@@ -19,7 +17,6 @@
     </composable_node>
   </node_container>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml">
-    <arg name="is_red" value="$(var is_red)"/>
     <arg name="state_graph_path" value="$(find-pkg-share nhk2025b_launch)/state_graph/simulate.md"/>
   </include>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/localization.launch.xml"/>
@@ -27,6 +24,5 @@
   <include file="$(find-pkg-share nhk2025b_launch)/launch/visualization.launch.xml"/>
   <node pkg="nhk2025b_behavior" exec="behavior" name="behavior" output="screen">
     <param name="state_graph_path" value="$(var state_graph_path)"/>
-    <param name="is_red" value="$(var is_red)"/>
   </node>
 </launch>

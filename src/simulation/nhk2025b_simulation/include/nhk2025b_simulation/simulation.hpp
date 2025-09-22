@@ -7,6 +7,7 @@
 #include <nhk2025b_msgs/msg/robot_status.hpp>
 #include <nhk2025b_msgs/msg/swerve.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <std_msgs/msg/bool.hpp>
 
 namespace simulation {
 class simulation : public rclcpp::Node {
@@ -16,6 +17,7 @@ class simulation : public rclcpp::Node {
    private:
     void timer_callback ();
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
+    void is_red_callback (const std_msgs::msg::Bool::SharedPtr msg);
 
     double wheel_radius;
     double robot_width, robot_length;
@@ -24,6 +26,9 @@ class simulation : public rclcpp::Node {
     int    count_;
     bool   sig_;
     double x_, y_, z_;
+    bool   is_red, last_is_red;
+    double initial_x_blue, initial_y_blue;
+    double initial_x_red, initial_y_red;
 
     rclcpp::TimerBase::SharedPtr timer_;
 
@@ -32,6 +37,7 @@ class simulation : public rclcpp::Node {
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr           imu_publisher_;
     rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr   swerve_subscriber_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr          is_red_subscriber_;
 };
 }  // namespace simulation
 
