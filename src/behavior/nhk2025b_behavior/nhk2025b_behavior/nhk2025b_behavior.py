@@ -23,6 +23,8 @@ def parse_labels_and_positions(md_path):
     transitions = []
 
     for line in body.splitlines():
+        if line[0]=="#":
+            continue
         m = re.match(r"\s*([a-zA-Z0-9_]+)\s*:\s*(.+)", line)
         if m:
             state, label = m.groups()
@@ -80,7 +82,9 @@ class nhk2025b_behavior(Node):
         }
         
         self.cond_env = {
-            "check_ready": self.check_ready
+            "check_ready": self.check_ready,
+            "check_pylon_arm_expand": self.check_pylon_arm_expand,
+            # "check_pylon_arm_height": self.check_pylon_arm_height,
         }
 
         self.label_to_state, self.state_to_pose, self.state_to_actions, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
@@ -101,6 +105,10 @@ class nhk2025b_behavior(Node):
         self.create_subscription(Command, '/command', self.command_callback, 1)
         self.create_subscription(Bool, '/is_red', self.is_red_callback, 1)
 
+        # self.create_subscription(EArm, '/e_arm/result', self.e_arm_callback , 1)
+        # self.create_subscription(BoxArm, '/box_arm/result', self.box_arm_callback , 1)
+        self.create_subscription(PylonArm, '/pylon_arm/result', self.pylon_arm_callback, 1)
+
         self.state_array = self.build_state_array()
         self.current_state = '[*]'  # 初期状態
         self.last_result = None
@@ -113,6 +121,8 @@ class nhk2025b_behavior(Node):
         self.conveyor_target = Conveyor()
         self.pylon_arm_target = PylonArm()
         self.command = Command()
+
+        self.pylon_arm_error = None
         self.waiting_for_goal = False
 
         self.finished = False  # 完了フラグ
@@ -147,6 +157,12 @@ class nhk2025b_behavior(Node):
 
     def is_red_callback(self, msg):
         self.is_red = msg.data
+      
+    def pylon_arm_callback(self, msg):
+        self.pylon_arm_error = PylonArm()
+        for i in range(2):
+            self.pylon_arm_error.expand[i] = self.pylon_arm_target.expand[i] - msg.expand[i]
+            self.pylon_arm_error.height[i] = self.pylon_arm_target.height[i] - msg.height[i]
 
     def publish_state(self, finished=False):
         if finished:
@@ -298,6 +314,9 @@ class nhk2025b_behavior(Node):
 
     def check_ready(self):
         return self.command.automate_ready
+
+    def check_pylon_arm_expand(self):
+        return abs(self.pylon_arm_error.expand[0]) + abs(self.pylon_arm_error.expand[1]) < 0.1
 
     def publish_target(self):
         self.e_arm_pub.publish(self.e_arm_target)

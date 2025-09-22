@@ -7,10 +7,11 @@
     </composable_node>
     <composable_node pkg="nhk2025b_canable" plugin="canable::canable" name="canable"/>
   </node_container>
-  <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml">
-    <arg name="state_graph_path" value="$(find-pkg-share nhk2025b_launch)/state_graph/real.md"/>
-  </include>
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml"/>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/sensor.launch.py"/>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/localization.launch.xml"/>
-  <!-- <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/> -->
+  <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/>
+  <node pkg="nhk2025b_behavior" exec="behavior" name="behavior" output="screen">
+    <param name="state_graph_path" value="$(find-pkg-share nhk2025b_launch)/state_graph/test.md"/>
+  </node>
 </launch>
