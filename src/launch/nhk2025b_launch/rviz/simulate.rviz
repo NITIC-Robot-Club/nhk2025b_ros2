@@ -269,7 +269,7 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /localization/current_pose
           Value: false
-        - Angle Tolerance: 0.10000000149011612
+        - Angle Tolerance: 0.029999999329447746
           Class: rviz_default_plugins/Odometry
           Covariance:
             Orientation:
@@ -287,9 +287,9 @@ Visualization Manager:
               Value: true
             Value: false
           Enabled: true
-          Keep: 10
+          Keep: 100
           Name: オドメトリ
-          Position Tolerance: 0.10000000149011612
+          Position Tolerance: 0.029999999329447746
           Shape:
             Alpha: 0.699999988079071
             Axes Length: 1
@@ -602,7 +602,7 @@ Visualization Manager:
           Enabled: true
           Name: 経路当たり判定
           Namespaces:
-            path_collision: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile

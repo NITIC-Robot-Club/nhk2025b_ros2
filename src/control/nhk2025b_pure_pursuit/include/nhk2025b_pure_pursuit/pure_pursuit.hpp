@@ -20,16 +20,19 @@ class pure_pursuit : public rclcpp::Node {
     double lookahead_time_;                // 速度スケーリング用の時間 [s]
     double min_lookahead_distance_;        // 最小lookahead距離 [m]
     double max_lookahead_distance_;        // 最大lookahead距離 [m]
-    double angle_lookahead_distance_;      // 角度スケーリング用の距離 [m]
+    double angle_speed_p_;                 // 角度比例ゲイン
     double curvature_decceleration_p_;     // 曲率減速用の比例ゲイン
-    double goal_deceleration_distance_p_;  // ゴール減速距離 [m]
-    double goal_deceleration_p_;           // ゴール到達許容距離 [m]
-    double angle_p_;                       // 角度ゲイン
+    double min_curvature_speed_m_s_;       // 曲率減速用の最低速度 [m/s]
+    double angle_decceleration_p_;         // 角度減速用の比例ゲイン
     double max_speed_xy_m_s_;              // 最大並進速度
     double max_speed_z_rad_s_;             // 最大回転速度
     double max_acceleration_xy_m_s2_;      // 最大加速度
     double max_acceleration_z_rad_s2_;     // 最大角加速度 [rad/s^2]
-    double angle_deceleration_p_;          // 角度減速用の比例ゲイン
+    double goal_deceleration_m_s2_;        // ゴール減速用の減速度 [m/s^2]
+    double goal_position_tolerance_;       // ゴール位置許容誤差 [m]
+    double goal_yaw_tolerance_;            // ゴールヨー許容誤差 [rad]
+    double goal_speed_tolerance_xy_m_s_;   // ゴール速度許容誤差 [m/s]
+    double goal_speed_tolerance_z_rad_s_;  // ゴール速度許容誤差 [rad/s]
 
     double lookahead_distance_;  // 現在のlookahead距離 [m]（動的に計算される）
     // 入力データ
@@ -45,8 +48,7 @@ class pure_pursuit : public rclcpp::Node {
     // ROS2通信
     rclcpp::TimerBase::SharedPtr                                     timer_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr   cmd_vel_publisher_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    lookahead_position_publisher_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    lookahead_angle_publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    lookahead_publisher_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subscriber_;
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr             path_subscriber_;
 };

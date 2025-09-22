@@ -23,6 +23,9 @@ def parse_labels_and_positions(md_path):
     transitions = []
 
     for line in body.splitlines():
+        if line=="":
+            continue
+        
         if line[0]=="#":
             continue
         m = re.match(r"\s*([a-zA-Z0-9_]+)\s*:\s*(.+)", line)
@@ -275,7 +278,7 @@ class nhk2025b_behavior(Node):
         yaw = math.atan2(2.0*(q.w*q.z + q.x*q.y), 1.0 - 2.0*(q.y*q.y + q.z*q.z))
         dyaw = abs((yaw - math.radians(goal_yaw) + math.pi) % (2*math.pi) - math.pi)
         deg = math.degrees(dyaw)
-        return dist < 0.10 and deg < 5.0
+        return dist < 0.10 and deg < 10.0
 
     def set_position(self, x, y, yaw_deg):
         if self.is_red:
