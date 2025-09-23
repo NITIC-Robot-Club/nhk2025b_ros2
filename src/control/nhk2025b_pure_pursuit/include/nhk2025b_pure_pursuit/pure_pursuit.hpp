@@ -26,6 +26,7 @@ class pure_pursuit : public rclcpp::Node {
     double angle_decceleration_p_;         // 角度減速用の比例ゲイン
     double max_speed_xy_m_s_;              // 最大並進速度
     double max_speed_z_rad_s_;             // 最大回転速度
+    double min_speed_z_rad_s_;             // 最小回転速度
     double max_acceleration_xy_m_s2_;      // 最大加速度
     double max_acceleration_z_rad_s2_;     // 最大角加速度 [rad/s^2]
     double goal_deceleration_m_s2_;        // ゴール減速用の減速度 [m/s^2]

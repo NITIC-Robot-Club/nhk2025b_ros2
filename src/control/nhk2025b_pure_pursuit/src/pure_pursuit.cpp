@@ -19,6 +19,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->declare_parameter ("angle_decceleration_p", 1.0);
     this->declare_parameter ("max_speed_xy_m_s", 3.0);
     this->declare_parameter ("max_speed_z_rad_s", 3.14);
+    this->declare_parameter ("min_speed_z_rad_s", 0.3);
     this->declare_parameter ("max_acceleration_xy_m_s2_", 10.0);
     this->declare_parameter ("max_acceleration_z_rad_s2", 10.0);
     this->declare_parameter ("goal_deceleration_m_s2", 4.0);
@@ -47,6 +48,7 @@ void pure_pursuit::timer_callback () {
     this->get_parameter ("angle_decceleration_p", angle_decceleration_p_);
     this->get_parameter ("max_speed_xy_m_s", max_speed_xy_m_s_);
     this->get_parameter ("max_speed_z_rad_s", max_speed_z_rad_s_);
+    this->get_parameter ("min_speed_z_rad_s", min_speed_z_rad_s_);
     this->get_parameter ("max_acceleration_xy_m_s2_", max_acceleration_xy_m_s2_);
     this->get_parameter ("max_acceleration_z_rad_s2", max_acceleration_z_rad_s2_);
     this->get_parameter ("goal_deceleration_m_s2", goal_deceleration_m_s2_);
@@ -162,6 +164,14 @@ void pure_pursuit::timer_callback () {
     yaw_speed                 = last_cmd_vel_.twist.angular.z + angle_acceleration * delta_t;
     yaw_speed                 = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
 
+    if(!goal_yaw_reached) {
+        if(yaw_speed < 0) {
+            yaw_speed = std::min(yaw_speed, -min_speed_z_rad_s_);
+        } else {
+            yaw_speed = std::max(yaw_speed, min_speed_z_rad_s_);
+        }
+    }
+
     if (goal_position_reached && goal_speed_xy_reached) {
         speed = 0.0;
     }
@@ -186,6 +196,8 @@ void pure_pursuit::timer_callback () {
     lookahead_msg.pose            = path_.poses[lookahead_index].pose;
     lookahead_publisher_->publish (lookahead_msg);
     last_cmd_vel_ = cmd_vel;
+
+    RCLCPP_INFO(this->get_logger(), "xy: pos: %d, speed: %d, z: pos: %d, speed: %d", goal_position_reached, goal_speed_xy_reached, goal_yaw_reached, goal_speed_z_reached);
 }
 }  // namespace pure_pursuit
 

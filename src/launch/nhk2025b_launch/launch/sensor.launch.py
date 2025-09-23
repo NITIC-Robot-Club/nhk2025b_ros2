@@ -111,7 +111,8 @@ def generate_launch_description():
             'scan_range_start':scan_range_start,
             'scan_range_stop':scan_range_stop
         }],
-        output='screen'
+        output='screen',
+        arguments=['--ros-args', '--log-level', 'richbeam_lidar_node0:=WARN']
     )
 
     ld = LaunchDescription()
