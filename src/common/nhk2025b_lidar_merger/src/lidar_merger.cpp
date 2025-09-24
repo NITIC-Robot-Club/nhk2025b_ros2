@@ -22,8 +22,8 @@ void lidar_merger::publish_merged_point_cloud2 () {
 
     // 一時的に有効な点を格納するバッファ
     std::vector<std::tuple<float, float, float>> valid_points;
-    double                                       robot_width  = 0.8;
-    double                                       robot_length = 0.6;
+    double                                       robot_width  = 0.9;
+    double                                       robot_length = 0.7;
 
     if (!scan1.ranges.empty ()) {
         // scan1のtf -> base_link変換

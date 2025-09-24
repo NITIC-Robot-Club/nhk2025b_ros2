@@ -1,0 +1,19 @@
+<launch>
+    <node name="richbeam_lidar_node0" pkg="lakibeam1" exec="lakibeam1_scan_node" output="screen" args="--ros-args --log-level WARN">
+        <param name="frame_id" value="lidar_front"/>
+        <param name="output_topic" value="/sensor/lidar/front/scan" />
+        <param name="inverted" value="false"/>
+        <param name="hostip" value="0.0.0.0"/>
+        <param name="port" value="'2368'"/>
+        <param name="angle_offset" value="0"/>
+    </node>
+
+    <node name="richbeam_lidar_node1" pkg="lakibeam1" exec="lakibeam1_scan_node" output="screen" args="--ros-args --log-level WARN">
+        <param name="frame_id" value="lidar_rear"/>
+        <param name="output_topic" value="/sensor/lidar/rear/scan" />
+        <param name="inverted" value="false"/>
+        <param name="hostip" value="0.0.0.0"/>
+        <param name="port" value="'2369'"/>
+        <param name="angle_offset" value="0"/>
+    </node>
+</launch>

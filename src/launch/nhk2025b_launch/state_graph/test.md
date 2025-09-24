@@ -29,10 +29,10 @@ stateDiagram-v2
     pylon_2_setup_0 : set_position(1.5, 2.0, 0.0)
 
     pylon_2_setup_1 : go to pylon_2_setup_1
-    pylon_2_setup_1 : set_position(1.5, 0.5, 0.0)
+    pylon_2_setup_1 : set_position(1.5, 1.0, 0.0)
 
     pylon_2_get : go to pylon_2_get
-    pylon_2_get : set_position(2.62, 0.5, 0.0)
+    pylon_2_get : set_position(2.62, 1.0, 0.0)
 
     pylon_2_drop : go to pylon_2_drop
     pylon_2_drop : set_position(8.0, 1.0, 0.0)
@@ -44,7 +44,7 @@ stateDiagram-v2
     pylon_3_setup : set_position(3.5, 1.0, 0.0)
 
     pylon_3_get : go to pylon_3_get
-    pylon_3_get : set_position(3.5, 0.5, 0.0)
+    pylon_3_get : set_position(3.5, 1.0, 0.0)
 
     pylon_3_drop : go to pylon_3_drop
     pylon_3_drop : set_position(8.0, 1.5, 0.0)
@@ -62,14 +62,14 @@ stateDiagram-v2
     pylon_0_out --> e_01_get
     e_01_get --> e_01_hold
     e_01_hold --> e_01_drop
-    e_01_drop --> pylon_2_setup_0
-    pylon_2_setup_0 --> pylon_2_setup_1
-    pylon_2_setup_1 --> pylon_2_drop
-    pylon_2_drop --> pylon_2_out
-    pylon_2_out --> pylon_3_setup
+    e_01_drop --> pylon_3_setup
     pylon_3_setup --> pylon_3_get
     pylon_3_get --> pylon_3_drop
     pylon_3_drop --> pylon_3_out
-    pylon_3_out --> start_position_emg
+    pylon_3_out --> pylon_2_setup_0
+    pylon_2_setup_0 --> pylon_2_setup_1
+    pylon_2_setup_1 --> pylon_2_drop
+    pylon_2_drop --> pylon_2_out
+    pylon_2_out -->start_position_emg
     start_position_emg --> [*]
 ```
