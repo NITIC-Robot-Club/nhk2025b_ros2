@@ -3,17 +3,18 @@
 namespace path_planner {
 path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_planner", options) {
     theta_resolution = this->declare_parameter<int> ("theta_resolution", 5);
-    resolution_ms    = this->declare_parameter<int> ("resolution_ms", 100);
     offset_mm        = this->declare_parameter<int> ("offset_mm", 30);
     penalty_mm       = this->declare_parameter<int> ("penalty_mm", 750);
-    robot_height_mm  = this->declare_parameter<int> ("robot_height_mm", 800);
-    robot_width_mm   = this->declare_parameter<int> ("robot_width_mm", 600);
+    robot_width      = this->declare_parameter<double> ("robot_width", 0.8);
+    robot_length     = this->declare_parameter<double> ("robot_length", 0.6);
     tolerance_xy_mm  = this->declare_parameter<int> ("tolerance_xy_mm", 30);
     tolerance_z_rad  = this->declare_parameter<double> ("tolerance_z_rad", 0.03);
     grad_alpha       = this->declare_parameter<double> ("grad_alpha", 1.0);
     grad_beta        = this->declare_parameter<double> ("grad_beta", 8.2);
     grad_gamma       = this->declare_parameter<double> ("grad_gamma", 0.0);
     grad_step_size   = this->declare_parameter<double> ("grad_step_size", 0.1);
+    heuristic_weight = this->declare_parameter<double> ("heuristic_weight", 1.0);
+    map_cost_weight  = this->declare_parameter<double> ("map_cost_weight", 0.0);
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 1);
     current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&path_planner::current_pose_callback, this, std::placeholders::_1));
@@ -24,25 +25,18 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
 
     inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 1);
     theta_map_publisher   = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/thetamap", 1);
-    path.header.frame_id  = "map";
 }
 
 void path_planner::timer_callback () {
+    this->get_parameter ("heuristic_weight", heuristic_weight);
+    this->get_parameter ("map_cost_weight", map_cost_weight);
+
     nav_msgs::msg::Path empty_path;
     empty_path.header.frame_id = "map";
     empty_path.header.stamp    = this->now ();
-    double diff_x              = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
-    double diff_y              = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
-    double distance            = std::hypot (diff_x, diff_y);
-    double current_yaw         = get_yaw_2d (current_pose.pose.orientation);
-    double goal_yaw            = get_yaw_2d (safe_goal_pose.pose.orientation);
-    double delta_yaw           = goal_yaw - current_yaw;
-    if (delta_yaw > M_PI)
-        delta_yaw -= 2 * M_PI;
-    else if (delta_yaw < -M_PI)
-        delta_yaw += 2 * M_PI;
-    path.header.stamp = this->now ();
-    path_publisher->publish (path);
+    send_path.header.frame_id  = "map";
+    send_path.header.stamp = this->now ();
+    path_publisher->publish (send_path);
 }
 
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
@@ -55,18 +49,24 @@ void path_planner::create_path () {
     if (current_pose.header.stamp.sec == 0) return;
     if (goal_pose.header.stamp.sec == 0) return;
 
-    path.poses.clear ();
-
+    nav_msgs::msg::Path path;
+    path.header.frame_id = "map";
+    path.header.stamp    = this->now ();
     linear_astar ();
 
     path_smoother ();
     angular_astar (path);
+    // path.poses = linear_path.poses;
+    RCLCPP_INFO(this->get_logger (), "%d ,%d ,%d", linear_path.poses.size (), smoothed_path.poses.size (), path.poses.size ());
 
     for (int i = 0; i < path.poses.size (); i++) {
         path.poses[i].header = path.header;
     }
     if (path.poses.size () != 0) safe_goal_pose = path.poses.back ();
     path_publisher->publish (path);
+
+    send_path.poses.clear ();
+    send_path = path;
 }
 
 void path_planner::inflate_map () {
@@ -87,11 +87,11 @@ void path_planner::inflate_map () {
     inflated_map.clear ();
     occ_map.data.resize (map_width * map_height, 0);
     inflated_map.resize (map_height, std::vector<int8_t> (map_width, 0));
-    double width_radius         = robot_width_mm / 2000.0 / map_resolution;
-    double height_radius        = robot_height_mm / 2000.0 / map_resolution;
+    double width_radius         = robot_width / 2 / map_resolution;
+    double length_radius        = robot_length / 2 / map_resolution;
     int    offset_radius        = std::ceil (offset_mm / 1000.0 / map_resolution);
-    int    max_inflation_radius = std::ceil (std::hypot (width_radius, height_radius)) + offset_radius;
-    int    min_inflation_radius = std::ceil (std::min (width_radius, height_radius)) + offset_radius;
+    int    max_inflation_radius = std::ceil (std::hypot (width_radius, length_radius)) + offset_radius;
+    int    min_inflation_radius = std::ceil (std::min (width_radius, length_radius)) + offset_radius;
     int    inflate_radius       = std::max (max_inflation_radius, static_cast<int> (std::ceil (penalty_mm / 1000.0 / map_resolution)));
     // マップ全体を走査
     for (int y = 0; y < map_height; ++y) {
@@ -173,7 +173,6 @@ void path_planner::path_smoother () {
             smoothed_path.poses[i].pose.position.y -= total_y * grad_step_size;
         }
     }
-    // RCLCPP_INFO (this->get_logger (), "Smoothing  %zu points", smoothed_path.poses.size ());
 }
 std::vector<double> path_planner::angular_smoother (std::vector<double> theta_path) {
     auto idx_to_rad = [&] (double idx) { return idx * 2 * M_PI / angle_cost_map[0].size (); };
@@ -252,7 +251,7 @@ void path_planner::linear_astar () {
             double new_cost = cost_so_far[to_index (current.x, current.y)] + std::hypot (dx, dy);
             if (!cost_so_far.count (idx) || new_cost < cost_so_far[idx]) {
                 cost_so_far[idx] = new_cost;
-                double priority  = new_cost + std::hypot (goal.first - next_x, goal.second - next_y);
+                double priority  = new_cost + linear_cost (goal.first - next_x, goal.second - next_y, next_x, next_y);
                 open.push ({next_x, next_y, new_cost, priority});
                 came_from[idx] = {current.x, current.y};
             }
@@ -268,22 +267,17 @@ void path_planner::linear_astar () {
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
             linear_path.poses.clear ();
+            RCLCPP_INFO(this->get_logger (), "No linear path");
             return;
         }
         curr = came_from[idx];
     }
-    if (linear_path.poses.size () == 0) {
-        geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x = goal.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
-        pose.pose.position.y = goal.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
-        linear_path.poses.push_back (pose);
+    if (linear_path.poses.size () != 0) {
+        std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
     }
-    std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
-    // RCLCPP_INFO (this->get_logger (), "Linear %zu points", linear_path.poses.size ());
 }
 void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     if (smoothed_path.poses.size () == 0) {
-        // RCLCPP_WARN (this->get_logger (), "linear path is empty, cannot perform angular A*");
         return;
     }
 
@@ -363,6 +357,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
             path.poses.clear ();
+            RCLCPP_INFO(this->get_logger (), "No Path");
             return;
         }
         curr = came_from[idx];
@@ -372,6 +367,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     theta_path = angular_smoother (theta_path);
 
     for (int i = 0; i < theta_path.size (); i++) {
+        if(i >= smoothed_path.poses.size()) break;
         geometry_msgs::msg::PoseStamped pose;
         pose.pose.position.x    = smoothed_path.poses[i].pose.position.x;
         pose.pose.position.y    = smoothed_path.poses[i].pose.position.y;
@@ -380,7 +376,15 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         pose.pose.orientation.w = std::cos (yaw / 2.0);
         path.poses.push_back (pose);
     }
-    // RCLCPP_INFO (this->get_logger (), "Angular %zu points", path.poses.size ());
+}
+double path_planner::linear_cost(int dx, int dy, int x, int y){
+    auto get_cost = [&] (int x, int y) -> double {
+        if (x < 0 || y < 0 || x >= map_width || y >= map_height) return 1.0;
+        return static_cast<double> (occ_map.data[y * map_width + x]) / 100.0;
+    };
+    double cost = 1.0;
+    cost = hypot(dx, dy) * heuristic_weight + get_cost(x, y) * map_cost_weight;
+    return cost;
 }
 double path_planner::theta_heuristic (int dx, int theta) {
     theta = std::abs (theta);
@@ -391,8 +395,8 @@ double path_planner::theta_heuristic (int dx, int theta) {
 void path_planner::init_rotated_footprint () {
     int num_rotations = 360 / theta_resolution;
     rotated_footprint.resize (num_rotations);
-    double inital_angle = std::atan2 (robot_height_mm, robot_width_mm);
-    double half_radius  = std::hypot (robot_width_mm / 2000.0, robot_height_mm / 2000.0) / map_resolution;
+    double inital_angle = std::atan2 (robot_width, robot_length);
+    double half_radius  = std::hypot (robot_width / 2.0, robot_length / 2.0) / map_resolution;
     for (int i = 0; i < num_rotations; ++i) {
         double angle            = i * theta_resolution * M_PI / 180.0;
         rotated_footprint[i][0] = {static_cast<int> (half_radius * std::cos (angle + inital_angle)), static_cast<int> (half_radius * std::sin (angle + inital_angle))};
@@ -423,7 +427,7 @@ void path_planner::find_freespace (std::pair<int, int> &point, int theta) {
     while (!q.empty ()) {
         auto [x, y] = q.front ();
         q.pop ();
-        if (!is_collision (x, y, theta) && inflated_map[y][x] < 50) {
+        if (!is_collision (x, y, theta) && inflated_map[y][x] < 10) {
             point.first  = x;
             point.second = y;
             return;

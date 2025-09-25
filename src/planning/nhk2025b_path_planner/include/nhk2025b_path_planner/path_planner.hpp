@@ -36,11 +36,10 @@ class path_planner : public rclcpp::Node {
         }
     };
     int    theta_resolution;
-    int    resolution_ms;
     int    penalty_mm;
     int    offset_mm;
-    int    robot_height_mm;
-    int    robot_width_mm;
+    double robot_length;
+    double robot_width;
     int    tolerance_xy_mm;
     double tolerance_z_rad;
 
@@ -49,26 +48,30 @@ class path_planner : public rclcpp::Node {
     double grad_gamma;      // 元のパスからの引き戻し項の重み
     double grad_step_size;  // 勾配降下のステップサイズ
 
+    double heuristic_weight;  // ヒューリスティックの重み
+    double map_cost_weight;   // マップコストの重み
+
     int    map_width, map_height;
     double map_resolution;
 
     bool is_map_changed = true;
 
-    void   current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
-    void   goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
-    void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
-    void   vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
-    void   create_path ();
-    void   find_freespace (std::pair<int, int>& point, int theta);
-    void   timer_callback ();
-    void   linear_astar ();
-    void   angular_astar (nav_msgs::msg::Path& path);
-    void   path_smoother ();
+    void                current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void                goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void                map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+    void                vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
+    void                create_path ();
+    void                find_freespace (std::pair<int, int>& point, int theta);
+    void                timer_callback ();
+    void                linear_astar ();
+    void                angular_astar (nav_msgs::msg::Path& path);
+    void                path_smoother ();
     std::vector<double> angular_smoother (std::vector<double> theta_path);
-    void   inflate_map ();
-    void   init_rotated_footprint ();
-    bool   is_collision (int x, int y, int theta);
-    double theta_heuristic (int dx, int theta);
+    void                inflate_map ();
+    void                init_rotated_footprint ();
+    bool                is_collision (int x, int y, int theta);
+    double              linear_cost (int dx, int dy, int x, int y);
+    double              theta_heuristic (int dx, int theta);
 
     std::pair<int, int> to_grid (double x, double y);
 
@@ -95,7 +98,7 @@ class path_planner : public rclcpp::Node {
     nav_msgs::msg::OccupancyGrid                                      last_map;
     nav_msgs::msg::OccupancyGrid                                      occ_map;
     nav_msgs::msg::OccupancyGrid                                      theta_map;
-    nav_msgs::msg::Path                                               path;
+    nav_msgs::msg::Path                                               send_path;
     nav_msgs::msg::Path                                               linear_path;
     nav_msgs::msg::Path                                               smoothed_path;
     geometry_msgs::msg::TwistStamped                                  current_vel;
