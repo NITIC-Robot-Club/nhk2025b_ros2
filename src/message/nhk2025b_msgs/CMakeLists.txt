@@ -12,6 +12,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Command.msg"
   "msg/Conveyor.msg"
   "msg/EArm.msg"
+  "msg/Line.msg"
   "msg/PcState.msg"
   "msg/PylonArm.msg"
   "msg/RobotStatus.msg"
