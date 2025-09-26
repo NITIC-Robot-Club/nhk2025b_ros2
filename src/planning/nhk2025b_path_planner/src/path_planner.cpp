@@ -113,7 +113,7 @@ void path_planner::inflate_map () {
                             }
                             int8_t dist_penalty = 0;
                             if (dist <= inflate_radius) {
-                                dist_penalty = static_cast<int8_t> (100 * (1.0 - (dist * dist) / (inflate_radius * inflate_radius)));
+                                dist_penalty = static_cast<int8_t> (100 * (1.0 - dist / inflate_radius));
                             }
                             occ_map.data[next_y * map_width + next_x] = std::max (occ_map.data[next_y * map_width + next_x], dist_penalty);
                         }
