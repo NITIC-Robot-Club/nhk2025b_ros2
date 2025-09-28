@@ -2,6 +2,7 @@
 #define __box_perception_hpp__
 
 #include <rclcpp/rclcpp.hpp>
+#include <memory>
 #include <std_msgs/msg/bool.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
@@ -21,8 +22,13 @@ class box_perception : public rclcpp::Node {
    public:
     box_perception (const rclcpp::NodeOptions &options);
 
+    // ICP関連関数
+    geometry_msgs::msg::Pose estimate_pose_icp(const std::vector<geometry_msgs::msg::Point32>& cluster, const std::vector<geometry_msgs::msg::Point32>& map_points);
+    void icp_step(const std::vector<geometry_msgs::msg::Point32>& src, const std::vector<geometry_msgs::msg::Point32>& tgt, double& dx, double& dy, double& dtheta);
+    void apply_pose(geometry_msgs::msg::Pose& pose, double dx, double dy, double dtheta);
+
    private:
-    rclcpp::Publisher<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_state_update_publisher_;
+    rclcpp::Publisher<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_state_publisher_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_subscriber_;
     rclcpp::Subscription<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_array_subscriber_;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_subscriber_;
@@ -32,6 +38,7 @@ class box_perception : public rclcpp::Node {
     double threshold;
 
     nhk2025b_msgs::msg::BoxArray last_box_state;
+    nav_msgs::msg::OccupancyGrid last_map_state;
     float resolution;
     uint32_t map_width;
     uint32_t map_height;
@@ -60,6 +67,8 @@ class box_perception : public rclcpp::Node {
     double yaw;
     double length_cm;
 
+    rclcpp::TimerBase::SharedPtr timer_;
+
     // functions
     void point_cloud_callback (const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void box_array_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr msg);
@@ -69,14 +78,6 @@ class box_perception : public rclcpp::Node {
     uint64_t rand_range(uint64_t max);
     double abs(double val);
     double get_distance(nhk2025b_msgs::msg::Line line, geometry_msgs::msg::Point32 point);
-    geometry_msgs::msg::Point32 get_point32_from_pc2(const sensor_msgs::msg::PointCloud2& pc2, int index);
-
-    std::string estimate_box_type(double length);
-    int ransac_line(const sensor_msgs::msg::PointCloud2& pc2, nhk2025b_msgs::msg::Line& out_line, double threshold, int iteration_num);
-    std::string estimate_box_type_multi(const std::vector<double>& lengths);
-
-    // pointcloud2 value
-
 };
 }  // namespace box_perception
 

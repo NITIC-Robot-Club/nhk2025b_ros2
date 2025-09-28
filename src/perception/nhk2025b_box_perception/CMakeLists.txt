@@ -17,6 +17,14 @@ rclcpp_components_register_node(${PROJECT_NAME}
     EXECUTABLE box_perception
 )
 
+add_executable(box_initializer src/box_initializer.cpp)
+ament_target_dependencies(box_initializer rclcpp nhk2025b_msgs)
+
+install(TARGETS
+  box_initializer
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 if($ENV{ROS_DISTRO} STREQUAL "iron" OR $ENV{ROS_DISTRO} STREQUAL "jazzy" OR $ENV{ROS_DISTRO} STREQUAL "rolling")
   ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)
 else()

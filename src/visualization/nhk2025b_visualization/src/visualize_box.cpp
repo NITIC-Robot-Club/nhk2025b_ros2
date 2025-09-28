@@ -10,7 +10,7 @@ visualize_box::visualize_box (const rclcpp::NodeOptions &options) : Node ("visua
 
 void visualize_box::box_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr msg) {
     visualization_msgs::msg::MarkerArray marker_array;
-    int                                  id = 0;
+    int id = 0;
     for (const auto &box : msg->boxes) {
         visualization_msgs::msg::Marker marker;
         marker.header.frame_id = "map";
@@ -20,12 +20,26 @@ void visualize_box::box_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr 
         marker.type            = visualization_msgs::msg::Marker::CUBE;
         marker.action          = visualization_msgs::msg::Marker::ADD;
         marker.pose            = box.pose;
-        marker.scale           = box.size;
-        marker.pose.position.z += box.size.z / 2.0;
-        marker.color.r  = 1.0f;
-        marker.color.g  = 1.0f;
-        marker.color.b  = 1.0f;
-        marker.color.a  = 1.0f;
+        marker.scale.x = box.size.x;
+        marker.scale.y = box.size.y;
+        marker.scale.z = box.size.z;
+        marker.pose.position.z += marker.scale.z / 2.0;
+
+        switch (box.info.type) {
+            case nhk2025b_msgs::msg::BoxInfo::A:
+                marker.color.r = 1.0f; marker.color.g = 0.0f; marker.color.b = 0.0f; break; // 赤
+            case nhk2025b_msgs::msg::BoxInfo::B:
+                marker.color.r = 0.0f; marker.color.g = 1.0f; marker.color.b = 0.0f; break; // 緑
+            case nhk2025b_msgs::msg::BoxInfo::C:
+                marker.color.r = 0.0f; marker.color.g = 0.0f; marker.color.b = 1.0f; break; // 青
+            case nhk2025b_msgs::msg::BoxInfo::D:
+                marker.color.r = 1.0f; marker.color.g = 1.0f; marker.color.b = 0.0f; break; // 黄
+            case nhk2025b_msgs::msg::BoxInfo::E:
+                marker.color.r = 1.0f; marker.color.g = 0.0f; marker.color.b = 1.0f; break; // ピンク
+            default:
+                marker.color.r = 1.0f; marker.color.g = 1.0f; marker.color.b = 1.0f; break; // 白
+        }
+        marker.color.a = 1.0f;
         marker.lifetime = rclcpp::Duration::from_seconds (0.2);
 
         marker_array.markers.push_back (marker);
