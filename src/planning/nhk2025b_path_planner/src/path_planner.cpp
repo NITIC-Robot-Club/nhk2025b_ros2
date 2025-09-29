@@ -175,6 +175,48 @@ void path_planner::path_smoother () {
     }
     // RCLCPP_INFO (this->get_logger (), "Smoothing  %zu points", smoothed_path.poses.size ());
 }
+std::vector<double> path_planner::angular_smoother (std::vector<double> theta_path) {
+    auto idx_to_rad = [&] (double idx) { return idx * 2 * M_PI / angle_cost_map[0].size (); };
+
+    auto rad_to_idx = [&] (double rad) {
+        // 0～2π に正規化
+        while (rad < 0) rad += 2 * M_PI;
+        while (rad >= 2 * M_PI) rad -= 2 * M_PI;
+        return rad / (2 * M_PI / angle_cost_map[0].size ());  // double のまま返す
+    };
+    auto mid_index = [&] (double a, double b) {
+        double a_rad = idx_to_rad (a);
+        double b_rad = idx_to_rad (b);
+
+        double mid_rad = std::atan2 (std::sin (a_rad) + std::sin (b_rad), std::cos (a_rad) + std::cos (b_rad));
+
+        return rad_to_idx (mid_rad);  // 0 <= y < 72 の double
+    };
+    const int max_iterations = 50;
+    if (theta_path.size () < 3) {
+        return theta_path;
+    }
+    for (int iter = 0; iter < max_iterations; ++iter) {
+        for (size_t i = 1; i + 1 < theta_path.size (); ++i) {
+            // 曲率項（滑らかさ）
+            double mid_y = mid_index (theta_path[i - 1], theta_path[i + 1]);
+            double smooth_y = theta_path[i] - mid_y;
+
+            // 勾配降下による更新
+            double new_y = theta_path[i] - smooth_y;
+            if (new_y < 0) {
+                new_y += angle_cost_map[0].size ();
+            } else if (new_y >= angle_cost_map[0].size ()) {
+                new_y -= angle_cost_map[0].size ();
+            }
+            if (angle_cost_map[i][(int)std::round (new_y)] > 50) {
+                continue;
+            }
+            theta_path[i] = new_y;
+        }
+    }
+    return theta_path;
+}
 void path_planner::linear_astar () {
     linear_path.poses.clear ();
 
@@ -253,10 +295,9 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     std::priority_queue<astar_node, std::vector<astar_node>, std::greater<astar_node>> open;
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
     std::unordered_map<int, double>                                                    cost_so_far;
-
     came_from.clear ();
     cost_so_far.clear ();
-    nav_msgs::msg::OccupancyGrid theta_map;
+
     theta_map.header.frame_id        = "map";
     theta_map.header.stamp           = this->now ();
     theta_map.info.width             = smoothed_path.poses.size ();
@@ -264,6 +305,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     theta_map.info.resolution        = 0.05;
     theta_map.info.origin.position.x = 0.0;
     theta_map.info.origin.position.y = 0.0;
+    theta_map.data.clear ();
     theta_map.data.resize (theta_map.info.width * theta_map.info.height, 0);
     // 各角度のコストを計算
     angle_cost_map.clear ();
@@ -314,15 +356,10 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
             }
         }
     }
-    auto curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
+    std::vector<double> theta_path;
+    auto                curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
     while (curr.first != 0 || curr.second != start_theta) {
-        geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x    = smoothed_path.poses[curr.first].pose.position.x;
-        pose.pose.position.y    = smoothed_path.poses[curr.first].pose.position.y;
-        double yaw              = curr.second * theta_resolution * M_PI / 180.0;
-        pose.pose.orientation.z = std::sin (yaw / 2.0);
-        pose.pose.orientation.w = std::cos (yaw / 2.0);
-        path.poses.push_back (pose);
+        theta_path.push_back (curr.second);
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
             path.poses.clear ();
@@ -330,15 +367,19 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
         }
         curr = came_from[idx];
     }
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x    = smoothed_path.poses[0].pose.position.x;
-    pose.pose.position.y    = smoothed_path.poses[0].pose.position.y;
-    double yaw              = start_theta * theta_resolution * M_PI / 180.0;
-    pose.pose.orientation.z = std::sin (yaw / 2.0);
-    pose.pose.orientation.w = std::cos (yaw / 2.0);
-    path.poses.push_back (pose);
+    theta_path.push_back (start_theta);
+    std::reverse (theta_path.begin (), theta_path.end ());
+    theta_path = angular_smoother (theta_path);
 
-    std::reverse (path.poses.begin (), path.poses.end ());
+    for (int i = 0; i < theta_path.size (); i++) {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.pose.position.x    = smoothed_path.poses[i].pose.position.x;
+        pose.pose.position.y    = smoothed_path.poses[i].pose.position.y;
+        double yaw              = theta_path[i] * theta_resolution * M_PI / 180.0;
+        pose.pose.orientation.z = std::sin (yaw / 2.0);
+        pose.pose.orientation.w = std::cos (yaw / 2.0);
+        path.poses.push_back (pose);
+    }
     // RCLCPP_INFO (this->get_logger (), "Angular %zu points", path.poses.size ());
 }
 double path_planner::theta_heuristic (int dx, int theta) {

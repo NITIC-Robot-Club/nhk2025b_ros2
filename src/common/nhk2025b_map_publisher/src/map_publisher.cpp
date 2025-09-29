@@ -142,10 +142,9 @@ void map_publisher::is_red_callback (const std_msgs::msg::Bool::SharedPtr msg) {
     is_red = msg->data;
     for (int i = 0; i < 5; i++) {
         if (is_red) {
-            // 赤のときはfield_dataのyを左右反転にする
             double field_data_y[2];
-            field_data_y[0]  = field_data[i][2];
-            field_data_y[1]  = field_data[i][3];
+            field_data_y[0]  = field_data_raw[i][2];
+            field_data_y[1]  = field_data_raw[i][3];
             field_data[i][2] = 5.4 - field_data_y[1];
             field_data[i][3] = 5.4 - field_data_y[0];
         } else {

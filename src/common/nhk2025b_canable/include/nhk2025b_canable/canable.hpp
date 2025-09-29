@@ -12,6 +12,7 @@
 #include "nhk2025b_msgs/msg/swerve.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/int32.hpp"
+#include "std_msgs/msg/int32_multi_array.hpp"
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -20,7 +21,13 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <filesystem>
 #include <mutex>
+#include <string>
+
+bool can_interface_exists (const std::string &ifname) {
+    return std::filesystem::exists ("/sys/class/net/" + ifname);
+}
 
 namespace canable {
 
@@ -44,12 +51,18 @@ class canable : public rclcpp::Node {
     void conveyor_callback (const nhk2025b_msgs::msg::Conveyor::SharedPtr msg);
     void pylon_arm_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr msg);
 
+    void e_arm_controller_callback (const nhk2025b_msgs::msg::EArm::SharedPtr msg);
+    void box_arm_controller_callback (const nhk2025b_msgs::msg::BoxArm::SharedPtr msg);
+    void conveyor_controller_callback (const nhk2025b_msgs::msg::Conveyor::SharedPtr msg);
+    void pylon_arm_controller_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr msg);
+
     // === ソケット・ステータス ===
     int  can_socket_;
     bool retry_open_can        = true;
     bool retry_write_can       = true;
     int  retry_write_count     = 0;
     int  max_retry_write_count = 5;
+    bool can_alive_            = false;
 
     struct sockaddr_can addr_;
     struct ifreq        ifr_;
@@ -69,14 +82,14 @@ class canable : public rclcpp::Node {
     nhk2025b_msgs::msg::Conveyor    conveyor_result_;
     nhk2025b_msgs::msg::PylonArm    pylon_arm_result_;
 
-    bool       swerve_flag_[4]          = {false, false, false, false};
+    bool       swerve_flag_[4]          = {false};
     bool       robot_status_flag_       = false;
-    int        robomas_current_[2]      = {0, 0};
-    bool       robomas_current_flag_[2] = {false, false};
+    int        robomas_current_[2]      = {0};
+    bool       robomas_current_flag_[2] = {false};
     std::mutex data_mutex_;
 
     int  id_list[17] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x116, 0x117, 0x118, 0x120, 0x121, 0x122, 0x123, 0x124, 0x125};
-    bool id_flag[17] = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+    bool id_flag[17] = {false};
 
     // === 構造体 ===
 
@@ -89,7 +102,8 @@ class canable : public rclcpp::Node {
         uint8_t raw;
         struct {
             uint8_t sig : 1;
-            uint8_t : 7;
+            uint8_t is_red : 1;
+            uint8_t : 6;
         } data;
     } power_receive;
 
@@ -183,6 +197,11 @@ class canable : public rclcpp::Node {
     rclcpp::Subscription<nhk2025b_msgs::msg::Conveyor>::SharedPtr conveyor_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::PylonArm>::SharedPtr pylon_arm_sub_;
 
+    rclcpp::Subscription<nhk2025b_msgs::msg::EArm>::SharedPtr     e_arm_controller_sub_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::BoxArm>::SharedPtr   box_arm_controller_sub_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::Conveyor>::SharedPtr conveyor_controller_sub_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::PylonArm>::SharedPtr pylon_arm_controller_sub_;
+
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr            robomas_current_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr          bno_yaw_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::EArm>::SharedPtr        e_arm_pub_;
@@ -190,6 +209,7 @@ class canable : public rclcpp::Node {
     rclcpp::Publisher<nhk2025b_msgs::msg::BoxArm>::SharedPtr      box_arm_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::Conveyor>::SharedPtr    conveyor_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::PylonArm>::SharedPtr    pylon_arm_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr  missing_can_id_pub_;
     rclcpp::Publisher<nhk2025b_msgs::msg::RobotStatus>::SharedPtr robot_status_pub_;
 
     rclcpp::TimerBase::SharedPtr timer_;

@@ -64,6 +64,7 @@ class path_planner : public rclcpp::Node {
     void   linear_astar ();
     void   angular_astar (nav_msgs::msg::Path& path);
     void   path_smoother ();
+    std::vector<double> angular_smoother (std::vector<double> theta_path);
     void   inflate_map ();
     void   init_rotated_footprint ();
     bool   is_collision (int x, int y, int theta);
@@ -93,6 +94,7 @@ class path_planner : public rclcpp::Node {
     nav_msgs::msg::OccupancyGrid                                      original_map;
     nav_msgs::msg::OccupancyGrid                                      last_map;
     nav_msgs::msg::OccupancyGrid                                      occ_map;
+    nav_msgs::msg::OccupancyGrid                                      theta_map;
     nav_msgs::msg::Path                                               path;
     nav_msgs::msg::Path                                               linear_path;
     nav_msgs::msg::Path                                               smoothed_path;

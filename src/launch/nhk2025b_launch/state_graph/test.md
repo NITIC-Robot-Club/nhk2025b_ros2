@@ -1,40 +1,75 @@
 ```mermaid
 stateDiagram-v2
 
-    position_initial : go to initial position
-    position_initial : set_position(1.0, 1.0, 0.0)
+    start_position_emg : go to start position (for emg)
+    start_position_emg : set_position(0.6, 0.5, 0.0)
 
-    position_pylon_1 : go to pylon position 1
-    position_pylon_1 : set_position(2.2, 0.7, 0.0)
+    start_position_0 : go to start_position_0
+    start_position_0 : set_position(0.6, 0.5, 0.0)
 
-    position_pylon_2 : go to pylon position 2
-    position_pylon_2 : set_position(3.0, 1.0, 0.0)
+    pylon_0_get : go to pylon_0_get
+    pylon_0_get : set_position(3.2, 1.19, 0.0)
 
-    position_pylon_out : go to pylon drop out position
-    position_pylon_out : set_position(6.0, 4.0, 90.0)
+    pylon_0_drop : go to pylon_0_drop
+    pylon_0_drop : set_position(8.0, 1.19, 0.0)
 
+    pylon_0_out : go to pylon_0_out
+    pylon_0_out : set_position(7.5, 1.19, 0.0)
 
-    get_pylon_height : Get pylon
-    get_pylon_height : set_pylon_arm_height(left = 0.1, right = 0.1)
-    get_pylon_expand : set_pylon_arm_expand(left = 90.0, right = 90.0)
-    get_pylon_rpm : set_pylon_arm_rpm(left = 50, right = 50)
+    e_01_get : go to e_01_get
+    e_01_get : set_position(8.8, 4.6, 90.0)
 
-    drop_pylon_height : Drop pylon
-    drop_pylon_height : set_pylon_arm_height(left = 0.1, right = 0.1)
-    drop_pylon_expand : set_pylon_arm_expand(left = 90.0, right = 90.0)
-    drop_pylon_rpm : set_pylon_arm_rpm(left = -50, right = -50)
+    e_01_hold : go to e_01_hold
+    e_01_hold : set_position(8.8, 4.0, 90.0)
+
+    e_01_drop : go to e_01_drop
+    e_01_drop : set_position(4.0, 3.0, 90.0)
+
+    pylon_2_setup_0 : go to pylon_2_setup_0
+    pylon_2_setup_0 : set_position(1.5, 2.0, 0.0)
+
+    pylon_2_setup_1 : go to pylon_2_setup_1
+    pylon_2_setup_1 : set_position(1.5, 1.0, 0.0)
+
+    pylon_2_get : go to pylon_2_get
+    pylon_2_get : set_position(2.62, 1.0, 0.0)
+
+    pylon_2_drop : go to pylon_2_drop
+    pylon_2_drop : set_position(8.0, 1.0, 0.0)
+
+    pylon_2_out : go to pylon_2_out
+    pylon_2_out : set_position(7.5, 1.0, 0.0)
+
+    pylon_3_setup : go to pylon_3_setup
+    pylon_3_setup : set_position(3.5, 1.0, 0.0)
+
+    pylon_3_get : go to pylon_3_get
+    pylon_3_get : set_position(3.5, 1.0, 0.0)
+
+    pylon_3_drop : go to pylon_3_drop
+    pylon_3_drop : set_position(8.0, 1.5, 0.0)
+
+    pylon_3_out : go to pylon_3_out
+    pylon_3_out : set_position(7.5, 1.5, 0.0)
+
 
 
     [*] --> start
-    start --> position_initial
-    position_initial --> get_pylon_expand
-    get_pylon_expand --> get_pylon_height : check_pylon_arm_expand
-    get_pylon_height --> get_pylon_rpm
-#    get_pylon_rpm --> position_pylon_1
-#    position_pylon_1 --> position_pylon_2
-#    position_pylon_2 --> position_pylon_out
-#    position_pylon_out --> drop_pylon_height
-#    drop_pylon_height --> drop_pylon_expand
-#    drop_pylon_expand --> drop_pylon_rpm
-#    drop_pylon_rpm -->start
+    start --> start_position_0
+    start_position_0 --> pylon_0_get
+    pylon_0_get --> pylon_0_drop
+    pylon_0_drop --> pylon_0_out
+    pylon_0_out --> e_01_get
+    e_01_get --> e_01_hold
+    e_01_hold --> e_01_drop
+    e_01_drop --> pylon_3_setup
+    pylon_3_setup --> pylon_3_get
+    pylon_3_get --> pylon_3_drop
+    pylon_3_drop --> pylon_3_out
+    pylon_3_out --> pylon_2_setup_0
+    pylon_2_setup_0 --> pylon_2_setup_1
+    pylon_2_setup_1 --> pylon_2_drop
+    pylon_2_drop --> pylon_2_out
+    pylon_2_out -->start_position_emg
+    start_position_emg --> [*]
 ```

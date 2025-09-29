@@ -86,8 +86,7 @@ class nhk2025b_behavior(Node):
         
         self.cond_env = {
             "check_ready": self.check_ready,
-            "check_pylon_arm_expand": self.check_pylon_arm_expand,
-            # "check_pylon_arm_height": self.check_pylon_arm_height,
+            "check_pylon_arm_height": self.check_pylon_arm_height,
         }
 
         self.label_to_state, self.state_to_pose, self.state_to_actions, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
@@ -318,8 +317,8 @@ class nhk2025b_behavior(Node):
     def check_ready(self):
         return self.command.automate_ready
 
-    def check_pylon_arm_expand(self):
-        return abs(self.pylon_arm_error.expand[0]) + abs(self.pylon_arm_error.expand[1]) < 0.1
+    def check_pylon_arm_height(self):
+        return abs(self.pylon_arm_error.height[0]) + abs(self.pylon_arm_error.height[1]) < 0.01
 
     def publish_target(self):
         self.e_arm_pub.publish(self.e_arm_target)
@@ -372,9 +371,9 @@ class nhk2025b_behavior(Node):
     def set_pylon_arm_rpm(self, left=None, right=None):
         self.get_logger().info(f"Setting pylon arm rpm: left={left}, right={right}")
         if left is not None:
-            self.pylon_arm_target.rpm[0] = left
+            self.pylon_arm_target.collect_rpm[0] = left
         if right is not None:
-            self.pylon_arm_target.rpm[1] = right
+            self.pylon_arm_target.collect_rpm[1] = right
 
 
 def main(args=None):
