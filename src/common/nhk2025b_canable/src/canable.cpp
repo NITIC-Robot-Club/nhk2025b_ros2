@@ -60,12 +60,12 @@ canable::~canable () {
 }
 
 int canable::init_can_socket () {
-    // if (!can_interface_exists ("can0")) {
-    //     RCLCPP_ERROR (this->get_logger (), "CAN interface 'can0' does not exist");
-    //     can_alive_ = false;
-    //     return -1;
-    // }
-    // can_alive_ = true;
+    if (!can_interface_exists ("can0")) {
+        RCLCPP_ERROR (this->get_logger (), "CAN interface 'can0' does not exist");
+        can_alive_ = false;
+        return -1;
+    }
+    can_alive_ = true;
 
     can_socket_ = socket (PF_CAN, SOCK_RAW, CAN_RAW);
     if (can_socket_ < 0) {
@@ -77,11 +77,6 @@ int canable::init_can_socket () {
     if (ioctl (can_socket_, SIOCGIFINDEX, &ifr_) < 0) {
         RCLCPP_ERROR (this->get_logger (), "Failed to get interface index");
         close (can_socket_);
-        // if (retry_open_can) {
-        //     RCLCPP_INFO (this->get_logger (), "Retrying to open CAN socket...");
-        //     std::this_thread::sleep_for (std::chrono::milliseconds (500));
-        //     return init_can_socket ();
-        // }
     }
 
     addr_.can_family  = AF_CAN;
@@ -283,17 +278,17 @@ void canable::check_can_receive () {
         RCLCPP_WARN (this->get_logger (), "Missing CAN messages: %s", missing_ids.str ().c_str ());
     }
     missing_can_id_pub_->publish (missing_ids_msg);
-    // bool can_exists = can_interface_exists ("can0");
-    // if (can_exists && !can_alive_) {
-    //     RCLCPP_INFO (this->get_logger (), "CAN interface 'can0' is back online.");
-    //     init_can_socket ();
-    // } else if (!can_exists && can_alive_) {
-    //     RCLCPP_ERROR (this->get_logger (), "CAN interface 'can0' is down.");
-    //     if (can_socket_ >= 0) {
-    //         close (can_socket_);
-    //     }
-    // }
-    // can_alive_ = can_exists;
+    bool can_exists = can_interface_exists ("can0");
+    if (can_exists && !can_alive_) {
+        RCLCPP_INFO (this->get_logger (), "CAN interface 'can0' is back online.");
+        init_can_socket ();
+    } else if (!can_exists && can_alive_) {
+        RCLCPP_ERROR (this->get_logger (), "CAN interface 'can0' is down.");
+        if (can_socket_ >= 0) {
+            close (can_socket_);
+        }
+    }
+    can_alive_ = can_exists;
 }
 
 void canable::e_arm_callback (const nhk2025b_msgs::msg::EArm::SharedPtr msg) {
