@@ -12,7 +12,7 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
 
     if (init_can_socket () != 0) {
         RCLCPP_ERROR (this->get_logger (), "Failed to initialize CAN socket");
-        return;
+        // return;
     }
 
     e_arm_sub_     = this->create_subscription<nhk2025b_msgs::msg::EArm> ("/e_arm/cmd", 1, std::bind (&canable::e_arm_callback, this, std::placeholders::_1));
@@ -22,6 +22,11 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
     conveyor_sub_  = this->create_subscription<nhk2025b_msgs::msg::Conveyor> ("/conveyor/cmd", 1, std::bind (&canable::conveyor_callback, this, std::placeholders::_1));
     pylon_arm_sub_ = this->create_subscription<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/cmd", 1, std::bind (&canable::pylon_arm_callback, this, std::placeholders::_1));
 
+    e_arm_controller_sub_     = this->create_subscription<nhk2025b_msgs::msg::EArm> ("/e_arm/controller_cmd", 1, std::bind (&canable::e_arm_controller_callback, this, std::placeholders::_1));
+    box_arm_controller_sub_   = this->create_subscription<nhk2025b_msgs::msg::BoxArm> ("/box_arm/controller_cmd", 1, std::bind (&canable::box_arm_controller_callback, this, std::placeholders::_1));
+    conveyor_controller_sub_  = this->create_subscription<nhk2025b_msgs::msg::Conveyor> ("/conveyor/controller_cmd", 1, std::bind (&canable::conveyor_controller_callback, this, std::placeholders::_1));
+    pylon_arm_controller_sub_ = this->create_subscription<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/controller_cmd", 1, std::bind (&canable::pylon_arm_controller_callback, this, std::placeholders::_1));
+
     bno_yaw_pub_         = this->create_publisher<std_msgs::msg::Float32> ("/bno_yaw", 1);
     robomas_current_pub_ = this->create_publisher<std_msgs::msg::Int32> ("/robomas_current", 1);
     e_arm_pub_           = this->create_publisher<nhk2025b_msgs::msg::EArm> ("/e_arm/result", 1);
@@ -29,6 +34,7 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
     box_arm_pub_         = this->create_publisher<nhk2025b_msgs::msg::BoxArm> ("/box_arm/result", 1);
     conveyor_pub_        = this->create_publisher<nhk2025b_msgs::msg::Conveyor> ("/conveyor/result", 1);
     pylon_arm_pub_       = this->create_publisher<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/result", 1);
+    missing_can_id_pub_  = this->create_publisher<std_msgs::msg::Int32MultiArray> ("/missing_can_id", 1);
     robot_status_pub_    = this->create_publisher<nhk2025b_msgs::msg::RobotStatus> ("/robot_status", 1);
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&canable::timer_callback, this));
@@ -37,10 +43,14 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
     can_receive_timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&canable::check_can_receive, this));  // 100msごとにCAN受信確認
 
     for (int i = 0; i < 2; i++) {
-        box_arm_cmd_.height[i]              = 0.0;
-        box_arm_cmd_.arm_position_strong[i] = 0.55;
-        box_arm_cmd_.arm_position_weak[i]   = 0.55;
+        box_arm_cmd_.height[i]              = 0.1;
+        box_arm_cmd_.arm_position_strong[i] = 0.0;
+        box_arm_cmd_.arm_position_weak[i]   = 0.60;
+        box_arm_cmd_.expand[i]              = M_PI / 2;
     }
+
+    command_.allow_automate = false;
+    command_.signal         = false;
 }
 
 canable::~canable () {
@@ -50,6 +60,13 @@ canable::~canable () {
 }
 
 int canable::init_can_socket () {
+    // if (!can_interface_exists ("can0")) {
+    //     RCLCPP_ERROR (this->get_logger (), "CAN interface 'can0' does not exist");
+    //     can_alive_ = false;
+    //     return -1;
+    // }
+    // can_alive_ = true;
+
     can_socket_ = socket (PF_CAN, SOCK_RAW, CAN_RAW);
     if (can_socket_ < 0) {
         RCLCPP_ERROR (this->get_logger (), "Failed to create CAN socket");
@@ -60,11 +77,11 @@ int canable::init_can_socket () {
     if (ioctl (can_socket_, SIOCGIFINDEX, &ifr_) < 0) {
         RCLCPP_ERROR (this->get_logger (), "Failed to get interface index");
         close (can_socket_);
-        if (retry_open_can) {
-            RCLCPP_INFO (this->get_logger (), "Retrying to open CAN socket...");
-            std::this_thread::sleep_for (std::chrono::milliseconds (500));
-            return init_can_socket ();
-        }
+        // if (retry_open_can) {
+        //     RCLCPP_INFO (this->get_logger (), "Retrying to open CAN socket...");
+        //     std::this_thread::sleep_for (std::chrono::milliseconds (500));
+        //     return init_can_socket ();
+        // }
     }
 
     addr_.can_family  = AF_CAN;
@@ -248,25 +265,42 @@ void canable::read_can_socket () {
         }
     }
 }
+
 void canable::check_can_receive () {
-    std::ostringstream missing_ids;
+    std::ostringstream             missing_ids;
+    std_msgs::msg::Int32MultiArray missing_ids_msg;
     for (int i = 0; i < 17; i++) {
         if (!id_flag[i]) {
             if (!missing_ids.str ().empty ()) {
                 missing_ids << ", ";
             }
             missing_ids << std::hex << id_list[i];
+            missing_ids_msg.data.push_back (id_list[i]);
         }
         id_flag[i] = false;  // フラグをリセット
     }
     if (!missing_ids.str ().empty ()) {
         RCLCPP_WARN (this->get_logger (), "Missing CAN messages: %s", missing_ids.str ().c_str ());
     }
+    missing_can_id_pub_->publish (missing_ids_msg);
+    // bool can_exists = can_interface_exists ("can0");
+    // if (can_exists && !can_alive_) {
+    //     RCLCPP_INFO (this->get_logger (), "CAN interface 'can0' is back online.");
+    //     init_can_socket ();
+    // } else if (!can_exists && can_alive_) {
+    //     RCLCPP_ERROR (this->get_logger (), "CAN interface 'can0' is down.");
+    //     if (can_socket_ >= 0) {
+    //         close (can_socket_);
+    //     }
+    // }
+    // can_alive_ = can_exists;
 }
 
 void canable::e_arm_callback (const nhk2025b_msgs::msg::EArm::SharedPtr msg) {
-    std::lock_guard<std::mutex> lock (data_mutex_);
-    e_arm_cmd_ = *msg;
+    if (command_.allow_automate) {
+        std::lock_guard<std::mutex> lock (data_mutex_);
+        e_arm_cmd_ = *msg;
+    }
 }
 
 void canable::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) {
@@ -275,8 +309,10 @@ void canable::swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg) 
 }
 
 void canable::box_arm_callback (const nhk2025b_msgs::msg::BoxArm::SharedPtr msg) {
-    std::lock_guard<std::mutex> lock (data_mutex_);
-    box_arm_cmd_ = *msg;
+    if (command_.allow_automate) {
+        std::lock_guard<std::mutex> lock (data_mutex_);
+        box_arm_cmd_ = *msg;
+    }
 }
 
 void canable::command_callback (const nhk2025b_msgs::msg::Command::SharedPtr msg) {
@@ -285,13 +321,45 @@ void canable::command_callback (const nhk2025b_msgs::msg::Command::SharedPtr msg
 }
 
 void canable::conveyor_callback (const nhk2025b_msgs::msg::Conveyor::SharedPtr msg) {
-    std::lock_guard<std::mutex> lock (data_mutex_);
-    conveyor_cmd_ = *msg;
+    if (command_.allow_automate) {
+        std::lock_guard<std::mutex> lock (data_mutex_);
+        conveyor_cmd_ = *msg;
+    }
 }
 
 void canable::pylon_arm_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr msg) {
-    std::lock_guard<std::mutex> lock (data_mutex_);
-    pylon_arm_cmd_ = *msg;
+    if (command_.allow_automate) {
+        std::lock_guard<std::mutex> lock (data_mutex_);
+        pylon_arm_cmd_ = *msg;
+    }
+}
+
+void canable::e_arm_controller_callback (const nhk2025b_msgs::msg::EArm::SharedPtr msg) {
+    if (!command_.allow_automate) {
+        std::lock_guard<std::mutex> lock (data_mutex_);
+        e_arm_cmd_ = *msg;
+    }
+}
+
+void canable::box_arm_controller_callback (const nhk2025b_msgs::msg::BoxArm::SharedPtr msg) {
+    if (!command_.allow_automate) {
+        std::lock_guard<std::mutex> lock (data_mutex_);
+        box_arm_cmd_ = *msg;
+    }
+}
+
+void canable::conveyor_controller_callback (const nhk2025b_msgs::msg::Conveyor::SharedPtr msg) {
+    if (!command_.allow_automate) {
+        std::lock_guard<std::mutex> lock (data_mutex_);
+        conveyor_cmd_ = *msg;
+    }
+}
+
+void canable::pylon_arm_controller_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr msg) {
+    if (!command_.allow_automate) {
+        std::lock_guard<std::mutex> lock (data_mutex_);
+        pylon_arm_cmd_ = *msg;
+    }
 }
 
 void canable::timer_callback () {
