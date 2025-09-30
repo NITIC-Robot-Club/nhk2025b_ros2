@@ -14,7 +14,27 @@ target_include_directories(${PROJECT_NAME}
 
 rclcpp_components_register_node(${PROJECT_NAME}
     PLUGIN "box_perception::box_perception"
+    PLUGIN "box_initializer::box_initializer"
     EXECUTABLE box_perception
+)
+
+add_executable(box_initializer src/box_initializer.cpp)
+ament_target_dependencies(box_initializer
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  nhk2025b_msgs
+)
+
+install(TARGETS box_initializer
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 if($ENV{ROS_DISTRO} STREQUAL "iron" OR $ENV{ROS_DISTRO} STREQUAL "jazzy" OR $ENV{ROS_DISTRO} STREQUAL "rolling")
