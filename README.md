@@ -33,3 +33,21 @@ RUN+="/sbin/ip link set can0 up"
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
+
+# Virtual CAN
+
+first
+```bash
+sudo modprobe vcan
+```
+
+start
+```bash
+sudo ip link add dev can0 type vcan bitrate 1000000
+sudo ip link set up can0
+```
+
+end
+```bash
+sudo ip link delete can0
+```

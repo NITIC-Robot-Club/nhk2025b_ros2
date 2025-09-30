@@ -16,7 +16,6 @@ lidar_merger::lidar_merger (const rclcpp::NodeOptions &options) : Node ("lidar_m
 
 void lidar_merger::publish_merged_point_cloud2 () {
     if (scan1.ranges.empty () && scan2.ranges.empty ()) {
-        // どちらかのスキャンが未受信なら何もしない
         return;
     }
 

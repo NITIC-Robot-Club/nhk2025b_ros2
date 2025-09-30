@@ -118,7 +118,7 @@ void mcl::cloud_callback (const sensor_msgs::msg::PointCloud2::SharedPtr cloud_m
 
     sensor_update (*cloud_msg);
     resample_particles ();
-    // timer_callback();
+    publish_velocity ();
 }
 
 void mcl::timer_callback () {
@@ -152,23 +152,24 @@ void mcl::timer_callback () {
 
     if (!is_converged ()) {
         RCLCPP_WARN (this->get_logger (), "Particles not converged");
-        // estimated.pose.position.x    = last_estimated_pose_.pose.position.x + (current_pose_.position.x - last_pose_.position.x);
-        // estimated.pose.position.y    = last_estimated_pose_.pose.position.y + (current_pose_.position.y - last_pose_.position.y);
-        // estimated.pose.orientation.z = last_estimated_pose_.pose.orientation.z + (current_pose_.orientation.z - last_pose_.orientation.z);
-        // estimated.pose.orientation.w = last_estimated_pose_.pose.orientation.w + (current_pose_.orientation.w - last_pose_.orientation.w);
-        // return;
     }
 
     pose_pub_->publish (estimated);
     pose_with_covariance_pub_->publish (estimate_pose_with_covariance ());
+}
 
+void mcl::publish_velocity () {
+    geometry_msgs::msg::PoseStamped estimated;
+    estimated.pose            = estimate_pose ();
+    estimated.header.frame_id = "map";
+    estimated.header.stamp    = this->now ();
     if (!last_estimated_pose_.header.stamp.sec) {
         last_estimated_pose_ = estimated;
     } else {
         double dt = (rclcpp::Time (estimated.header.stamp) - rclcpp::Time (last_estimated_pose_.header.stamp)).seconds ();
 
         geometry_msgs::msg::TwistStamped twist;
-        twist.header.frame_id = "base_link";
+        twist.header.frame_id = "map";
         twist.header.stamp    = this->now ();
         twist.twist.linear.x  = (estimated.pose.position.x - last_estimated_pose_.pose.position.x) / dt;
         twist.twist.linear.y  = (estimated.pose.position.y - last_estimated_pose_.pose.position.y) / dt;
