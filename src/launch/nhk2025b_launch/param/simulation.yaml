@@ -2,18 +2,19 @@
   ros__parameters:
     robot_width: 0.8
     robot_length: 0.6
-    lidar_frequency: 12.0
 
 lidar_simulation_front:
   ros__parameters:
-    lidar_x: 0.249
+    lidar_x: 0.215
     lidar_y: 0.0
     lidar_z: 0.0
     frame_name: "lidar_front"
+    lidar_frequency: 30.0
 
 lidar_simulation_rear:
   ros__parameters:
-    lidar_x: -0.249
-    lidar_y: 0.0
-    lidar_z: 1.57
+    lidar_x: -0.215
+    lidar_y: -0.247
+    lidar_z: 3.14159265358
     frame_name: "lidar_rear"
+    lidar_frequency: 30.0

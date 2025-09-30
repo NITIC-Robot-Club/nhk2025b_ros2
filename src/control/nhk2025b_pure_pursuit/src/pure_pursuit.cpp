@@ -197,7 +197,7 @@ void pure_pursuit::timer_callback () {
     lookahead_publisher_->publish (lookahead_msg);
     last_cmd_vel_ = cmd_vel;
 
-    RCLCPP_INFO(this->get_logger(), "xy: pos: %d, speed: %d, z: pos: %d, speed: %d", goal_position_reached, goal_speed_xy_reached, goal_yaw_reached, goal_speed_z_reached);
+    // RCLCPP_INFO(this->get_logger(), "xy: pos: %d, speed: %d, z: pos: %d, speed: %d", goal_position_reached, goal_speed_xy_reached, goal_yaw_reached, goal_speed_z_reached);
 }
 }  // namespace pure_pursuit
 
