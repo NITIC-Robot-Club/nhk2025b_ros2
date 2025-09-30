@@ -16,8 +16,8 @@
       <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
     </composable_node>
     <!-- <composable_node pkg="nhk2025b_box_perception" plugin="box_perception::box_perception" name="box_perception">
-      <param from="$(find-pkg-share nhk2025b_launch)/param/box.yaml"/> -->
-    <!-- </composable_node> -->
+      <param from="$(find-pkg-share nhk2025b_launch)/param/perception.yaml"/>
+    </composable_node> -->
   </node_container>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml"/>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/localization.launch.xml"/>
@@ -27,6 +27,6 @@
     <param name="state_graph_path" value="$(find-pkg-share nhk2025b_launch)/state_graph/swerve_test.md"/>
   </node>
   <node pkg="nhk2025b_box_perception" exec="box_initializer" name="box_initializer" namespace="box_perception" output="screen">
-    <param from="$(find-pkg-share nhk2025b_launch)/param/box.yaml"/>
+    <param from="$(find-pkg-share nhk2025b_launch)/param/perception.yaml"/>
   </node>
 </launch>
