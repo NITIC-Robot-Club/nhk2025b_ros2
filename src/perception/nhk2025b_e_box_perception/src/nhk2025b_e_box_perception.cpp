@@ -5,7 +5,7 @@ namespace e_box_perception {
 e_box_perception::e_box_perception (const rclcpp::NodeOptions& options) : rclcpp::Node ("e_box_perception", options) {
     box_publisher_     = this->create_publisher<nhk2025b_msgs::msg::BoxArray> ("/box_state", rclcpp::QoS (10));
     pose_subscriber_   = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&e_box_perception::pose_callback, this, std::placeholders::_1));
-    lidar_subscriber_  = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/lidar_points", 1, std::bind (&e_box_perception::lidar_callback, this, std::placeholders::_1));
+    lidar_subscriber_  = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&e_box_perception::lidar_callback, this, std::placeholders::_1));
     is_red_subscriber_ = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&e_box_perception::is_red_callback, this, std::placeholders::_1));
     iter               = this->declare_parameter<int> ("iter", 100);
     distance_threshold = this->declare_parameter<double> ("distance_threshold", 0.025);

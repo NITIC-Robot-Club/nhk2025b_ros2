@@ -4,7 +4,7 @@
 namespace map_publisher {
 map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_publisher", options) {
     publisher_         = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1);
-    box_subscriber_    = this->create_subscription<nhk2025b_msgs::msg::BoxArray> ("/box_state", 1, std::bind (&map_publisher::box_callback, this, std::placeholders::_1));
+    box_subscriber_    = this->create_subscription<nhk2025b_msgs::msg::BoxArray> ("/simulation/box_state", 1, std::bind (&map_publisher::box_callback, this, std::placeholders::_1));
     is_red_subscriber_ = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&map_publisher::is_red_callback, this, std::placeholders::_1));
     timer_             = this->create_wall_timer (std::chrono::milliseconds (1000), std::bind (&map_publisher::publish_map, this));
     this->declare_parameter<double> ("resolution", 0.05);  // 5cm
