@@ -28,6 +28,11 @@ rclcpp_components_register_node(${PROJECT_NAME}
     EXECUTABLE box_state_simulation  
 )
 
+rclcpp_components_register_node(${PROJECT_NAME}
+    PLUGIN "arm_simulation::arm_simulation"
+    EXECUTABLE arm_simulation
+)
+
 if($ENV{ROS_DISTRO} STREQUAL "iron" OR $ENV{ROS_DISTRO} STREQUAL "jazzy" OR $ENV{ROS_DISTRO} STREQUAL "rolling")
   ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)
 else()

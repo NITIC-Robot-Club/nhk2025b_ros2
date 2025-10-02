@@ -89,4 +89,5 @@ def generate_launch_description():
         result_joint_state_publisher,
         rviz_cmd,
         rviz_result,
+        # joint_state_gui
     ])

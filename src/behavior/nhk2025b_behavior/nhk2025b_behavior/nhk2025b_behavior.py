@@ -74,10 +74,32 @@ class nhk2025b_behavior(Node):
             self.md_name = self.md_name.split('.')[0]  # 拡張子を除去
         self.is_red = False
 
+        self.current_pose = None
+        self.robot_status = None
+        self.goal_pose = PoseStamped()
+        self.e_arm_target = EArm()
+        self.box_arm_target = BoxArm()
+        self.conveyor_target = Conveyor()
+        self.pylon_arm_target = PylonArm()
+        self.command = Command()
+
+        self.e_arm_result = EArm()
+        self.box_arm_result = BoxArm()
+        self.pylon_arm_result = PylonArm()
+
+        self.pylon_arm_height_tolerance = 0.02
+        self.pylon_arm_expand_tolerance = 0.3
+        self.box_arm_height_tolerance = 0.02
+        self.box_arm_expand_tolerance = 0.3
+        self.e_arm_expand_tolerance = 0.3
+        self.e_arm_get_tolerance = 0.01
+
         self.function_dict = {
             "set_e_arm": self.set_e_arm,
+            "set_box_arm_height": self.set_box_arm_height,
             "set_box_arm_expand": self.set_box_arm_expand,
-            "set_box_arm_next_box": self.set_box_arm_next_box,
+            "set_box_arm_strong": self.set_box_arm_strong,
+            "set_box_arm_weak": self.set_box_arm_weak,
             "set_conveyor_rpm": self.set_conveyor_rpm,
             "set_pylon_arm_height": self.set_pylon_arm_height,
             "set_pylon_arm_expand": self.set_pylon_arm_expand,
@@ -85,8 +107,10 @@ class nhk2025b_behavior(Node):
         }
         
         self.cond_env = {
-            "check_ready": self.check_ready,
-            "check_pylon_arm_height": self.check_pylon_arm_height,
+            "check_allow_automate": self.check_allow_automate,
+            "check_pylon_arm": self.check_pylon_arm,
+            "check_box_arm": self.check_box_arm,
+            "check_e_arm": self.check_e_arm,
         }
 
         self.label_to_state, self.state_to_pose, self.state_to_actions, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
@@ -107,24 +131,15 @@ class nhk2025b_behavior(Node):
         self.create_subscription(Command, '/command', self.command_callback, 1)
         self.create_subscription(Bool, '/is_red', self.is_red_callback, 1)
 
-        # self.create_subscription(EArm, '/e_arm/result', self.e_arm_callback , 1)
-        # self.create_subscription(BoxArm, '/box_arm/result', self.box_arm_callback , 1)
+        self.create_subscription(EArm, '/e_arm/result', self.e_arm_callback , 1)
+        self.create_subscription(BoxArm, '/box_arm/result', self.box_arm_callback , 1)
         self.create_subscription(PylonArm, '/pylon_arm/result', self.pylon_arm_callback, 1)
 
         self.state_array = self.build_state_array()
         self.current_state = '[*]'  # 初期状態
         self.last_result = None
 
-        self.current_pose = None
-        self.robot_status = None
-        self.goal_pose = PoseStamped()
-        self.e_arm_target = EArm()
-        self.box_arm_target = BoxArm()
-        self.conveyor_target = Conveyor()
-        self.pylon_arm_target = PylonArm()
-        self.command = Command()
 
-        self.pylon_arm_error = None
         self.waiting_for_goal = False
 
         self.finished = False  # 完了フラグ
@@ -161,10 +176,39 @@ class nhk2025b_behavior(Node):
         self.is_red = msg.data
       
     def pylon_arm_callback(self, msg):
-        self.pylon_arm_error = PylonArm()
+        self.pylon_arm_result = msg
+
+    def e_arm_callback(self, msg):
+        self.e_arm_result = msg
+
+    def box_arm_callback(self, msg):
+        self.box_arm_result = msg
+
+    def check_allow_automate(self):
+        return self.command.allow_automate 
+    
+    def check_pylon_arm(self):
         for i in range(2):
-            self.pylon_arm_error.expand[i] = self.pylon_arm_target.expand[i] - msg.expand[i]
-            self.pylon_arm_error.height[i] = self.pylon_arm_target.height[i] - msg.height[i]
+            if abs(self.pylon_arm_target.height[i] - self.pylon_arm_result.height[i]) > self.pylon_arm_height_tolerance:
+                return False
+            if abs(self.pylon_arm_target.expand[i] - self.pylon_arm_result.expand[i]) > self.pylon_arm_expand_tolerance:
+                return False
+        return True
+    
+    def check_box_arm(self):
+        for i in range(2):
+            if abs(self.box_arm_target.height[i] - self.box_arm_result.height[i]) > self.box_arm_height_tolerance:
+                return False
+            if abs(self.box_arm_target.expand[i] - self.box_arm_result.expand[i]) > self.box_arm_expand_tolerance:
+                return False
+        return True
+
+    def check_e_arm(self):
+        if abs(self.e_arm_target.expand - self.e_arm_result.expand) > self.e_arm_expand_tolerance:
+            return False
+        if abs(self.e_arm_target.get - self.e_arm_result.get) > self.e_arm_get_tolerance:
+            return False
+        return True
 
     def publish_state(self, finished=False):
         if finished:
@@ -314,12 +358,6 @@ class nhk2025b_behavior(Node):
             self.pose_pub.publish(pose)
             self.goal_pose = pose
 
-    def check_ready(self):
-        return self.command.automate_ready
-
-    def check_pylon_arm_height(self):
-        return abs(self.pylon_arm_error.height[0]) + abs(self.pylon_arm_error.height[1]) < 0.01
-
     def publish_target(self):
         self.e_arm_pub.publish(self.e_arm_target)
         self.box_arm_pub.publish(self.box_arm_target)
@@ -327,49 +365,54 @@ class nhk2025b_behavior(Node):
         self.pylon_arm_pub.publish(self.pylon_arm_target)
     
     def set_e_arm(self, expand = None, get = None):
-        self.get_logger().info(f"Setting e-arm: ready={expand}, get={get}")
-        if(expand is not None):
+        if expand is not None:
             self.e_arm_target.expand = expand / 180 * math.pi
-        if(get is not None):
+        if get is not None:
             self.e_arm_target.get = get / 180 * math.pi
 
     def set_box_arm_expand(self, left=None, right=None):
-        self.get_logger().info(f"Setting box arm expand: left={left}, right={right}")
         if left is not None:
             self.box_arm_target.expand[0] = left / 180 * math.pi
         if right is not None:
             self.box_arm_target.expand[1] = right / 180 * math.pi
-
-    def set_box_arm_next_box(self, left=None, right=None):
-        self.get_logger().info(f"Setting box arm next box: left={left}, right={right}")
+    
+    def set_box_arm_height(self, left=None, right=None):
         if left is not None:
-            self.box_arm_target.arm_position_weak[0] = left
+            self.box_arm_target.height[0] = left
         if right is not None:
-            self.box_arm_target.arm_position_weak[1] = right
+            self.box_arm_target.height[1] = right
+        
+    def set_box_arm_strong(self, left=None, right=None):
+        if left is not None:
+            self.box_arm_target.strong[0] = left
+        if right is not None:
+            self.box_arm_target.strong[1] = right
+    
+    def set_box_arm_weak(self, left=None, right=None):
+        if left is not None:
+            self.box_arm_target.weak[0] = left
+        if right is not None:
+            self.box_arm_target.weak[1] = right
 
     def set_conveyor_rpm(self, left=None, right=None):
-        self.get_logger().info(f"Setting conveyor rpm: left={left}, right={right}")
         if left is not None:
             self.conveyor_target.rpm[0] = left
         if right is not None:
                 self.conveyor_target.rpm[1] = right
 
     def set_pylon_arm_height(self, left=None, right=None):
-        self.get_logger().info(f"Setting pylon arm height: left={left}, right={right}")
         if left is not None:
             self.pylon_arm_target.height[0] = left
         if right is not None:
             self.pylon_arm_target.height[1] = right
 
     def set_pylon_arm_expand(self, left=None, right=None):
-        self.get_logger().info(f"Setting pylon arm expand: left={left}, right={right}")
         if left is not None:
             self.pylon_arm_target.expand[0] = left / 180 * math.pi
         if right is not None:
             self.pylon_arm_target.expand[1] = right / 180 * math.pi
 
     def set_pylon_arm_rpm(self, left=None, right=None):
-        self.get_logger().info(f"Setting pylon arm rpm: left={left}, right={right}")
         if left is not None:
             self.pylon_arm_target.collect_rpm[0] = left
         if right is not None:
