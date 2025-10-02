@@ -33,7 +33,8 @@ class e_box_perception : public rclcpp::Node {
         Point  start, end;
     };
     rclcpp::Publisher<nhk2025b_msgs::msg::BoxArray>::SharedPtr       box_publisher_;
-    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subscriber_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    e_collect_pose_publisher_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr e_drop_pose_subscriber_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr   lidar_subscriber_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr             is_red_subscriber_;
     int                                                              iter;
@@ -41,14 +42,16 @@ class e_box_perception : public rclcpp::Node {
     bool                                                             is_red_;
     double                                                           min_x, max_x, min_y, max_y;
     double                                                           normal_distance;
-    geometry_msgs::msg::PoseStamped                                  current_pose_;
+    geometry_msgs::msg::PoseStamped                                  e_drop_pose_;
     nhk2025b_msgs::msg::BoxArray                                     box_array_;
+    sensor_msgs::msg::PointCloud2                                    lidar_data_;
+    geometry_msgs::msg::PoseStamped                                  e_box_normal_;
 
     void                    pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr pose);
     void                    lidar_callback (const sensor_msgs::msg::PointCloud2::SharedPtr lidar);
     void                    is_red_callback (const std_msgs::msg::Bool::SharedPtr is_red);
     std::vector<Point>      cloud_to_points (const sensor_msgs::msg::PointCloud2 &cloud);
-    e_box_perception::Line  ransac (std::vector<Point> data);
+    e_box_perception::Line  ransac (std::vector<Point> data, double line_length);
     std::vector<Point>      filtering_points (std::vector<Point> data);
     e_box_perception::Point line_centre (e_box_perception::Line line);
     e_box_perception::Point normal_point (e_box_perception::Line line, e_box_perception::Point point, double normal_distance);

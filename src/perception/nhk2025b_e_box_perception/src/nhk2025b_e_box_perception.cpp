@@ -3,17 +3,43 @@
 namespace e_box_perception {
 
 e_box_perception::e_box_perception (const rclcpp::NodeOptions& options) : rclcpp::Node ("e_box_perception", options) {
-    box_publisher_     = this->create_publisher<nhk2025b_msgs::msg::BoxArray> ("/box_state", rclcpp::QoS (10));
-    pose_subscriber_   = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&e_box_perception::pose_callback, this, std::placeholders::_1));
-    lidar_subscriber_  = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&e_box_perception::lidar_callback, this, std::placeholders::_1));
-    is_red_subscriber_ = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&e_box_perception::is_red_callback, this, std::placeholders::_1));
-    iter               = this->declare_parameter<int> ("iter", 100);
-    distance_threshold = this->declare_parameter<double> ("distance_threshold", 0.025);
-    normal_distance    = this->declare_parameter<double> ("normal_distance", 0.5);
+    box_publisher_            = this->create_publisher<nhk2025b_msgs::msg::BoxArray> ("/box_state", rclcpp::QoS (10));
+    e_collect_pose_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/perception/e_collect_pose", rclcpp::QoS (10));
+    e_drop_pose_subscriber_   = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/e_drop_pose", 1, std::bind (&e_box_perception::pose_callback, this, std::placeholders::_1));
+    lidar_subscriber_         = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&e_box_perception::lidar_callback, this, std::placeholders::_1));
+    is_red_subscriber_        = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&e_box_perception::is_red_callback, this, std::placeholders::_1));
+    iter                      = this->declare_parameter<int> ("iter", 100);
+    distance_threshold        = this->declare_parameter<double> ("distance_threshold", 0.025);
+    normal_distance           = this->declare_parameter<double> ("normal_distance", 0.5);
 }
 
 void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
-    current_pose_ = *pose;
+    double ransac_length1 = 0.3, ransac_length2 = 1.0;
+    e_drop_pose_                                         = *pose;
+    std::vector<e_box_perception::Point> points          = cloud_to_points (lidar_data_);  // 点群データをPointの配列に変換
+    std::vector<e_box_perception::Point> filtered_points = filtering_points (points);      // 検出範囲に入っている点のみ抽出
+    e_box_perception::Line               line1           = ransac (filtered_points, ransac_length1);
+    e_box_perception::Line               line2           = ransac (filtered_points, ransac_length2);
+    e_box_perception::Point              centre_of_line1 = line_centre (line1);  // 直線の中心点を計算
+    e_box_perception::Point              centre_of_line2 = line_centre (line2);
+    e_box_perception::Point              centre_of_box1  = normal_point (line1, centre_of_line1, normal_distance);  // 直線の法線方向にnormal_distanceだけ離れた点を計算
+    e_box_perception::Point              centre_of_box2  = normal_point (line2, centre_of_line2, normal_distance);
+    nhk2025b_msgs::msg::Box              box;
+    box.info.type       = nhk2025b_msgs::msg::BoxInfo::E;
+    box.info.id         = box_array_.boxes.size () + 1;
+    box.pose.position.x = centre_of_box1.x;
+    box.pose.position.y = centre_of_box1.y;
+    box.pose.position.z = 0.0;
+    box.size.x          = 0.3;
+    box.size.y          = 1.0;
+    box.size.z          = 0.3;
+    box_array_.boxes.push_back (box);
+    e_box_normal_.header.frame_id = "map";
+    e_box_normal_.header.stamp    = this->now ();
+    e_box_normal_.pose.position.x = centre_of_box2.x;
+    e_box_normal_.pose.position.y = centre_of_box2.y;
+    e_box_normal_.pose.position.z = 0.0;
+    e_collect_pose_publisher_->publish(e_box_normal_);
 }
 
 void e_box_perception::is_red_callback (const std_msgs::msg::Bool::SharedPtr is_red) {
@@ -32,21 +58,7 @@ void e_box_perception::is_red_callback (const std_msgs::msg::Bool::SharedPtr is_
 }
 
 void e_box_perception::lidar_callback (const sensor_msgs::msg::PointCloud2::SharedPtr lidar) {
-    std::vector<e_box_perception::Point> points          = cloud_to_points (*lidar);                              // 点群データをPointの配列に変換
-    std::vector<e_box_perception::Point> filtered_points = filtering_points (points);                             // 検出範囲に入っている点のみ抽出
-    e_box_perception::Line               line            = ransac (filtered_points);                              // RANSACで直線検出
-    e_box_perception::Point              centre_of_line  = line_centre (line);                                    // 直線の中心点を計算
-    e_box_perception::Point              centre_of_box   = normal_point (line, centre_of_line, normal_distance);  // 直線の法線方向にnormal_distanceだけ離れた点を計算
-    nhk2025b_msgs::msg::Box              box;
-    box.info.type       = nhk2025b_msgs::msg::BoxInfo::E;
-    box.info.id         = box_array_.boxes.size () + 1;
-    box.pose.position.x = centre_of_box.x;
-    box.pose.position.y = centre_of_box.y;
-    box.pose.position.z = 0.0;
-    box.size.x          = 0.3;
-    box.size.y          = 1.0;
-    box.size.z          = 0.3;
-    box_array_.boxes.push_back (box);
+    lidar_data_ = *lidar;
 }
 
 std::vector<e_box_perception::Point> e_box_perception::cloud_to_points (const sensor_msgs::msg::PointCloud2& cloud) {
@@ -105,7 +117,7 @@ e_box_perception::Point e_box_perception::normal_point (e_box_perception::Line l
     }
 }
 
-e_box_perception::Line e_box_perception::ransac (std::vector<e_box_perception::Point> data) {
+e_box_perception::Line e_box_perception::ransac (std::vector<e_box_perception::Point> data, double line_length) {
     if (data.size () == 0) {
         Line err_line;
         err_line.a     = 0.0f;
@@ -117,12 +129,18 @@ e_box_perception::Line e_box_perception::ransac (std::vector<e_box_perception::P
     int best_inliers   = 0;
     iter               = this->get_parameter ("iter").as_int ();
     distance_threshold = this->get_parameter ("distance_threshold").as_double ();
-    Line               best_line;
-    std::vector<Point> best_inlier_points;
+    Line                            best_line;  // ax-y+b=0
+    std::vector<Point>              best_inlier_points;
+    std::random_device              rd;
+    std::mt19937                    gen (rd ());
+    std::uniform_int_distribution<> dis (0, data.size () - 1);
+
+    double min_length = line_length - 0.05;
+    double max_length = line_length + 0.05;
 
     for (int i = 0; i < iter; i++) {
-        Point p1 = data[rand () % data.size ()];
-        Point p2 = data[rand () % data.size ()];
+        Point p1 = data[dis (gen)];
+        Point p2 = data[dis (gen)];
         if (abs (p1.x - p2.x) < 1e-6) continue;
         double             a       = (p1.y - p2.y) / (p1.x - p2.x);
         double             b       = p1.y - a * p1.x;
@@ -143,9 +161,9 @@ e_box_perception::Line e_box_perception::ransac (std::vector<e_box_perception::P
             Point line_start = temp_inliers.front ();
             Point line_end   = temp_inliers.back ();
 
-            double line_length = sqrt (pow (line_end.x - line_start.x, 2) + pow (line_end.y - line_start.y, 2));
+            double detected_line_length = sqrt (pow (line_end.x - line_start.x, 2) + pow (line_end.y - line_start.y, 2));
 
-            if (line_length >= 0.25 && line_length <= 0.35) {
+            if (detected_line_length >= min_length && detected_line_length <= max_length) {
                 best_inliers       = inliers;
                 best_line.a        = a;
                 best_line.b        = b;
@@ -153,6 +171,16 @@ e_box_perception::Line e_box_perception::ransac (std::vector<e_box_perception::P
             }
         }
     }
+
+    if (best_inlier_points.empty ()) {
+        Line err_line;
+        err_line.a     = 0.0f;
+        err_line.b     = 0.0f;
+        err_line.start = {0.0f, 0.0f};
+        err_line.end   = {0.0f, 0.0f};
+        return err_line;
+    }
+
     std::sort (best_inlier_points.begin (), best_inlier_points.end (), [] (const Point& a, const Point& b) { return a.x < b.x; });
     best_line.start   = best_inlier_points.front ();
     best_line.end     = best_inlier_points.back ();
