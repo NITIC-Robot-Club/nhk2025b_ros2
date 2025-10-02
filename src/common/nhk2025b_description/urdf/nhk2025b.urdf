@@ -249,7 +249,7 @@
   <link name = "l_pylon_arm_height"/>
 
   <joint name="l_pylon_arm_height_to_l_pylon_arm" type="revolute">
-    <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0 0 0" rpy="0.0 1.5707963267948966 0.0"/>
     <axis xyz="0 1 0"/>
     <parent link="l_pylon_arm_height"/>
     <child link="l_pylon_arm"/>
@@ -288,7 +288,7 @@
   <link name = "r_pylon_arm_height"/>
 
   <joint name="r_pylon_arm_height_to_r_pylon_arm" type="revolute">
-    <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0 0 0" rpy="0.0 1.5707963267948966 0.0"/>
     <axis xyz="0 1 0"/>
     <parent link="r_pylon_arm_height"/>
     <child link="r_pylon_arm"/>

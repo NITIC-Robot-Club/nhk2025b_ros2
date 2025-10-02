@@ -87,11 +87,11 @@ class nhk2025b_behavior(Node):
         self.box_arm_result = BoxArm()
         self.pylon_arm_result = PylonArm()
 
-        self.pylon_arm_height_tolerance = 0.02
-        self.pylon_arm_expand_tolerance = 0.3
-        self.box_arm_height_tolerance = 0.02
-        self.box_arm_expand_tolerance = 0.3
-        self.e_arm_expand_tolerance = 0.3
+        self.pylon_arm_height_tolerance = 0.01
+        self.pylon_arm_expand_tolerance = 0.1
+        self.box_arm_height_tolerance = 0.01
+        self.box_arm_expand_tolerance = 0.1
+        self.e_arm_expand_tolerance = 0.1
         self.e_arm_get_tolerance = 0.01
 
         self.function_dict = {
@@ -396,9 +396,9 @@ class nhk2025b_behavior(Node):
 
     def set_conveyor_rpm(self, left=None, right=None):
         if left is not None:
-            self.conveyor_target.rpm[0] = left
+            self.conveyor_target.conveyor_rpm[0] = left
         if right is not None:
-                self.conveyor_target.rpm[1] = right
+            self.conveyor_target.conveyor_rpm[1] = right
 
     def set_pylon_arm_height(self, left=None, right=None):
         if left is not None:
