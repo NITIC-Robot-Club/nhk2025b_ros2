@@ -21,8 +21,8 @@ stateDiagram-v2
 
     pylon_0_position_get  : パイロン0 移動
     pylon_0_position_get  : set_position(3.2, 1.19, 0.0)
-    pylon_0_position_drop : set_position(8.0, 1.19, 0.0)
-    pylon_0_position_out  : set_position(7.5, 1.19, 0.0)
+    pylon_0_position_drop : set_position(7.0, 1.19, 0.0)
+    pylon_0_position_out  : set_position(6.5, 1.19, 0.0)
     pylon_0_box_arm_expand    : set_box_arm_expand(right = 90, left = 90)
 
     start_position_1 --> pylon_0_position_get
