@@ -135,11 +135,22 @@ e_box_perception::Line e_box_perception::ransac (std::vector<e_box_perception::P
                 inlier_points.push_back (data[j]);
             }
         }
-        if (inliers > best_inliers) {
-            best_inliers       = inliers;
-            best_line.a        = a;
-            best_line.b        = b;
-            best_inlier_points = inlier_points;
+
+        if (inliers > best_inliers && !inlier_points.empty ()) {
+            std::vector<Point> temp_inliers = inlier_points;
+            std::sort (temp_inliers.begin (), temp_inliers.end (), [] (const Point& a, const Point& b) { return a.x < b.x; });
+
+            Point line_start = temp_inliers.front ();
+            Point line_end   = temp_inliers.back ();
+
+            double line_length = sqrt (pow (line_end.x - line_start.x, 2) + pow (line_end.y - line_start.y, 2));
+
+            if (line_length >= 0.25 && line_length <= 0.35) {
+                best_inliers       = inliers;
+                best_line.a        = a;
+                best_line.b        = b;
+                best_inlier_points = inlier_points;
+            }
         }
     }
     std::sort (best_inlier_points.begin (), best_inlier_points.end (), [] (const Point& a, const Point& b) { return a.x < b.x; });
