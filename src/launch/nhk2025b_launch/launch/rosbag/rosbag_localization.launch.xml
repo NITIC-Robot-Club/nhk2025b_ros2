@@ -2,10 +2,6 @@
     <arg name="is_red" default="false"/>
     <node_container pkg="rclcpp_components" exec="component_container" name="rosbag_robot_viewer" namespace="">
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
-        <!-- <composable_node pkg="nhk2025b_map_publisher" plugin="map_publisher::map_publisher" name="map_publisher">
-            <param name="is_red" value="$(var is_red)"/>
-            <param from="$(find-pkg-share nhk2025b_launch)/param/common.yaml"/>
-        </composable_node> -->
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_stl::visualize_stl" name="visualize_field">
             <remap from="output/maker" to="/visualize/field"/>
             <param from="$(find-pkg-share nhk2025b_launch)/config/visualize_field.yaml"/>

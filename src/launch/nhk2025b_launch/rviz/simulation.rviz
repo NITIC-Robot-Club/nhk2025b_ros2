@@ -588,22 +588,23 @@ Visualization Manager:
             Value: /visualization/robot_footprint
           Value: true
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: false
+          Enabled: true
           Name: 独ステ可視化
           Namespaces:
-            {}
+            swerve: true
+            swerve_angle_text: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /visualization/swerve
-          Value: false
+          Value: true
         - Class: rviz_default_plugins/MarkerArray
           Enabled: true
           Name: 経路当たり判定
           Namespaces:
-            {}
+            path_collision: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -802,25 +803,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 10
+      Distance: 9.597246170043945
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5
-        Y: 2.5
-        Z: 0
+        X: 3.8917694091796875
+        Y: 1.9355943202972412
+        Z: 0.003918131813406944
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 0.7747970819473267
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 4.7131853103637695
+      Yaw: 4.28040075302124
     Saved: ~
 Window Geometry:
   Displays:
