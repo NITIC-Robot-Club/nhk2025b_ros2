@@ -1,0 +1,1 @@
+ros2 bag record --all

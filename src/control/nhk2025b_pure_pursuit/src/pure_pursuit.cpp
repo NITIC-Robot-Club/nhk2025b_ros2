@@ -127,8 +127,15 @@ void pure_pursuit::timer_callback () {
     double d = std::max (goal_distance, 0.0);
 
     // 今の距離dで静止できる最大速度
-    double max_stop_speed = std::sqrt (2.0 * goal_deceleration_m_s2_ * d);
-    target_speed          = std::min (target_speed, max_stop_speed);
+    // double max_stop_speed = std::sqrt (2.0 * goal_deceleration_m_s2_ * d);
+    // target_speed          = std::min (target_speed, max_stop_speed);
+
+    double slow_dist = last_speed * last_speed / (2 * goal_deceleration_m_s2_);  // 通常の停止距離
+    double ratio     = std::clamp (d / slow_dist, 0.0, 1.0);
+
+    // cos補間で滑らかに0へ
+    double speed_scale  = 0.5 * (1 - std::cos (M_PI * ratio));
+    target_speed = target_speed * speed_scale;
 
     // 曲率に応じた速度制限
     int p1 = closest_index;
@@ -164,11 +171,11 @@ void pure_pursuit::timer_callback () {
     yaw_speed                 = last_cmd_vel_.twist.angular.z + angle_acceleration * delta_t;
     yaw_speed                 = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
 
-    if(!goal_yaw_reached) {
-        if(yaw_speed < 0) {
-            yaw_speed = std::min(yaw_speed, -min_speed_z_rad_s_);
+    if (!goal_yaw_reached) {
+        if (yaw_speed < 0) {
+            yaw_speed = std::min (yaw_speed, -min_speed_z_rad_s_);
         } else {
-            yaw_speed = std::max(yaw_speed, min_speed_z_rad_s_);
+            yaw_speed = std::max (yaw_speed, min_speed_z_rad_s_);
         }
     }
 
