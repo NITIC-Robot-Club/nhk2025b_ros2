@@ -20,19 +20,20 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     vel_subscriber          = this->create_subscription<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
     robot_width_subscriber  = this->create_subscription<std_msgs::msg::Float32> ("/robot_width", 1, [this] (const std_msgs::msg::Float32::SharedPtr msg) {
         if (abs (robot_width - msg->data) > 0.001) {
-            if(robot_width == msg->data) return;
-            robot_width = msg->data;
-            inflate_map ();
-            init_rotated_footprint ();
-            create_path ();
+            if (robot_width != msg->data) {
+                robot_width = msg->data;
+                inflate_map ();
+                init_rotated_footprint ();
+                create_path ();
+            }
         }
     });
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 
-    inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 1);
-    theta_map_publisher   = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/thetamap", 1);
-    send_path.header.frame_id  = "map";
+    inflate_map_publisher     = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 1);
+    theta_map_publisher       = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/thetamap", 1);
+    send_path.header.frame_id = "map";
 }
 
 void path_planner::timer_callback () {
@@ -68,19 +69,19 @@ void path_planner::create_path () {
     if (current_pose.header.stamp.sec == 0) return;
     if (goal_pose.header.stamp.sec == 0) return;
 
-    geometry_msgs::msg::PoseStamped use_goal = goal_pose;
-    geometry_msgs::msg::PoseStamped use_current = current_pose;
-    nav_msgs::msg::OccupancyGrid use_occ_map = occ_map;
+    geometry_msgs::msg::PoseStamped  use_goal         = goal_pose;
+    geometry_msgs::msg::PoseStamped  use_current      = current_pose;
+    nav_msgs::msg::OccupancyGrid     use_occ_map      = occ_map;
     std::vector<std::vector<int8_t>> use_inflated_map = inflated_map;
-    
+
     nav_msgs::msg::Path path;
     path.header.frame_id = "map";
 
-    linear_astar (use_current, use_goal, use_inflated_map);
+    nav_msgs::msg::Path linear_path = linear_astar (use_current, use_goal, use_inflated_map);
+    nav_msgs::msg::Path smoothed_path = path_smoother (linear_path, use_occ_map);
 
-    path_smoother (use_occ_map);
-    angular_astar (path, use_current, use_goal, use_inflated_map);
-    RCLCPP_INFO(this->get_logger(), "Path length: %d, %d, %d", linear_path.poses.size(),smoothed_path.poses.size(), path.poses.size());
+    angular_astar (path, smoothed_path, use_current, use_goal, use_inflated_map);
+    // RCLCPP_INFO (this->get_logger (), "num %d, %d, %d", linear_path.poses.size (), smoothed_path.poses.size (), path.poses.size ());
     path.header.stamp = this->now ();
     for (int i = 0; i < path.poses.size (); i++) {
         path.poses[i].header = path.header;
@@ -107,10 +108,10 @@ bool path_planner::is_same_map () {
 }
 
 void path_planner::inflate_map () {
-    occ_map.data.clear ();
-    inflated_map.clear ();
-    occ_map.data.resize (map_width * map_height, 0);
-    inflated_map.resize (map_height, std::vector<int8_t> (map_width, 0));
+    nav_msgs::msg::OccupancyGrid     local_occ_map;
+    std::vector<std::vector<int8_t>> local_inflated_map;
+    local_occ_map.data.resize (map_width * map_height, 0);
+    local_inflated_map.resize (map_height, std::vector<int8_t> (map_width, 0));
     double width_radius         = robot_width / 2.0 / map_resolution;
     double length_radius        = robot_length / 2.0 / map_resolution;
     int    offset_radius        = std::ceil (offset_mm / 1000.0 / map_resolution);
@@ -129,23 +130,25 @@ void path_planner::inflate_map () {
                         if (next_x >= 0 && next_x < map_width && next_y >= 0 && next_y < map_height) {
                             double dist = std::hypot (dx, dy);
                             if (dist <= offset_radius) {
-                                inflated_map[next_y][next_x] = std::max (inflated_map[next_y][next_x], int8_t (100));
+                                local_inflated_map[next_y][next_x] = std::max (local_inflated_map[next_y][next_x], int8_t (100));
                             } else if (dist <= min_inflation_radius) {
-                                inflated_map[next_y][next_x] = std::max (inflated_map[next_y][next_x], int8_t (80));
+                                local_inflated_map[next_y][next_x] = std::max (local_inflated_map[next_y][next_x], int8_t (80));
                             } else if (dist <= max_inflation_radius) {
-                                inflated_map[next_y][next_x] = std::max (inflated_map[next_y][next_x], int8_t (30));
+                                local_inflated_map[next_y][next_x] = std::max (local_inflated_map[next_y][next_x], int8_t (30));
                             }
                             int8_t dist_penalty = 0;
                             if (dist <= inflate_radius) {
                                 dist_penalty = static_cast<int8_t> (100 * (1.0 - (dist / inflate_radius)));
                             }
-                            occ_map.data[next_y * map_width + next_x] = std::max (occ_map.data[next_y * map_width + next_x], dist_penalty);
+                            local_occ_map.data[next_y * map_width + next_x] = std::max (local_occ_map.data[next_y * map_width + next_x], dist_penalty);
                         }
                     }
                 }
             }
         }
     }
+    inflated_map = local_inflated_map;
+    occ_map      = local_occ_map;
 }
 std::pair<int, int> path_planner::to_grid (double x, double y) {
     int gx = static_cast<int> ((x - original_map.info.origin.position.x) / map_resolution);
@@ -154,7 +157,7 @@ std::pair<int, int> path_planner::to_grid (double x, double y) {
     gy     = std::clamp (gy, 0, map_height - 1);
     return {gx, gy};
 }
-void path_planner::path_smoother (const nav_msgs::msg::OccupancyGrid& use_occ_map) {
+nav_msgs::msg::Path path_planner::path_smoother (const nav_msgs::msg::Path &linear_path, const nav_msgs::msg::OccupancyGrid &use_occ_map) {
     auto get_cost = [&] (int x, int y) -> double {
         if (x < 0 || y < 0 || x >= map_width || y >= map_height) return 1.0;
         return static_cast<double> (use_occ_map.data[y * map_width + x]) / 100.0;
@@ -165,17 +168,17 @@ void path_planner::path_smoother (const nav_msgs::msg::OccupancyGrid& use_occ_ma
         double dy             = get_cost (grid_x, grid_y + 1) - get_cost (grid_x, grid_y - 1);
         return {dx / 2.0, dy / 2.0};
     };
-    smoothed_path.poses.clear ();
-    smoothed_path.poses      = linear_path.poses;
+    nav_msgs::msg::Path path = linear_path;
+
     const int max_iterations = 300;
-    if (smoothed_path.poses.size () < 3) {
-        return;
+    if (path.poses.size () < 3) {
+        return path;
     }
     for (int iter = 0; iter < max_iterations; ++iter) {
-        for (size_t i = 1; i + 1 < smoothed_path.poses.size (); ++i) {
-            geometry_msgs::msg::PoseStamped p_prev = smoothed_path.poses[i - 1];
-            geometry_msgs::msg::PoseStamped p_curr = smoothed_path.poses[i];
-            geometry_msgs::msg::PoseStamped p_next = smoothed_path.poses[i + 1];
+        for (size_t i = 1; i + 1 < path.poses.size (); ++i) {
+            geometry_msgs::msg::PoseStamped p_prev = path.poses[i - 1];
+            geometry_msgs::msg::PoseStamped p_curr = path.poses[i];
+            geometry_msgs::msg::PoseStamped p_next = path.poses[i + 1];
 
             // コストマップ勾配（障害物回避）
             auto [cost_x, cost_y] = get_cost_gradient (p_curr.pose.position.x, p_curr.pose.position.y);
@@ -193,10 +196,11 @@ void path_planner::path_smoother (const nav_msgs::msg::OccupancyGrid& use_occ_ma
             double total_y = cost_y * grad_alpha + smooth_y * grad_beta + anchor_y * grad_gamma;
 
             // 勾配降下による更新
-            smoothed_path.poses[i].pose.position.x -= total_x * grad_step_size;
-            smoothed_path.poses[i].pose.position.y -= total_y * grad_step_size;
+            path.poses[i].pose.position.x -= total_x * grad_step_size;
+            path.poses[i].pose.position.y -= total_y * grad_step_size;
         }
     }
+    return path;
 }
 std::vector<double> path_planner::angular_smoother (std::vector<double> theta_path) {
     auto idx_to_rad = [&] (double idx) { return idx * 2 * M_PI / angle_cost_map[0].size (); };
@@ -240,8 +244,8 @@ std::vector<double> path_planner::angular_smoother (std::vector<double> theta_pa
     }
     return theta_path;
 }
-void path_planner::linear_astar (const geometry_msgs::msg::PoseStamped &use_current_pose, const geometry_msgs::msg::PoseStamped &use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map) {
-    linear_path.poses.clear ();
+nav_msgs::msg::Path path_planner::linear_astar (const geometry_msgs::msg::PoseStamped &use_current_pose, const geometry_msgs::msg::PoseStamped &use_goal_pose, const std::vector<std::vector<int8_t>> &use_inflated_map) {
+    nav_msgs::msg::Path path;
 
     auto start = to_grid (use_current_pose.pose.position.x, use_current_pose.pose.position.y);
     auto goal  = to_grid (use_goal_pose.pose.position.x, use_goal_pose.pose.position.y);
@@ -287,23 +291,25 @@ void path_planner::linear_astar (const geometry_msgs::msg::PoseStamped &use_curr
         geometry_msgs::msg::PoseStamped pose;
         pose.pose.position.x = curr.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
         pose.pose.position.y = curr.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
-        linear_path.poses.push_back (pose);
+        path.poses.push_back (pose);
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
-            linear_path.poses.clear ();
-            return;
+            path.poses.clear ();
+            return path;
         }
         curr = came_from[idx];
     }
-    if (linear_path.poses.size () == 0) {
+    if (path.poses.size () == 0) {
         geometry_msgs::msg::PoseStamped pose;
         pose.pose.position.x = goal.first * map_resolution + original_map.info.origin.position.x + map_resolution / 2;
         pose.pose.position.y = goal.second * map_resolution + original_map.info.origin.position.y + map_resolution / 2;
-        linear_path.poses.push_back (pose);
+        path.poses.push_back (pose);
     }
-    std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
+    std::reverse (path.poses.begin (), path.poses.end ());
+    return path;
 }
-void path_planner::angular_astar (nav_msgs::msg::Path &path, const geometry_msgs::msg::PoseStamped &use_current_pose, const geometry_msgs::msg::PoseStamped &use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map) {
+void path_planner::angular_astar (
+    nav_msgs::msg::Path &path, const nav_msgs::msg::Path &smoothed_path, const geometry_msgs::msg::PoseStamped &use_current_pose, const geometry_msgs::msg::PoseStamped &use_goal_pose, const std::vector<std::vector<int8_t>> &use_inflated_map) {
     if (smoothed_path.poses.size () == 0) {
         return;
     }
@@ -318,7 +324,7 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path, const geometry_msgs
     std::unordered_map<int, double>                                                    cost_so_far;
     came_from.clear ();
     cost_so_far.clear ();
-
+    nav_msgs::msg::OccupancyGrid theta_map;
     theta_map.header.frame_id        = "map";
     theta_map.header.stamp           = this->now ();
     theta_map.info.width             = smoothed_path.poses.size ();
@@ -326,7 +332,6 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path, const geometry_msgs
     theta_map.info.resolution        = 0.05;
     theta_map.info.origin.position.x = 0.0;
     theta_map.info.origin.position.y = 0.0;
-    theta_map.data.clear ();
     theta_map.data.resize (theta_map.info.width * theta_map.info.height, 0);
     // 各角度のコストを計算
     angle_cost_map.clear ();
@@ -401,7 +406,6 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path, const geometry_msgs
         pose.pose.orientation.w = std::cos (yaw / 2.0);
         path.poses.push_back (pose);
     }
-    // RCLCPP_INFO (this->get_logger (), "Angular %zu points", path.poses.size ());
 }
 double path_planner::theta_heuristic (int dx, int theta) {
     theta = std::abs (theta);
@@ -423,7 +427,7 @@ void path_planner::init_rotated_footprint () {
         rotated_footprint[i][3] = {-rotated_footprint[i][1].first, -rotated_footprint[i][1].second};
     }
 }
-bool path_planner::is_collision (int x, int y, int theta, const std::vector<std::vector<int8_t>>& use_inflated_map) {
+bool path_planner::is_collision (int x, int y, int theta, const std::vector<std::vector<int8_t>> &use_inflated_map) {
     for (int i = 0; i < 4; ++i) {
         int next_x = x + rotated_footprint[theta][i].first;
         int next_y = y + rotated_footprint[theta][i].second;
@@ -436,7 +440,7 @@ bool path_planner::is_collision (int x, int y, int theta, const std::vector<std:
     }
     return false;
 }
-void path_planner::find_freespace (std::pair<int, int> &point, int theta, const std::vector<std::vector<int8_t>>& use_inflated_map) {
+void path_planner::find_freespace (std::pair<int, int> &point, int theta, const std::vector<std::vector<int8_t>> &use_inflated_map) {
     std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
     std::queue<std::pair<int, int>> q;
     q.push ({point.first, point.second});

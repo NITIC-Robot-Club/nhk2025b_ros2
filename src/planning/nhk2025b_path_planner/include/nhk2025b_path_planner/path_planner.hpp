@@ -62,14 +62,16 @@ class path_planner : public rclcpp::Node {
     void   create_path ();
     void   find_freespace (std::pair<int, int>& point, int theta, const std::vector<std::vector<int8_t>>& use_inflated_map);
     void   timer_callback ();
-    void   linear_astar (const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
-    void   angular_astar (nav_msgs::msg::Path& path, const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
-    void   path_smoother (const nav_msgs::msg::OccupancyGrid& use_occ_map);
     void   inflate_map ();
     void   init_rotated_footprint ();
     bool   is_collision (int x, int y, int theta, const std::vector<std::vector<int8_t>>& use_inflated_map);
     bool   is_same_map ();
     double theta_heuristic (int dx, int theta);
+    void   angular_astar (
+          nav_msgs::msg::Path& path, const nav_msgs::msg::Path& smoothed_path, const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
+
+    nav_msgs::msg::Path linear_astar (const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
+    nav_msgs::msg::Path path_smoother (const nav_msgs::msg::Path& linear_path, const nav_msgs::msg::OccupancyGrid& use_occ_map);
 
     std::vector<double> angular_smoother (std::vector<double> theta_path);
     std::pair<int, int> to_grid (double x, double y);
@@ -79,7 +81,6 @@ class path_planner : public rclcpp::Node {
     }
     std::vector<std::vector<int8_t>> inflated_map;
     std::vector<std::vector<int8_t>> angle_cost_map;
-    // std::vector<std::pair<int, int>>                linear_path;
 
     std::vector<std::array<std::pair<int, int>, 4>> rotated_footprint;
 
@@ -96,10 +97,7 @@ class path_planner : public rclcpp::Node {
     nav_msgs::msg::OccupancyGrid     original_map;
     nav_msgs::msg::OccupancyGrid     last_map;
     nav_msgs::msg::OccupancyGrid     occ_map;
-    nav_msgs::msg::OccupancyGrid     theta_map;
     nav_msgs::msg::Path              send_path;
-    nav_msgs::msg::Path              linear_path;
-    nav_msgs::msg::Path              smoothed_path;
     geometry_msgs::msg::TwistStamped current_vel;
 
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr                 path_publisher;
