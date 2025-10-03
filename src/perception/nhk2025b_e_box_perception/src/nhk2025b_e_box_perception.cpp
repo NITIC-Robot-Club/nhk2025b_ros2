@@ -14,32 +14,43 @@ e_box_perception::e_box_perception (const rclcpp::NodeOptions& options) : rclcpp
 }
 
 void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
-    double ransac_length1 = 0.3, ransac_length2 = 1.0;
+    double ransac_length                                 = 0.3;
     e_drop_pose_                                         = *pose;
-    std::vector<e_box_perception::Point> points          = cloud_to_points (lidar_data_);  // 点群データをPointの配列に変換
-    std::vector<e_box_perception::Point> filtered_points = filtering_points (points);      // 検出範囲に入っている点のみ抽出
-    e_box_perception::Line               line1           = ransac (filtered_points, ransac_length1);
-    e_box_perception::Line               line2           = ransac (filtered_points, ransac_length2);
-    e_box_perception::Point              centre_of_line1 = line_centre (line1);  // 直線の中心点を計算
-    e_box_perception::Point              centre_of_line2 = line_centre (line2);
-    e_box_perception::Point              centre_of_box1  = normal_point (line1, centre_of_line1, normal_distance);  // 直線の法線方向にnormal_distanceだけ離れた点を計算
-    e_box_perception::Point              centre_of_box2  = normal_point (line2, centre_of_line2, normal_distance);
-    nhk2025b_msgs::msg::Box              box;
+    std::vector<e_box_perception::Point> points          = cloud_to_points (lidar_data_);                          // 点群データをPointの配列に変換
+    std::vector<e_box_perception::Point> filtered_points = filtering_points (points);                              // 検出範囲に入っている点のみ抽出
+    e_box_perception::Line               line1           = ransac (filtered_points, ransac_length);                // RANSACで直線を検出
+    e_box_perception::Point              centre_of_line  = line_centre (line1);                                    // 直線の中心点を計算
+    e_box_perception::Point              centre_of_box   = normal_point (line1, centre_of_line, normal_distance);  // 検出線分の中点からボックスの中心の座標を取得
+    e_box_perception::Line               line2;
+    line2.start                           = centre_of_box;
+    line2.end                             = centre_of_line;
+    e_box_perception::Point collect_point = collect_normal_point (line2, centre_of_box, 0.45);                 // ボックスの中心から収集位置までの座標を取得
+    double                  line_angle    = atan2 (line1.end.y - line1.start.y, line1.end.x - line1.start.x);  // 収集位置の傾きを取得
+    tf2::Quaternion         quat;
+    quat.setRPY (0, 0, line_angle);
+
+    geometry_msgs::msg::PoseStamped collect_pose;
+    collect_pose.header.frame_id    = "base_link";
+    collect_pose.header.stamp       = this->now ();
+    collect_pose.pose.position.x    = collect_point.x;
+    collect_pose.pose.position.y    = collect_point.y;
+    collect_pose.pose.position.z    = 0.0;
+    collect_pose.pose.orientation.x = quat.x ();
+    collect_pose.pose.orientation.y = quat.y ();
+    collect_pose.pose.orientation.z = quat.z ();
+    collect_pose.pose.orientation.w = quat.w ();
+    e_collect_pose_publisher_->publish (collect_pose);
+
+    nhk2025b_msgs::msg::Box box;
     box.info.type       = nhk2025b_msgs::msg::BoxInfo::E;
     box.info.id         = box_array_.boxes.size () + 1;
-    box.pose.position.x = centre_of_box1.x;
-    box.pose.position.y = centre_of_box1.y;
+    box.pose.position.x = centre_of_box.x;
+    box.pose.position.y = centre_of_box.y;
     box.pose.position.z = 0.0;
     box.size.x          = 0.3;
     box.size.y          = 1.0;
     box.size.z          = 0.3;
     box_array_.boxes.push_back (box);
-    e_box_normal_.header.frame_id = "map";
-    e_box_normal_.header.stamp    = this->now ();
-    e_box_normal_.pose.position.x = centre_of_box2.x;
-    e_box_normal_.pose.position.y = centre_of_box2.y;
-    e_box_normal_.pose.position.z = 0.0;
-    e_collect_pose_publisher_->publish(e_box_normal_);
 }
 
 void e_box_perception::is_red_callback (const std_msgs::msg::Bool::SharedPtr is_red) {
@@ -91,7 +102,20 @@ e_box_perception::Point e_box_perception::line_centre (e_box_perception::Line li
 
 e_box_perception::Point e_box_perception::normal_point (e_box_perception::Line line, e_box_perception::Point point, double normal_distance) {
     double line_angle = atan2 (line.end.y - line.start.y, line.end.x - line.start.x);
+    double normal_angle;
+    if (is_red_) {
+        normal_angle = line_angle - M_PI / 2.0;
+    } else {
+        normal_angle = line_angle + M_PI / 2.0;
+    }
+    e_box_perception::Point normal_pt;
+    normal_pt.x = point.x + normal_distance * cos (normal_angle);
+    normal_pt.y = point.y + normal_distance * sin (normal_angle);
+    return normal_pt;
+}
 
+e_box_perception::Point e_box_perception::collect_normal_point (e_box_perception::Line line, e_box_perception::Point point, double normal_distance) {
+    double line_angle = atan2 (line.end.y - line.start.y, line.end.x - line.start.x);
     double normal_angle;
     if (is_red_) {
         normal_angle = line_angle + M_PI / 2.0;
@@ -101,20 +125,7 @@ e_box_perception::Point e_box_perception::normal_point (e_box_perception::Line l
     e_box_perception::Point normal_pt;
     normal_pt.x = point.x + normal_distance * cos (normal_angle);
     normal_pt.y = point.y + normal_distance * sin (normal_angle);
-
-    if (normal_pt.x >= min_x && normal_pt.x <= max_x && normal_pt.y >= min_y && normal_pt.y <= max_y) {
-        return normal_pt;
-    } else {
-        normal_angle = is_red_ ? line_angle - M_PI / 2.0 : line_angle + M_PI / 2.0;
-        normal_pt.x  = point.x + normal_distance * cos (normal_angle);
-        normal_pt.y  = point.y + normal_distance * sin (normal_angle);
-
-        if (normal_pt.x >= min_x && normal_pt.x <= max_x && normal_pt.y >= min_y && normal_pt.y <= max_y) {
-            return normal_pt;
-        } else {
-            return point;
-        }
-    }
+    return normal_pt;
 }
 
 e_box_perception::Line e_box_perception::ransac (std::vector<e_box_perception::Point> data, double line_length) {

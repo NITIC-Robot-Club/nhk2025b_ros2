@@ -12,6 +12,8 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <std_msgs/msg/bool.hpp>
 
+#include <tf2/LinearMath/Quaternion.h>
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -55,6 +57,7 @@ class e_box_perception : public rclcpp::Node {
     std::vector<Point>      filtering_points (std::vector<Point> data);
     e_box_perception::Point line_centre (e_box_perception::Line line);
     e_box_perception::Point normal_point (e_box_perception::Line line, e_box_perception::Point point, double normal_distance);
+    e_box_perception::Point collect_normal_point (e_box_perception::Line line, e_box_perception::Point point, double normal_distance);
 };
 }  // namespace e_box_perception
 
