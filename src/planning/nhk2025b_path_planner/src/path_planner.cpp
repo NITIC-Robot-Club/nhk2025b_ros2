@@ -19,8 +19,16 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     goal_pose_subscriber    = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/goal_pose", 1, std::bind (&path_planner::goal_pose_callback, this, std::placeholders::_1));
     map_subscriber          = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&path_planner::map_callback, this, std::placeholders::_1));
     vel_subscriber          = this->create_subscription<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
-    robot_width_subscriber  = this->create_subscription<std_msgs::msg::Float32> ("/robot_width", 1, [this] (const std_msgs::msg::Float32::SharedPtr msg) { robot_width = msg->data; });
-    timer_                  = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
+    robot_width_subscriber  = this->create_subscription<std_msgs::msg::Float32> ("/robot_width", 1, [this] (const std_msgs::msg::Float32::SharedPtr msg) {
+        if (abs (robot_width - msg->data) > 0.001) {
+            robot_width = msg->data;
+            inflate_map ();
+            create_path ();
+            inflate_map_publisher->publish (occ_map);
+        }
+    });
+
+    timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 
     inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 1);
     theta_map_publisher   = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/thetamap", 1);
@@ -71,20 +79,22 @@ void path_planner::create_path () {
     path_publisher->publish (path);
 }
 
-void path_planner::inflate_map () {
+bool path_planner::is_same_map () {
     if (original_map.data.size () == last_map.data.size ()) {
-        bool is_same_map = true;
         for (int i = 0; i < original_map.data.size (); ++i) {
             if (original_map.data[i] != last_map.data[i]) {
-                is_same_map = false;
-                break;
+                is_map_changed = true;
+                return false;
             }
         }
-        is_map_changed = !is_same_map;
-        if (is_same_map) {
-            return;
-        }
+    } else {
+        return false;
     }
+    is_map_changed = false;
+    return true;
+}
+
+void path_planner::inflate_map () {
     occ_map.data.clear ();
     inflated_map.clear ();
     occ_map.data.resize (map_width * map_height, 0);
@@ -452,7 +462,9 @@ void path_planner::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr m
     map_resolution = original_map.info.resolution;
     occ_map.info   = original_map.info;
     occ_map.header = original_map.header;
-    inflate_map ();
+    if (!is_same_map ()) {
+        inflate_map ();
+    }
     last_map = original_map;
     inflate_map_publisher->publish (occ_map);
 

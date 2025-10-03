@@ -68,6 +68,7 @@ class path_planner : public rclcpp::Node {
     void   inflate_map ();
     void   init_rotated_footprint ();
     bool   is_collision (int x, int y, int theta);
+    bool   is_same_map ();
     double theta_heuristic (int dx, int theta);
 
     std::vector<double> angular_smoother (std::vector<double> theta_path);

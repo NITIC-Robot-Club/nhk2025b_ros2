@@ -94,11 +94,8 @@ class nhk2025b_behavior(Node):
         self.e_arm_expand_tolerance = 0.1
         self.e_arm_get_tolerance = 0.01
 
-        self.expand_len = 0.4
-        self.robot_width = 1.0
-        self.robot_length = 0.6
-        self.expand_x = 0.15
-        self.expand_y = 0.35
+        self.robot_default_width = 1.0
+        self.robot_expanded_width = 1.4
         
         self.function_dict = {
             "set_e_arm": self.set_e_arm,
@@ -190,11 +187,15 @@ class nhk2025b_behavior(Node):
 
     def box_arm_callback(self, msg):
         self.box_arm_result = msg
-        last_robot_width = self.robot_width
-        # expand_x, expand_y を中心に msg.expand[i]　rad 回転させたときのロボットの幅を計算
+        expanded = False
         for i in range(2):
-            last_robot_width += max(0.0, math.sin(msg.expand[i]) * self.expand_len - (self.robot_length - self.expand_y))
-        self.robot_width_pub.publish(Float32(data=last_robot_width))
+            if msg.expand[i] > 0.1:
+                expanded = True
+        if expanded:
+            self.robot_width_pub.publish(Float32(data=self.robot_expanded_width))
+        else:
+            self.robot_width_pub.publish(Float32(data=self.robot_default_width))
+
 
     def check_allow_automate(self):
         return self.command.allow_automate 
