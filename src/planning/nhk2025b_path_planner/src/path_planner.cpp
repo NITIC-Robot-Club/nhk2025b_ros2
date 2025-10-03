@@ -80,7 +80,7 @@ void path_planner::create_path () {
 
     path_smoother (use_occ_map);
     angular_astar (path, use_current, use_goal, use_inflated_map);
-
+    RCLCPP_INFO(this->get_logger(), "Path length: %d, %d, %d", linear_path.poses.size(),smoothed_path.poses.size(), path.poses.size());
     path.header.stamp = this->now ();
     for (int i = 0; i < path.poses.size (); i++) {
         path.poses[i].header = path.header;
@@ -197,7 +197,6 @@ void path_planner::path_smoother (const nav_msgs::msg::OccupancyGrid& use_occ_ma
             smoothed_path.poses[i].pose.position.y -= total_y * grad_step_size;
         }
     }
-    // RCLCPP_INFO (this->get_logger (), "Smoothing  %zu points", smoothed_path.poses.size ());
 }
 std::vector<double> path_planner::angular_smoother (std::vector<double> theta_path) {
     auto idx_to_rad = [&] (double idx) { return idx * 2 * M_PI / angle_cost_map[0].size (); };
@@ -303,11 +302,9 @@ void path_planner::linear_astar (const geometry_msgs::msg::PoseStamped &use_curr
         linear_path.poses.push_back (pose);
     }
     std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
-    // RCLCPP_INFO (this->get_logger (), "Linear %zu points", linear_path.poses.size ());
 }
 void path_planner::angular_astar (nav_msgs::msg::Path &path, const geometry_msgs::msg::PoseStamped &use_current_pose, const geometry_msgs::msg::PoseStamped &use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map) {
     if (smoothed_path.poses.size () == 0) {
-        // RCLCPP_WARN (this->get_logger (), "linear path is empty, cannot perform angular A*");
         return;
     }
 
