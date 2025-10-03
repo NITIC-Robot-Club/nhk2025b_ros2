@@ -119,6 +119,7 @@ class nhk2025b_behavior(Node):
         self.label_to_state, self.state_to_pose, self.state_to_actions, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
         self.id_to_label = {v: k for k, v in self.label_to_state.items()}
         self.id_to_state = {v: s for s, v in self.state_id_map.items()}
+        self.label_snapshots = self.build_state_snapshots()
 
         self.state_array_pub = self.create_publisher(StateArray, '/behavior/avaiable_state_array', 1)
         self.pose_pub = self.create_publisher(PoseStamped, '/behavior/goal_pose', 1)
@@ -169,6 +170,26 @@ class nhk2025b_behavior(Node):
             state_msg.id = self.state_id_map[state]
             msg.state.append(state_msg)
         return msg
+
+    def build_state_snapshots(self):
+        snapshots = {}
+        for label, state in self.label_to_state.items():
+            actions = []
+            visited = set()
+            def dfs(s):
+                if s in visited:
+                    return
+                visited.add(s)
+                if s in self.state_to_actions:
+                    for act in self.state_to_actions[s]:
+                        actions.append(act)
+                for src, dst, cond in self.transitions:
+                    if dst == s:  # 逆向きに辿る
+                        dfs(src)
+            dfs(state)
+            snapshots[label] = actions
+        return snapshots
+
 
     def publish_state_array(self):
         self.state_array_pub.publish(self.state_array)
@@ -261,10 +282,20 @@ class nhk2025b_behavior(Node):
         label = found.name
         state = self.label_to_state[label]
         self.get_logger().info(f'[set_status_num] ラベル {label}({state}) へ強制遷移')
+
+        # ---- 状態復元 ----
+        if label in self.label_snapshots:
+            for act in self.label_snapshots[label]:
+                try:
+                    eval(act, {}, self.function_dict)
+                except Exception as e:
+                    self.get_logger().warn(f"スナップショット復元失敗: {act} ({e})")
+
         self.goal_pose.pose.position.x = -1.0
         self.current_state = state
         self.waiting_for_goal = False
         self.finished = False
+
 
     def current_pose_callback(self, msg):
         self.current_pose = msg
