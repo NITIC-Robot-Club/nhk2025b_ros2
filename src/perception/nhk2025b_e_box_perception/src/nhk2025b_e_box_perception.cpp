@@ -8,6 +8,7 @@ e_box_perception::e_box_perception (const rclcpp::NodeOptions& options) : rclcpp
     e_drop_pose_subscriber_   = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/e_drop_pose", 1, std::bind (&e_box_perception::pose_callback, this, std::placeholders::_1));
     lidar_subscriber_         = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&e_box_perception::lidar_callback, this, std::placeholders::_1));
     is_red_subscriber_        = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&e_box_perception::is_red_callback, this, std::placeholders::_1));
+    current_pose_subscriber_  = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&e_box_perception::current_pose_callback, this, std::placeholders::_1));
     iter                      = this->declare_parameter<int> ("iter", 100);
     distance_threshold        = this->declare_parameter<double> ("distance_threshold", 0.025);
     normal_distance           = this->declare_parameter<double> ("normal_distance", 0.5);
@@ -102,16 +103,20 @@ e_box_perception::Point e_box_perception::line_centre (e_box_perception::Line li
 
 e_box_perception::Point e_box_perception::normal_point (e_box_perception::Line line, e_box_perception::Point point, double normal_distance) {
     double line_angle = atan2 (line.end.y - line.start.y, line.end.x - line.start.x);
-    double normal_angle;
-    if (is_red_) {
-        normal_angle = line_angle - M_PI / 2.0;
-    } else {
-        normal_angle = line_angle + M_PI / 2.0;
-    }
-    e_box_perception::Point normal_pt;
-    normal_pt.x = point.x + normal_distance * cos (normal_angle);
-    normal_pt.y = point.y + normal_distance * sin (normal_angle);
-    return normal_pt;
+
+    e_box_perception::Point normal_pt1, normal_pt2;
+    double                  normal_angle1 = line_angle - M_PI / 2.0;
+    double                  normal_angle2 = line_angle + M_PI / 2.0;
+
+    normal_pt1.x = point.x + normal_distance * cos (normal_angle1);
+    normal_pt1.y = point.y + normal_distance * sin (normal_angle1);
+    normal_pt2.x = point.x + normal_distance * cos (normal_angle2);
+    normal_pt2.y = point.y + normal_distance * sin (normal_angle2);
+
+    double dist1 = sqrt (pow (normal_pt1.x - robot_pose_.pose.position.x, 2) + pow (normal_pt1.y - robot_pose_.pose.position.y, 2));
+    double dist2 = sqrt (pow (normal_pt2.x - robot_pose_.pose.position.x, 2) + pow (normal_pt2.y - robot_pose_.pose.position.y, 2));
+
+    return (dist1 > dist2) ? normal_pt1 : normal_pt2;
 }
 
 e_box_perception::Point e_box_perception::collect_normal_point (e_box_perception::Line line, e_box_perception::Point point, double normal_distance) {
@@ -200,6 +205,9 @@ e_box_perception::Line e_box_perception::ransac (std::vector<e_box_perception::P
     return best_line;
 }
 
+void e_box_perception::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr current_pose) {
+    robot_pose_ = *current_pose;
+}
 }  // namespace e_box_perception
 
 #include <rclcpp_components/register_node_macro.hpp>

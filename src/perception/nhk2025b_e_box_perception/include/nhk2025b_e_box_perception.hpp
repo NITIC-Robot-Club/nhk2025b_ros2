@@ -39,6 +39,7 @@ class e_box_perception : public rclcpp::Node {
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr e_drop_pose_subscriber_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr   lidar_subscriber_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr             is_red_subscriber_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr current_pose_subscriber_;
     int                                                              iter;
     double                                                           distance_threshold;
     bool                                                             is_red_;
@@ -48,10 +49,12 @@ class e_box_perception : public rclcpp::Node {
     nhk2025b_msgs::msg::BoxArray                                     box_array_;
     sensor_msgs::msg::PointCloud2                                    lidar_data_;
     geometry_msgs::msg::PoseStamped                                  e_box_normal_;
+    geometry_msgs::msg::PoseStamped                                  robot_pose_;
 
     void                    pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr pose);
     void                    lidar_callback (const sensor_msgs::msg::PointCloud2::SharedPtr lidar);
     void                    is_red_callback (const std_msgs::msg::Bool::SharedPtr is_red);
+    void                    current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr current_pose);
     std::vector<Point>      cloud_to_points (const sensor_msgs::msg::PointCloud2 &cloud);
     e_box_perception::Line  ransac (std::vector<Point> data, double line_length);
     std::vector<Point>      filtering_points (std::vector<Point> data);
