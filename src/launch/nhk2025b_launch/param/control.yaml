@@ -1,7 +1,7 @@
 pure_pursuit:
   ros__parameters:
     lookahead_time: 1.0
-    min_lookahead_distance: 0.1
+    min_lookahead_distance: 0.05
     max_lookahead_distance: 0.4
     angle_speed_p: 2.0
     curvature_decceleration_p: 1.0

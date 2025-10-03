@@ -24,7 +24,6 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
             robot_width = msg->data;
             inflate_map ();
             create_path ();
-            inflate_map_publisher->publish (occ_map);
         }
     });
 
