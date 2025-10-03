@@ -60,14 +60,14 @@ class path_planner : public rclcpp::Node {
     void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void   vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void   create_path ();
-    void   find_freespace (std::pair<int, int>& point, int theta);
+    void   find_freespace (std::pair<int, int>& point, int theta, const std::vector<std::vector<int8_t>>& use_inflated_map);
     void   timer_callback ();
-    void   linear_astar ();
-    void   angular_astar (nav_msgs::msg::Path& path);
-    void   path_smoother ();
+    void   linear_astar (const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
+    void   angular_astar (nav_msgs::msg::Path& path, const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
+    void   path_smoother (const nav_msgs::msg::OccupancyGrid& use_occ_map);
     void   inflate_map ();
     void   init_rotated_footprint ();
-    bool   is_collision (int x, int y, int theta);
+    bool   is_collision (int x, int y, int theta, const std::vector<std::vector<int8_t>>& use_inflated_map);
     bool   is_same_map ();
     double theta_heuristic (int dx, int theta);
 
@@ -97,7 +97,7 @@ class path_planner : public rclcpp::Node {
     nav_msgs::msg::OccupancyGrid     last_map;
     nav_msgs::msg::OccupancyGrid     occ_map;
     nav_msgs::msg::OccupancyGrid     theta_map;
-    nav_msgs::msg::Path              path;
+    nav_msgs::msg::Path              send_path;
     nav_msgs::msg::Path              linear_path;
     nav_msgs::msg::Path              smoothed_path;
     geometry_msgs::msg::TwistStamped current_vel;

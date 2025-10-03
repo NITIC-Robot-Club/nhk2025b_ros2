@@ -3,7 +3,6 @@
 namespace path_planner {
 path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_planner", options) {
     theta_resolution = this->declare_parameter<int> ("theta_resolution", 5);
-    resolution_ms    = this->declare_parameter<int> ("resolution_ms", 100);
     offset_mm        = this->declare_parameter<int> ("offset_mm", 30);
     penalty_mm       = this->declare_parameter<int> ("penalty_mm", 750);
     robot_length     = this->declare_parameter<double> ("robot_length", 0.6);
@@ -23,6 +22,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
         if (abs (robot_width - msg->data) > 0.001) {
             robot_width = msg->data;
             inflate_map ();
+            init_rotated_footprint ();
             create_path ();
             inflate_map_publisher->publish (occ_map);
         }
@@ -32,7 +32,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
 
     inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 1);
     theta_map_publisher   = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/thetamap", 1);
-    path.header.frame_id  = "map";
+    send_path.header.frame_id  = "map";
 }
 
 void path_planner::timer_callback () {
@@ -51,10 +51,13 @@ void path_planner::timer_callback () {
     //     delta_yaw -= 2 * M_PI;
     // else if (delta_yaw < -M_PI)
     //     delta_yaw += 2 * M_PI;
-    path.header.stamp = this->now ();
-    path_publisher->publish (path);
+    send_path.header.stamp = this->now ();
+    path_publisher->publish (send_path);
 }
 
+void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+    current_pose = *msg;
+}
 void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     goal_pose = *msg;
     create_path ();
@@ -65,18 +68,27 @@ void path_planner::create_path () {
     if (current_pose.header.stamp.sec == 0) return;
     if (goal_pose.header.stamp.sec == 0) return;
 
-    path.poses.clear ();
+    geometry_msgs::msg::PoseStamped use_goal = goal_pose;
+    geometry_msgs::msg::PoseStamped use_current = current_pose;
+    nav_msgs::msg::OccupancyGrid use_occ_map = occ_map;
+    std::vector<std::vector<int8_t>> use_inflated_map = inflated_map;
+    
+    nav_msgs::msg::Path path;
+    path.header.frame_id = "map";
 
-    linear_astar ();
+    linear_astar (use_current, use_goal, use_inflated_map);
 
-    path_smoother ();
-    angular_astar (path);
+    path_smoother (use_occ_map);
+    angular_astar (path, use_current, use_goal, use_inflated_map);
 
+    path.header.stamp = this->now ();
     for (int i = 0; i < path.poses.size (); i++) {
         path.poses[i].header = path.header;
     }
-    if (path.poses.size () != 0) safe_goal_pose = path.poses.back ();
+    // if (path.poses.size () != 0) safe_goal_pose = path.poses.back ();
     path_publisher->publish (path);
+
+    send_path = path;
 }
 
 bool path_planner::is_same_map () {
@@ -125,7 +137,7 @@ void path_planner::inflate_map () {
                             }
                             int8_t dist_penalty = 0;
                             if (dist <= inflate_radius) {
-                                dist_penalty = static_cast<int8_t> (100 * (1.0 - (dist * dist) / (inflate_radius * inflate_radius)));
+                                dist_penalty = static_cast<int8_t> (100 * (1.0 - (dist / inflate_radius)));
                             }
                             occ_map.data[next_y * map_width + next_x] = std::max (occ_map.data[next_y * map_width + next_x], dist_penalty);
                         }
@@ -142,10 +154,10 @@ std::pair<int, int> path_planner::to_grid (double x, double y) {
     gy     = std::clamp (gy, 0, map_height - 1);
     return {gx, gy};
 }
-void path_planner::path_smoother () {
+void path_planner::path_smoother (const nav_msgs::msg::OccupancyGrid& use_occ_map) {
     auto get_cost = [&] (int x, int y) -> double {
         if (x < 0 || y < 0 || x >= map_width || y >= map_height) return 1.0;
-        return static_cast<double> (occ_map.data[y * map_width + x]) / 100.0;
+        return static_cast<double> (use_occ_map.data[y * map_width + x]) / 100.0;
     };
     auto get_cost_gradient = [&] (double x, double y) -> std::pair<double, double> {
         auto [grid_x, grid_y] = to_grid (x, y);
@@ -229,11 +241,11 @@ std::vector<double> path_planner::angular_smoother (std::vector<double> theta_pa
     }
     return theta_path;
 }
-void path_planner::linear_astar () {
+void path_planner::linear_astar (const geometry_msgs::msg::PoseStamped &use_current_pose, const geometry_msgs::msg::PoseStamped &use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map) {
     linear_path.poses.clear ();
 
-    auto start = to_grid (current_pose.pose.position.x, current_pose.pose.position.y);
-    auto goal  = to_grid (goal_pose.pose.position.x, goal_pose.pose.position.y);
+    auto start = to_grid (use_current_pose.pose.position.x, use_current_pose.pose.position.y);
+    auto goal  = to_grid (use_goal_pose.pose.position.x, use_goal_pose.pose.position.y);
 
     auto to_index = [&] (int x, int y) { return y * map_width + x; };
 
@@ -241,13 +253,13 @@ void path_planner::linear_astar () {
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
     std::unordered_map<int, double>                                                    cost_so_far;
 
-    int start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
-    int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
+    int start_theta = rad_to_deg (get_yaw_2d (use_current_pose.pose.orientation));
+    int goal_theta  = rad_to_deg (get_yaw_2d (use_goal_pose.pose.orientation));
     start_theta     = angle_to_index (start_theta);
     goal_theta      = angle_to_index (goal_theta);
 
-    find_freespace (start, start_theta);
-    find_freespace (goal, goal_theta);
+    find_freespace (start, start_theta, use_inflated_map);
+    find_freespace (goal, goal_theta, use_inflated_map);
 
     open.push ({start.first, start.second, 0.0, 0.0});
     cost_so_far[to_index (start.first, start.second)] = 0.0;
@@ -260,7 +272,7 @@ void path_planner::linear_astar () {
             int next_x = current.x + dx, next_y = current.y + dy;
             if (next_x < 0 || next_y < 0 || next_x >= map_width || next_y >= map_height) continue;
             int idx = to_index (next_x, next_y);
-            if (inflated_map[next_y][next_x] > 50) continue;
+            if (use_inflated_map[next_y][next_x] > 50) continue;
             double new_cost = cost_so_far[to_index (current.x, current.y)] + std::hypot (dx, dy);
             if (!cost_so_far.count (idx) || new_cost < cost_so_far[idx]) {
                 cost_so_far[idx] = new_cost;
@@ -293,14 +305,14 @@ void path_planner::linear_astar () {
     std::reverse (linear_path.poses.begin (), linear_path.poses.end ());
     // RCLCPP_INFO (this->get_logger (), "Linear %zu points", linear_path.poses.size ());
 }
-void path_planner::angular_astar (nav_msgs::msg::Path &path) {
+void path_planner::angular_astar (nav_msgs::msg::Path &path, const geometry_msgs::msg::PoseStamped &use_current_pose, const geometry_msgs::msg::PoseStamped &use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map) {
     if (smoothed_path.poses.size () == 0) {
         // RCLCPP_WARN (this->get_logger (), "linear path is empty, cannot perform angular A*");
         return;
     }
 
-    int start_theta = rad_to_deg (get_yaw_2d (current_pose.pose.orientation));
-    int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.pose.orientation));
+    int start_theta = rad_to_deg (get_yaw_2d (use_current_pose.pose.orientation));
+    int goal_theta  = rad_to_deg (get_yaw_2d (use_goal_pose.pose.orientation));
     start_theta     = angle_to_index (start_theta);
     goal_theta      = angle_to_index (goal_theta);
 
@@ -324,9 +336,9 @@ void path_planner::angular_astar (nav_msgs::msg::Path &path) {
     angle_cost_map.resize (smoothed_path.poses.size (), std::vector<int8_t> (360 / theta_resolution, 0));
     for (int i = 0; i < smoothed_path.poses.size (); ++i) {
         auto [gx, gy] = to_grid (smoothed_path.poses[i].pose.position.x, smoothed_path.poses[i].pose.position.y);
-        if (inflated_map[gy][gx] > 10) {
+        if (use_inflated_map[gy][gx] > 10) {
             for (int j = 0; j < angle_cost_map[0].size (); ++j) {
-                if (is_collision (gx, gy, j)) {
+                if (is_collision (gx, gy, j, use_inflated_map)) {
                     angle_cost_map[i][j]                         = 100;
                     theta_map.data[j * theta_map.info.width + i] = 100;
                 }
@@ -402,6 +414,7 @@ double path_planner::theta_heuristic (int dx, int theta) {
 }
 void path_planner::init_rotated_footprint () {
     int num_rotations = 360 / theta_resolution;
+    rotated_footprint.clear ();
     rotated_footprint.resize (num_rotations);
     double inital_angle = std::atan2 (robot_width, robot_length);
     double half_radius  = std::hypot (robot_width / 2.0, robot_length / 2.0) / map_resolution;
@@ -413,20 +426,20 @@ void path_planner::init_rotated_footprint () {
         rotated_footprint[i][3] = {-rotated_footprint[i][1].first, -rotated_footprint[i][1].second};
     }
 }
-bool path_planner::is_collision (int x, int y, int theta) {
+bool path_planner::is_collision (int x, int y, int theta, const std::vector<std::vector<int8_t>>& use_inflated_map) {
     for (int i = 0; i < 4; ++i) {
         int next_x = x + rotated_footprint[theta][i].first;
         int next_y = y + rotated_footprint[theta][i].second;
         if (next_x < 0 || next_y < 0 || next_x >= map_width || next_y >= map_height) {
             return true;
         }
-        if (inflated_map[next_y][next_x] > 90) {
+        if (use_inflated_map[next_y][next_x] > 90) {
             return true;
         }
     }
     return false;
 }
-void path_planner::find_freespace (std::pair<int, int> &point, int theta) {
+void path_planner::find_freespace (std::pair<int, int> &point, int theta, const std::vector<std::vector<int8_t>>& use_inflated_map) {
     std::vector<std::vector<bool>>  visited (map_height, std::vector<bool> (map_width, false));
     std::queue<std::pair<int, int>> q;
     q.push ({point.first, point.second});
@@ -435,7 +448,7 @@ void path_planner::find_freespace (std::pair<int, int> &point, int theta) {
     while (!q.empty ()) {
         auto [x, y] = q.front ();
         q.pop ();
-        if (!is_collision (x, y, theta) && inflated_map[y][x] < 50) {
+        if (!is_collision (x, y, theta, use_inflated_map) && use_inflated_map[y][x] < 50) {
             point.first  = x;
             point.second = y;
             return;
@@ -450,9 +463,6 @@ void path_planner::find_freespace (std::pair<int, int> &point, int theta) {
             }
         }
     }
-}
-void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    current_pose = *msg;
 }
 
 void path_planner::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
