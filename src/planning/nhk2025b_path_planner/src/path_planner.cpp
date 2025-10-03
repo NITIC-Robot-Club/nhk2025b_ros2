@@ -25,7 +25,6 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
             inflate_map ();
             init_rotated_footprint ();
             create_path ();
-            inflate_map_publisher->publish (occ_map);
         }
     });
 
