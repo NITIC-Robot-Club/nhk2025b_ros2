@@ -20,6 +20,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     vel_subscriber          = this->create_subscription<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
     robot_width_subscriber  = this->create_subscription<std_msgs::msg::Float32> ("/robot_width", 1, [this] (const std_msgs::msg::Float32::SharedPtr msg) {
         if (abs (robot_width - msg->data) > 0.001) {
+            if(robot_width == msg->data) return;
             robot_width = msg->data;
             inflate_map ();
             init_rotated_footprint ();
