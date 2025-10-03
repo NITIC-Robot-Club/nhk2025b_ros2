@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32, Bool
+from std_msgs.msg import Int32, Bool, Float32
 from geometry_msgs.msg import PoseStamped
 from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command, EArm, BoxArm, Conveyor, PylonArm
 import math
@@ -94,6 +94,12 @@ class nhk2025b_behavior(Node):
         self.e_arm_expand_tolerance = 0.1
         self.e_arm_get_tolerance = 0.01
 
+        self.expand_len = 0.4
+        self.robot_width = 1.0
+        self.robot_length = 0.6
+        self.expand_x = 0.15
+        self.expand_y = 0.35
+        
         self.function_dict = {
             "set_e_arm": self.set_e_arm,
             "set_box_arm_height": self.set_box_arm_height,
@@ -124,6 +130,7 @@ class nhk2025b_behavior(Node):
         self.box_arm_pub = self.create_publisher(BoxArm, '/box_arm/cmd', 1)
         self.conveyor_pub = self.create_publisher(Conveyor, '/conveyor/cmd', 1)
         self.pylon_arm_pub = self.create_publisher(PylonArm, '/pylon_arm/cmd', 1)
+        self.robot_width_pub = self.create_publisher(Float32, '/robot_width', 1)
 
         self.create_subscription(PoseStamped, '/localization/current_pose', self.current_pose_callback, 1)
         self.create_subscription(RobotStatus, '/robot_status', self.robot_status_callback, 1)
@@ -183,6 +190,11 @@ class nhk2025b_behavior(Node):
 
     def box_arm_callback(self, msg):
         self.box_arm_result = msg
+        last_robot_width = self.robot_width
+        # expand_x, expand_y を中心に msg.expand[i]　rad 回転させたときのロボットの幅を計算
+        for i in range(2):
+            last_robot_width += max(0.0, math.sin(msg.expand[i]) * self.expand_len - (self.robot_length - self.expand_y))
+        self.robot_width_pub.publish(Float32(data=last_robot_width))
 
     def check_allow_automate(self):
         return self.command.allow_automate 

@@ -7,6 +7,7 @@
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/path.hpp>
+#include <std_msgs/msg/float32.hpp>
 
 #include <queue>
 
@@ -39,8 +40,8 @@ class path_planner : public rclcpp::Node {
     int    resolution_ms;
     int    penalty_mm;
     int    offset_mm;
-    int    robot_height_mm;
-    int    robot_width_mm;
+    double robot_width = 1.0;
+    double robot_length;
     int    tolerance_xy_mm;
     double tolerance_z_rad;
 
@@ -64,12 +65,12 @@ class path_planner : public rclcpp::Node {
     void   linear_astar ();
     void   angular_astar (nav_msgs::msg::Path& path);
     void   path_smoother ();
-    std::vector<double> angular_smoother (std::vector<double> theta_path);
     void   inflate_map ();
     void   init_rotated_footprint ();
     bool   is_collision (int x, int y, int theta);
     double theta_heuristic (int dx, int theta);
 
+    std::vector<double> angular_smoother (std::vector<double> theta_path);
     std::pair<int, int> to_grid (double x, double y);
 
     double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
@@ -88,22 +89,24 @@ class path_planner : public rclcpp::Node {
     int rad_to_deg (double rad) {
         return static_cast<int> (rad * 180.0 / M_PI);
     }
-    geometry_msgs::msg::PoseStamped                                   current_pose;
-    geometry_msgs::msg::PoseStamped                                   goal_pose;
-    geometry_msgs::msg::PoseStamped                                   safe_goal_pose;
-    nav_msgs::msg::OccupancyGrid                                      original_map;
-    nav_msgs::msg::OccupancyGrid                                      last_map;
-    nav_msgs::msg::OccupancyGrid                                      occ_map;
-    nav_msgs::msg::OccupancyGrid                                      theta_map;
-    nav_msgs::msg::Path                                               path;
-    nav_msgs::msg::Path                                               linear_path;
-    nav_msgs::msg::Path                                               smoothed_path;
-    geometry_msgs::msg::TwistStamped                                  current_vel;
+    geometry_msgs::msg::PoseStamped  current_pose;
+    geometry_msgs::msg::PoseStamped  goal_pose;
+    geometry_msgs::msg::PoseStamped  safe_goal_pose;
+    nav_msgs::msg::OccupancyGrid     original_map;
+    nav_msgs::msg::OccupancyGrid     last_map;
+    nav_msgs::msg::OccupancyGrid     occ_map;
+    nav_msgs::msg::OccupancyGrid     theta_map;
+    nav_msgs::msg::Path              path;
+    nav_msgs::msg::Path              linear_path;
+    nav_msgs::msg::Path              smoothed_path;
+    geometry_msgs::msg::TwistStamped current_vel;
+
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr                 path_publisher;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscriber;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  goal_pose_subscriber;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr     map_subscriber;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_subscriber;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr           robot_width_subscriber;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr        inflate_map_publisher;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr        theta_map_publisher;
     rclcpp::TimerBase::SharedPtr                                      timer_;

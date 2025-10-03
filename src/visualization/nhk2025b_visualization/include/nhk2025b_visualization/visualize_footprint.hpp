@@ -6,6 +6,7 @@
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
+#include <std_msgs/msg/float32.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
 #include <deque>
@@ -20,7 +21,8 @@ class visualize_footprint : public rclcpp::Node {
     std::deque<visualization_msgs::msg::Marker> marker_history;
     nav_msgs::msg::OccupancyGrid                map;
 
-    double robot_width, robot_length;
+    double robot_width = 1.0;
+    double robot_length;
     int    history;
     void   pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
@@ -28,6 +30,7 @@ class visualize_footprint : public rclcpp::Node {
 
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr   pose_sub_;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr      map_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr            robot_width_sub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 };
 }  // namespace visualize_footprint

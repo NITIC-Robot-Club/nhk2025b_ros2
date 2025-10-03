@@ -6,8 +6,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     resolution_ms    = this->declare_parameter<int> ("resolution_ms", 100);
     offset_mm        = this->declare_parameter<int> ("offset_mm", 30);
     penalty_mm       = this->declare_parameter<int> ("penalty_mm", 750);
-    robot_height_mm  = this->declare_parameter<int> ("robot_height_mm", 800);
-    robot_width_mm   = this->declare_parameter<int> ("robot_width_mm", 600);
+    robot_length     = this->declare_parameter<double> ("robot_length", 0.6);
     tolerance_xy_mm  = this->declare_parameter<int> ("tolerance_xy_mm", 30);
     tolerance_z_rad  = this->declare_parameter<double> ("tolerance_z_rad", 0.03);
     grad_alpha       = this->declare_parameter<double> ("grad_alpha", 1.0);
@@ -20,6 +19,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
     goal_pose_subscriber    = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/goal_pose", 1, std::bind (&path_planner::goal_pose_callback, this, std::placeholders::_1));
     map_subscriber          = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&path_planner::map_callback, this, std::placeholders::_1));
     vel_subscriber          = this->create_subscription<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
+    robot_width_subscriber  = this->create_subscription<std_msgs::msg::Float32> ("/robot_width", 1, [this] (const std_msgs::msg::Float32::SharedPtr msg) { robot_width = msg->data; });
     timer_                  = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&path_planner::timer_callback, this));
 
     inflate_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/planning/costmap", 1);
@@ -28,19 +28,21 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
 }
 
 void path_planner::timer_callback () {
-    nav_msgs::msg::Path empty_path;
-    empty_path.header.frame_id = "map";
-    empty_path.header.stamp    = this->now ();
-    double diff_x              = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
-    double diff_y              = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
-    double distance            = std::hypot (diff_x, diff_y);
-    double current_yaw         = get_yaw_2d (current_pose.pose.orientation);
-    double goal_yaw            = get_yaw_2d (safe_goal_pose.pose.orientation);
-    double delta_yaw           = goal_yaw - current_yaw;
-    if (delta_yaw > M_PI)
-        delta_yaw -= 2 * M_PI;
-    else if (delta_yaw < -M_PI)
-        delta_yaw += 2 * M_PI;
+    // create_path ();
+    // return;
+    // nav_msgs::msg::Path empty_path;
+    // empty_path.header.frame_id = "map";
+    // empty_path.header.stamp    = this->now ();
+    // double diff_x              = safe_goal_pose.pose.position.x - current_pose.pose.position.x;
+    // double diff_y              = safe_goal_pose.pose.position.y - current_pose.pose.position.y;
+    // double distance            = std::hypot (diff_x, diff_y);
+    // double current_yaw         = get_yaw_2d (current_pose.pose.orientation);
+    // double goal_yaw            = get_yaw_2d (safe_goal_pose.pose.orientation);
+    // double delta_yaw           = goal_yaw - current_yaw;
+    // if (delta_yaw > M_PI)
+    //     delta_yaw -= 2 * M_PI;
+    // else if (delta_yaw < -M_PI)
+    //     delta_yaw += 2 * M_PI;
     path.header.stamp = this->now ();
     path_publisher->publish (path);
 }
@@ -87,11 +89,11 @@ void path_planner::inflate_map () {
     inflated_map.clear ();
     occ_map.data.resize (map_width * map_height, 0);
     inflated_map.resize (map_height, std::vector<int8_t> (map_width, 0));
-    double width_radius         = robot_width_mm / 2000.0 / map_resolution;
-    double height_radius        = robot_height_mm / 2000.0 / map_resolution;
+    double width_radius         = robot_width / 2.0 / map_resolution;
+    double length_radius        = robot_length / 2.0 / map_resolution;
     int    offset_radius        = std::ceil (offset_mm / 1000.0 / map_resolution);
-    int    max_inflation_radius = std::ceil (std::hypot (width_radius, height_radius)) + offset_radius;
-    int    min_inflation_radius = std::ceil (std::min (width_radius, height_radius)) + offset_radius;
+    int    max_inflation_radius = std::ceil (std::hypot (width_radius, length_radius)) + offset_radius;
+    int    min_inflation_radius = std::ceil (std::min (width_radius, length_radius)) + offset_radius;
     int    inflate_radius       = std::max (max_inflation_radius, static_cast<int> (std::ceil (penalty_mm / 1000.0 / map_resolution)));
     // マップ全体を走査
     for (int y = 0; y < map_height; ++y) {
@@ -199,7 +201,7 @@ std::vector<double> path_planner::angular_smoother (std::vector<double> theta_pa
     for (int iter = 0; iter < max_iterations; ++iter) {
         for (size_t i = 1; i + 1 < theta_path.size (); ++i) {
             // 曲率項（滑らかさ）
-            double mid_y = mid_index (theta_path[i - 1], theta_path[i + 1]);
+            double mid_y    = mid_index (theta_path[i - 1], theta_path[i + 1]);
             double smooth_y = theta_path[i] - mid_y;
 
             // 勾配降下による更新
@@ -391,8 +393,8 @@ double path_planner::theta_heuristic (int dx, int theta) {
 void path_planner::init_rotated_footprint () {
     int num_rotations = 360 / theta_resolution;
     rotated_footprint.resize (num_rotations);
-    double inital_angle = std::atan2 (robot_height_mm, robot_width_mm);
-    double half_radius  = std::hypot (robot_width_mm / 2000.0, robot_height_mm / 2000.0) / map_resolution;
+    double inital_angle = std::atan2 (robot_width, robot_length);
+    double half_radius  = std::hypot (robot_width / 2.0, robot_length / 2.0) / map_resolution;
     for (int i = 0; i < num_rotations; ++i) {
         double angle            = i * theta_resolution * M_PI / 180.0;
         rotated_footprint[i][0] = {static_cast<int> (half_radius * std::cos (angle + inital_angle)), static_cast<int> (half_radius * std::sin (angle + inital_angle))};

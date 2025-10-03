@@ -4,9 +4,11 @@
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_box::visualize_box" name="visualize_box"/>
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_footprint::visualize_footprint" name="visualize_footprint">
+            <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
             <param from="$(find-pkg-share nhk2025b_launch)/param/visualization.yaml"/>
         </composable_node>
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_path_collision::visualize_path_collision" name="visualize_path_collision">
+            <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
             <param from="$(find-pkg-share nhk2025b_launch)/param/visualization.yaml"/>
         </composable_node>
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_stl::visualize_stl" name="visualize_field">

@@ -7,5 +7,6 @@
       red:
         x: 0.4
         y: 0.3
-    robot_width: 0.8
+    robot_width: 1.0
     robot_length: 0.6
+    robot_width_expanded : 1.8

@@ -3,13 +3,12 @@
 namespace visualize_path_collision {
 
 visualize_path_collision::visualize_path_collision (const rclcpp::NodeOptions &options) : Node ("visualize_path_collision", options) {
-    path_sub_   = this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 1, std::bind (&visualize_path_collision::path_callback, this, std::placeholders::_1));
-    map_sub_    = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&visualize_path_collision::map_callback, this, std::placeholders::_1));
-    marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/path_collision", 1);
-    timer_      = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&visualize_path_collision::timer_callback, this));
+    path_sub_        = this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 1, std::bind (&visualize_path_collision::path_callback, this, std::placeholders::_1));
+    map_sub_         = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&visualize_path_collision::map_callback, this, std::placeholders::_1));
+    marker_pub_      = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/path_collision", 1);
+    timer_           = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&visualize_path_collision::timer_callback, this));
+    robot_width_sub_ = this->create_subscription<std_msgs::msg::Float32> ("/robot_width", 1, [this] (const std_msgs::msg::Float32::SharedPtr msg) { robot_width = msg->data; });
 
-    // Robot dimensions (in meters)
-    declare_parameter ("robot_width", 0.8);
     declare_parameter ("robot_length", 0.6);
 }
 
@@ -18,15 +17,14 @@ void visualize_path_collision::path_callback (const nav_msgs::msg::Path::SharedP
 }
 
 void visualize_path_collision::timer_callback () {
-    // パラメータ取得
-    robot_width                  = get_parameter ("robot_width").as_double ();
     robot_length                 = get_parameter ("robot_length").as_double ();
     double wheel_positions[5][2] = {
         {+robot_length / 2.0, +robot_width / 2.0},
         {-robot_length / 2.0, +robot_width / 2.0},
         {-robot_length / 2.0, -robot_width / 2.0},
         {+robot_length / 2.0, -robot_width / 2.0},
-        {+robot_length / 2.0, +robot_width / 2.0}  // 最後の点は最初の点と同じにする
+        {+robot_length / 2.0, +robot_width / 2.0}
+        // 最後の点は最初の点と同じにする
     };
 
     visualization_msgs::msg::MarkerArray marker_array;
