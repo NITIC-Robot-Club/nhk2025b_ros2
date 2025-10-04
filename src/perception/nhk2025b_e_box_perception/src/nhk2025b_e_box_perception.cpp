@@ -5,6 +5,8 @@ namespace e_box_perception {
 e_box_perception::e_box_perception (const rclcpp::NodeOptions& options) : rclcpp::Node ("e_box_perception", options) {
     box_publisher_            = this->create_publisher<nhk2025b_msgs::msg::BoxArray> ("/box_state", rclcpp::QoS (10));
     e_collect_pose_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/perception/e_collect_pose", rclcpp::QoS (10));
+    test_publisher_           = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/perception/test_pose", rclcpp::QoS (10));
+    pose_array_publisher_     = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/pose_array", rclcpp::QoS (10));
     e_drop_pose_subscriber_   = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/e_drop_pose", 1, std::bind (&e_box_perception::pose_callback, this, std::placeholders::_1));
     lidar_subscriber_         = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&e_box_perception::lidar_callback, this, std::placeholders::_1));
     is_red_subscriber_        = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&e_box_perception::is_red_callback, this, std::placeholders::_1));
@@ -27,10 +29,16 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
     std::vector<e_box_perception::Point> points          = cloud_to_points (lidar_data_);  // 点群データをPointの配列に変換
     std::vector<e_box_perception::Point> filtered_points = filtering_points (points);      // 検出範囲に入っている点のみ抽出
     e_box_perception::Line               best_line       = {0, 0, 0};
-    best_line                                            = ransac_line (points, inliers);  // RANSACで直線を検出
+    best_line                                            = ransac_line (filtered_points, inliers);  // RANSACで直線を検出
     RCLCPP_INFO (this->get_logger (), "a: %f, b: %f, c: %f", best_line.a, best_line.b, best_line.c);
 
     e_box_perception::Point centre_of_line        = line_midpoint (best_line);                                                                                                                                        // 直線の中心点を計算
+    geometry_msgs::msg::PoseStamped test;
+    test.header.frame_id  = "map";
+    test.header.stamp     = this->now ();
+    test.pose.position.x         = centre_of_line.first;
+    test.pose.position.y         = centre_of_line.second;
+    test_publisher_->publish (test);
     double                  best_line_inclination = atan2 (best_line.end.second - best_line.start.second, best_line.end.first - best_line.start.first);                                                               // 検出線分の傾きを計算
     e_box_perception::Point centre_of_box         = {centre_of_line.first + normal_distance * cos (best_line_inclination - M_PI_2), centre_of_line.second + normal_distance * sin (best_line_inclination - M_PI_2)};  // ボックスの中心を計算
     RCLCPP_INFO (this->get_logger (), "Line angle theta: %f°", best_line_inclination * 180.0 / M_PI);
@@ -110,11 +118,22 @@ std::vector<e_box_perception::Point> e_box_perception::cloud_to_points (const se
 
 std::vector<e_box_perception::Point> e_box_perception::filtering_points (std::vector<e_box_perception::Point> data) {
     std::vector<e_box_perception::Point> filtered;
+
+    geometry_msgs::msg::PoseArray test_poses;
+    test_poses.header.frame_id = "map";
+    test_poses.header.stamp    = this->now ();
+
     for (const auto& p : data) {
         if (p.first >= min_x || p.first <= max_x || p.second >= min_y || p.second <= max_y) {
+            geometry_msgs::msg::Pose pose;
+            pose.position.x = p.first;
+            pose.position.y = p.second;
+            test_poses.poses.push_back (pose);
             filtered.push_back (p);
         }
     }
+    RCLCPP_INFO (this->get_logger (), "Filtered points: %zu", filtered.size ());
+    pose_array_publisher_->publish (test_poses);
     return filtered;
 }
 

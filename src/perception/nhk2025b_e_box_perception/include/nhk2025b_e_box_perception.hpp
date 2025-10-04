@@ -7,6 +7,7 @@
 
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/pose_array.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nhk2025b_msgs/msg/box.hpp>
@@ -41,6 +42,8 @@ class e_box_perception : public rclcpp::Node {
     std::unique_ptr<tf2_ros::Buffer>                                 tf_buffer_;
     rclcpp::Publisher<nhk2025b_msgs::msg::BoxArray>::SharedPtr       box_publisher_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    e_collect_pose_publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    test_publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr      pose_array_publisher_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr e_drop_pose_subscriber_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr   lidar_subscriber_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr             is_red_subscriber_;
