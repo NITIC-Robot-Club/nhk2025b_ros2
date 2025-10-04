@@ -12,6 +12,10 @@ e_box_perception::e_box_perception (const rclcpp::NodeOptions& options) : rclcpp
     iter                      = this->declare_parameter<int> ("iter", 100);
     distance_threshold        = this->declare_parameter<double> ("distance_threshold", 0.025);
     normal_distance           = this->declare_parameter<double> ("normal_distance", 0.5);
+    min_x                     = this->declare_parameter<double> ("min_x", -5.0);
+    max_x                     = this->declare_parameter<double> ("max_x", 5.0);
+    min_y                     = this->declare_parameter<double> ("min_y", -3.0);
+    max_y                     = this->declare_parameter<double> ("max_y", 3.0);
 
     tf_buffer_   = std::make_unique<tf2_ros::Buffer> (this->get_clock ());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener> (*tf_buffer_);
@@ -25,7 +29,7 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
     e_box_perception::Line               best_line       = {0, 0, 0};
     best_line                                            = ransac_line (points, inliers);  // RANSACで直線を検出
     RCLCPP_INFO (this->get_logger (), "a: %f, b: %f, c: %f", best_line.a, best_line.b, best_line.c);
-    
+
     e_box_perception::Point centre_of_line        = line_midpoint (best_line);                                                                                                                                        // 直線の中心点を計算
     double                  best_line_inclination = atan2 (best_line.end.second - best_line.start.second, best_line.end.first - best_line.start.first);                                                               // 検出線分の傾きを計算
     e_box_perception::Point centre_of_box         = {centre_of_line.first + normal_distance * cos (best_line_inclination - M_PI_2), centre_of_line.second + normal_distance * sin (best_line_inclination - M_PI_2)};  // ボックスの中心を計算
@@ -61,6 +65,17 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
 
 void e_box_perception::is_red_callback (const std_msgs::msg::Bool::SharedPtr is_red) {
     is_red_ = is_red->data;
+    if (is_red_) {
+        min_x = 0.025;
+        max_x = 5.0;
+        min_y = 0.025;
+        max_y = 2.1;
+    } else {
+        min_x = 0.025;
+        max_x = 5.0;
+        min_y = 2.1;
+        max_y = 5.2;
+    }
 }
 
 void e_box_perception::lidar_callback (const sensor_msgs::msg::PointCloud2::SharedPtr lidar) {
@@ -70,82 +85,36 @@ void e_box_perception::lidar_callback (const sensor_msgs::msg::PointCloud2::Shar
 
 std::vector<e_box_perception::Point> e_box_perception::cloud_to_points (const sensor_msgs::msg::PointCloud2& cloud) {
     std::vector<e_box_perception::Point> points;
-    if (cloud.width == 0 || cloud.height == 0 || cloud.data.empty ()) {
+
+    int offset_x = -1, offset_y = -1;
+    for (size_t i = 0; i < cloud.fields.size (); i++) {
+        if (cloud.fields[i].name == "x") offset_x = cloud.fields[i].offset;
+        if (cloud.fields[i].name == "y") offset_y = cloud.fields[i].offset;
+    }
+    if (offset_x < 0 || offset_y < 0) {
         return points;
     }
+    points.reserve (cloud.width * cloud.height);
+    for (size_t i = 0; i < cloud.width * cloud.height; i++) {
+        const uint8_t* point_ptr = &cloud.data[i * cloud.point_step];
+        float          x_val, y_val;
+        std::memcpy (&x_val, point_ptr + offset_x, sizeof (float));
+        std::memcpy (&y_val, point_ptr + offset_y, sizeof (float));
 
-    // 点群の座標取得
-    sensor_msgs::PointCloud2ConstIterator<float> iter_x (cloud, "x");
-    sensor_msgs::PointCloud2ConstIterator<float> iter_y (cloud, "y");
-
-    // 変換用TF取得
-    geometry_msgs::msg::TransformStamped tf_map_to_cloud;
-    bool                                 need_tf = cloud.header.frame_id != "map";
-    if (need_tf) {
-        try {
-            tf_map_to_cloud = tf_buffer_->lookupTransform ("map", cloud.header.frame_id, tf2::TimePointZero);
-        } catch (const tf2::TransformException& ex) {
-            RCLCPP_WARN (this->get_logger (), "TF lookup failed (%s -> map): %s", cloud.header.frame_id.c_str (), ex.what ());
-            need_tf = false;  // 変換できなければそのまま使う
+        if (std::isfinite (x_val) && std::isfinite (y_val)) {
+            points.emplace_back (static_cast<double> (x_val), static_cast<double> (y_val));
         }
     }
-
-    // 点群ループ
-    for (; iter_x != iter_x.end (); ++iter_x, ++iter_y) {
-        float x = *iter_x;
-        float y = *iter_y;
-        if (!std::isfinite (x) || !std::isfinite (y)) continue;
-
-        if (need_tf) {
-            // tf2::Transform に変換
-            tf2::Vector3    pt (x, y, 0.0);
-            tf2::Quaternion q (tf_map_to_cloud.transform.rotation.x, tf_map_to_cloud.transform.rotation.y, tf_map_to_cloud.transform.rotation.z, tf_map_to_cloud.transform.rotation.w);
-            tf2::Vector3    t (tf_map_to_cloud.transform.translation.x, tf_map_to_cloud.transform.translation.y, tf_map_to_cloud.transform.translation.z);
-            pt = tf2::quatRotate (q, pt) + t;
-            x  = pt.x ();
-            y  = pt.y ();
-        }
-
-        points.emplace_back (x, y);
-    }
-
     return points;
 }
 
 std::vector<e_box_perception::Point> e_box_perception::filtering_points (std::vector<e_box_perception::Point> data) {
     std::vector<e_box_perception::Point> filtered;
     for (const auto& p : data) {
-        RCLCPP_INFO (this->get_logger (), "Point: x=%f, y=%f", p.first, p.second);
-    }
-
-    if (e_drop_pose_.header.stamp.sec == 0 && e_drop_pose_.header.stamp.nanosec == 0) {
-        RCLCPP_WARN (this->get_logger (), "Robot pose not yet received; skip filtering");
-        return data;
-    }
-    const double px        = e_drop_pose_.pose.position.x;
-    const double py        = e_drop_pose_.pose.position.y;
-    const auto&  q         = e_drop_pose_.pose.orientation;
-    const double siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
-    const double cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
-    const double yaw       = std::atan2 (siny_cosp, cosy_cosp);
-
-    // フィルタ範囲（横0.5m, 縦1.5m）: 横は±0.25m
-    const double half_width = 0.25;  // 0.25m
-    const double depth      = 1.5;
-
-    const double c = std::cos (yaw);
-    const double s = std::sin (yaw);
-
-    for (const auto& p : data) {
-        const double dx      = p.first - px;
-        const double dy      = p.second - py;
-        const double x_local = c * dx + s * dy;
-        const double y_local = -s * dx + c * dy;
-        if (x_local >= 0.0 && x_local <= depth && std::abs (y_local) <= half_width) {
+        if (p.first >= min_x || p.first <= max_x || p.second >= min_y || p.second <= max_y) {
             filtered.push_back (p);
         }
     }
-    RCLCPP_INFO (this->get_logger (), "Filtered points: %zu", filtered.size ());
     return filtered;
 }
 
