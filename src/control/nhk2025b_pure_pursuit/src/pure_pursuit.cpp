@@ -85,6 +85,7 @@ void pure_pursuit::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
 }
 
 void pure_pursuit::timer_callback () {
+    // パラメータ取得
 
     if (path_.poses.empty ()) {
         geometry_msgs::msg::TwistStamped cmd_vel;
@@ -128,21 +129,25 @@ void pure_pursuit::timer_callback () {
     geometry_msgs::msg::Pose goal_pose     = path_.poses.back ().pose;
     double                   goal_distance = std::hypot (goal_pose.position.x - current_pose_.pose.position.x, goal_pose.position.y - current_pose_.pose.position.y);
 
-    // lookahead距離は現在の速度に基づいて決める（直前のコマンド速度から算出）
-    // これを先に更新しておかないと、lookahead点が近すぎてdx,dyが小さくなり target_speed が小さくなる
-    double last_speed   = std::hypot (last_cmd_vel_.twist.linear.x, last_cmd_vel_.twist.linear.y);
-    lookahead_distance_ = std::clamp (lookahead_time_ * last_speed, min_lookahead_distance_, max_lookahead_distance_);
+    double last_speed = std::hypot (last_cmd_vel_.twist.linear.x, last_cmd_vel_.twist.linear.y);
+    // double predict_dt = std::min (lookahead_time_, 0.5);  // 最大0.5s先まで予測
+    double predicted_speed = last_speed + max_acceleration_xy_m_s2_ * lookahead_time_;
+    predicted_speed = std::clamp (predicted_speed, 0.0, max_speed_xy_m_s_);
+    lookahead_distance_ = std::clamp (lookahead_time_ * predicted_speed, min_lookahead_distance_, max_lookahead_distance_);
 
-    // lookahead点の探索
-    int    lookahead_index     = closest_index;
-    double min_lookahead_error = 1e9;
+    int lookahead_index = closest_index;
+    double acc_dist = 0.0;
+    double prev_x = current_pose_.pose.position.x;
+    double prev_y = current_pose_.pose.position.y;
     for (int i = closest_index; i < path_.poses.size (); i++) {
-        double dist  = std::hypot (path_.poses[i].pose.position.x - current_pose_.pose.position.x, path_.poses[i].pose.position.y - current_pose_.pose.position.y);
-        double error = std::abs (dist - lookahead_distance_);
-        if (error < min_lookahead_error) {
-            min_lookahead_error = error;
-            lookahead_index     = i;
-        }
+        double px = path_.poses[i].pose.position.x;
+        double py = path_.poses[i].pose.position.y;
+        double seg = std::hypot (px - prev_x, py - prev_y);
+        acc_dist += seg;
+        prev_x = px;
+        prev_y = py;
+        lookahead_index = i;
+        if (acc_dist >= lookahead_distance_) break;
     }
 
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
@@ -158,16 +163,22 @@ void pure_pursuit::timer_callback () {
 
     double d = std::max (goal_distance, 0.0);
 
-    // 今の距離dで静止できる最大速度
-    // double max_stop_speed = std::sqrt (2.0 * goal_deceleration_m_s2_ * d);
-    // target_speed          = std::min (target_speed, max_stop_speed);
-
-    double slow_dist = last_speed * last_speed / (2 * goal_deceleration_m_s2_);  // 通常の停止距離
-    double ratio     = std::clamp (d / slow_dist, 0.0, 1.0);
+    double achievable_decel = std::max (1e-3, std::min (goal_deceleration_m_s2_, max_acceleration_xy_m_s2_));
+    double slow_dist = last_speed * last_speed / (2 * achievable_decel);  // 実際に停止できる距離
+    double ratio = 1.0;
+    if (slow_dist > 1e-6) {
+        ratio = std::clamp (d / slow_dist, 0.0, 1.0);
+    }
 
     // cos補間で滑らかに0へ
     double speed_scale = 0.5 * (1 - std::cos (M_PI * ratio));
     target_speed       = target_speed * speed_scale;
+
+    RCLCPP_INFO (this->get_logger (), "stopping: last_speed=%f achievable_decel=%f slow_dist=%f d=%f ratio=%f speed_scale=%f", last_speed, achievable_decel, slow_dist, d, ratio, speed_scale);
+    
+        // // ここでさらに物理的に止まれる最大速度で上限をかける（安全側）
+        // double max_stop_speed = std::sqrt (2.0 * achievable_decel * std::max (0.0, d));
+        // target_speed = std::min (target_speed, max_stop_speed);
 
     // 曲率に応じた速度制限
     int p1 = closest_index;
@@ -192,7 +203,6 @@ void pure_pursuit::timer_callback () {
     double acceleration = (target_speed - last_speed) / delta_t_s;
     acceleration        = std::clamp (acceleration, -max_acceleration_xy_m_s2_, max_acceleration_xy_m_s2_);
     double speed        = last_speed + acceleration * delta_t_s;
-    // lookahead_distance_ = std::clamp (lookahead_time_ * speed, min_lookahead_distance_, max_lookahead_distance_);
 
     double yaw_diff = nhk2025b_utils::get_yaw_2d (path_.poses[lookahead_index].pose.orientation) - current_yaw;
     while (yaw_diff > +M_PI) yaw_diff -= 2.0 * M_PI;
@@ -203,9 +213,6 @@ void pure_pursuit::timer_callback () {
     angle_acceleration        = std::clamp (angle_acceleration, -max_acceleration_z_rad_s2_, max_acceleration_z_rad_s2_);
     yaw_speed                 = last_cmd_vel_.twist.angular.z + angle_acceleration * delta_t_s;
     yaw_speed                 = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
-
-    // info target_speed, acceleration
-    RCLCPP_INFO (this->get_logger (), "lookahead index : %d, target_speed : %f, acceleration : %f", lookahead_index, target_speed, acceleration);
 
     if (!goal_yaw_reached) {
         if (yaw_speed < 0) {
