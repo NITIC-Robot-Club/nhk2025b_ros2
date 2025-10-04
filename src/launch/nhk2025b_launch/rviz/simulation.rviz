@@ -594,8 +594,7 @@ Visualization Manager:
           Enabled: true
           Name: 独ステ可視化
           Namespaces:
-            swerve: true
-            swerve_angle_text: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -607,7 +606,7 @@ Visualization Manager:
           Enabled: true
           Name: 経路当たり判定
           Namespaces:
-            path_collision: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -874,16 +873,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 4.817691326141357
+      Distance: 13.841073036193848
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.753535747528076
-        Y: 3.9634432792663574
-        Z: -0.001246458850800991
+        X: 2.984276056289673
+        Y: 3.4989144802093506
+        Z: -0.0020157143007963896
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false

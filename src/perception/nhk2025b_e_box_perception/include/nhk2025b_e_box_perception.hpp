@@ -53,6 +53,9 @@ class e_box_perception : public rclcpp::Node {
     bool                                                             is_red_;
     double                                                           min_x, max_x, min_y, max_y;
     double                                                           normal_distance;
+    double                                                           front_line_length, side_line_length;
+    int                                                              detection_count_ = 0;
+    std::vector<std::vector<Point>>                                 detection_areas_;
     geometry_msgs::msg::PoseStamped                                  e_drop_pose_;
     nhk2025b_msgs::msg::BoxArray                                     box_array_;
     sensor_msgs::msg::PointCloud2                                    lidar_data_;
@@ -73,6 +76,7 @@ class e_box_perception : public rclcpp::Node {
     void                               update_detection_area (const geometry_msgs::msg::PoseStamped &pose);
     Line                               ransac_line (const std::vector<Point> &points, std::vector<Point> &inliers_out);
     Point                              line_midpoint (e_box_perception::Line line);
+    std::vector<Point>                 remove_detected_points(const std::vector<Point> &points, const std::vector<std::vector<Point>> &detected_points);
 };
 }  // namespace e_box_perception
 

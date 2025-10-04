@@ -23,15 +23,20 @@ e_box_perception::e_box_perception (const rclcpp::NodeOptions& options) : rclcpp
 }
 
 void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+    detection_count_++;
     std::vector<Point> inliers;
     e_drop_pose_                                         = *pose;
     std::vector<e_box_perception::Point> points          = cloud_to_points (lidar_data_);  // 点群データをPointの配列に変換
     std::vector<e_box_perception::Point> filtered_points = filtering_points (points);      // 検出範囲に入っている点のみ抽出
-    e_box_perception::Line               best_line       = {0, 0, 0};
-    best_line                                            = ransac_line (filtered_points, inliers);                                                                                           // RANSACで直線を検出
-    e_box_perception::Point         centre_of_line       = line_midpoint (best_line);                                                                                                        // 直線の中心点を計算
-    double                          theta                = atan2 (best_line.end.second - best_line.start.second, best_line.end.first - best_line.start.first);                               // 検出線分の傾きを計算
-    e_box_perception::Point         centre_of_box        = {centre_of_line.first - normal_distance * cos (theta - M_PI_2), centre_of_line.second - normal_distance * sin (theta - M_PI_2)};  // ボックスの中心を計算
+    if (detection_count_ >= 1) {
+        filtered_points = remove_detected_points (filtered_points, detection_areas_);
+    }
+    e_box_perception::Line best_line = {0, 0, 0};
+    best_line                        = ransac_line (filtered_points, inliers);  // RANSACで直線を検出
+    detection_areas_.push_back (inliers);
+    e_box_perception::Point         centre_of_line = line_midpoint (best_line);                                                                                                        // 直線の中心点を計算
+    double                          theta          = atan2 (best_line.end.second - best_line.start.second, best_line.end.first - best_line.start.first);                               // 検出線分の傾きを計算
+    e_box_perception::Point         centre_of_box  = {centre_of_line.first - normal_distance * cos (theta - M_PI_2), centre_of_line.second - normal_distance * sin (theta - M_PI_2)};  // ボックスの中心を計算
     geometry_msgs::msg::PoseStamped test;
     test.header.frame_id = "map";
     test.header.stamp    = this->now ();
@@ -88,14 +93,10 @@ std::vector<e_box_perception::Point> e_box_perception::cloud_to_points (const se
     if (cloud.width == 0 || cloud.height == 0 || cloud.data.empty ()) {
         return points;
     }
-
-    // 点群の座標取得
     sensor_msgs::PointCloud2ConstIterator<float> iter_x (cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y (cloud, "y");
-
-    // 変換用TF取得
-    geometry_msgs::msg::TransformStamped tf_map_to_cloud;
-    bool                                 need_tf = cloud.header.frame_id != "map";
+    geometry_msgs::msg::TransformStamped         tf_map_to_cloud;
+    bool                                         need_tf = cloud.header.frame_id != "map";
     if (need_tf) {
         try {
             tf_map_to_cloud = tf_buffer_->lookupTransform ("map", cloud.header.frame_id, tf2::TimePointZero);
@@ -104,15 +105,11 @@ std::vector<e_box_perception::Point> e_box_perception::cloud_to_points (const se
             need_tf = false;  // 変換できなければそのまま使う
         }
     }
-
-    // 点群ループ
     for (; iter_x != iter_x.end (); ++iter_x, ++iter_y) {
         float x = *iter_x;
         float y = *iter_y;
         if (!std::isfinite (x) || !std::isfinite (y)) continue;
-
         if (need_tf) {
-            // tf2::Transform に変換
             tf2::Vector3    pt (x, y, 0.0);
             tf2::Quaternion q (tf_map_to_cloud.transform.rotation.x, tf_map_to_cloud.transform.rotation.y, tf_map_to_cloud.transform.rotation.z, tf_map_to_cloud.transform.rotation.w);
             tf2::Vector3    t (tf_map_to_cloud.transform.translation.x, tf_map_to_cloud.transform.translation.y, tf_map_to_cloud.transform.translation.z);
@@ -120,10 +117,8 @@ std::vector<e_box_perception::Point> e_box_perception::cloud_to_points (const se
             x  = pt.x ();
             y  = pt.y ();
         }
-
         points.emplace_back (x, y);
     }
-
     return points;
 }
 
@@ -138,25 +133,14 @@ std::vector<e_box_perception::Point> e_box_perception::filtering_points (std::ve
             pose.position.x = p.first;
             pose.position.y = p.second;
             test_data.poses.push_back (pose);
-            filtered.push_back (p);
         }
     }
     pose_array_publisher_->publish (test_data);
-    geometry_msgs::msg::PoseArray test_poses;
-    test_poses.header.frame_id = "map";
-    test_poses.header.stamp    = this->now ();
-
     for (const auto& p : data) {
         if (p.first >= min_x && p.first <= max_x && p.second >= min_y && p.second <= max_y) {
-            geometry_msgs::msg::Pose pose;
-            pose.position.x = p.first;
-            pose.position.y = p.second;
-            test_poses.poses.push_back (pose);
             filtered.push_back (p);
         }
     }
-    RCLCPP_INFO (this->get_logger (), "Filtered points: %zu", filtered.size ());
-    pose_array_publisher_->publish (test_poses);
     return filtered;
 }
 
@@ -261,6 +245,30 @@ e_box_perception::Point e_box_perception::line_midpoint (e_box_perception::Line 
     mid.second = (line.start.second + line.end.second) / 2.0;
     return mid;
 }
+
+std::vector<e_box_perception::Point> e_box_perception::remove_detected_points (const std::vector<Point>& points, const std::vector<std::vector<Point>>& detected_points) {
+    std::vector<Point> remaining_points;
+    double             tolerance = 0.1;
+    for (const auto& pt : points) {
+        bool is_detected = false;
+        for (const auto& area : detected_points) {
+            for (const auto& det_pt : area) {
+                double dx = pt.first - det_pt.first;
+                double dy = pt.second - det_pt.second;
+                if (std::sqrt (dx * dx + dy * dy) < tolerance) {
+                    is_detected = true;
+                    break;
+                }
+            }
+            if (is_detected) break;
+        }
+        if (!is_detected) {
+            remaining_points.push_back (pt);
+        }
+    }
+    return remaining_points;
+}
+
 }  // namespace e_box_perception
 
 #include <rclcpp_components/register_node_macro.hpp>
