@@ -8,6 +8,13 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     pose_subscriber_     = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&pure_pursuit::pose_callback, this, std::placeholders::_1));
     path_subscriber_     = this->create_subscription<nav_msgs::msg::Path> ("/planning/path", 1, std::bind (&pure_pursuit::path_callback, this, std::placeholders::_1));
 
+    control_limit_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::ControlLimit> ("/control_limit", 1, [this] (const nhk2025b_msgs::msg::ControlLimit::SharedPtr msg) {
+        max_speed_xy_m_s_          = msg->max_speed_xy;
+        max_speed_z_rad_s_         = msg->max_speed_yaw;
+        max_acceleration_xy_m_s2_  = msg->max_acceleration_xy;
+        max_acceleration_z_rad_s2_ = msg->max_acceleration_yaw;
+    });
+
     timer_ = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&pure_pursuit::timer_callback, this));
 
     this->declare_parameter ("lookahead_time", 1.0);
@@ -27,17 +34,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->declare_parameter ("goal_yaw_tolerance_rad", 0.314);
     this->declare_parameter ("goal_speed_tolerance_xy_m_s", 0.3);
     this->declare_parameter ("goal_speed_tolerance_z_rad_s", 0.3);
-}
 
-void pure_pursuit::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    current_pose_ = *msg;
-}
-
-void pure_pursuit::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
-    path_ = *msg;
-}
-
-void pure_pursuit::timer_callback () {
     // パラメータ取得
     this->get_parameter ("lookahead_time", lookahead_time_);
     this->get_parameter ("min_lookahead_distance", min_lookahead_distance_);
@@ -56,6 +53,38 @@ void pure_pursuit::timer_callback () {
     this->get_parameter ("goal_yaw_tolerance_rad", goal_yaw_tolerance_);
     this->get_parameter ("goal_speed_tolerance_xy_m_s", goal_speed_tolerance_xy_m_s_);
     this->get_parameter ("goal_speed_tolerance_z_rad_s", goal_speed_tolerance_z_rad_s_);
+
+    // デバッグ表示
+    if (true) {
+        RCLCPP_INFO (this->get_logger (), "lookahead_time : %f", lookahead_time_);
+        RCLCPP_INFO (this->get_logger (), "min_lookahead_distance : %f", min_lookahead_distance_);
+        RCLCPP_INFO (this->get_logger (), "max_lookahead_distance : %f", max_lookahead_distance_);
+        RCLCPP_INFO (this->get_logger (), "angle_speed_p : %f", angle_speed_p_);
+        RCLCPP_INFO (this->get_logger (), "curvature_decceleration_p : %f", curvature_decceleration_p_);
+        RCLCPP_INFO (this->get_logger (), "min_curvature_speed_m_s : %f", min_curvature_speed_m_s_);
+        RCLCPP_INFO (this->get_logger (), "angle_decceleration_p : %f", angle_decceleration_p_);
+        RCLCPP_INFO (this->get_logger (), "max_speed_xy_m_s : %f", max_speed_xy_m_s_);
+        RCLCPP_INFO (this->get_logger (), "max_speed_z_rad_s : %f", max_speed_z_rad_s_);
+        RCLCPP_INFO (this->get_logger (), "min_speed_z_rad_s : %f", min_speed_z_rad_s_);
+        RCLCPP_INFO (this->get_logger (), "max_acceleration_xy_m_s2_ : %f", max_acceleration_xy_m_s2_);
+        RCLCPP_INFO (this->get_logger (), "max_acceleration_z_rad_s2 : %f", max_acceleration_z_rad_s2_);
+        RCLCPP_INFO (this->get_logger (), "goal_deceleration_m_s2 : %f", goal_deceleration_m_s2_);
+        RCLCPP_INFO (this->get_logger (), "goal_position_tolerance_m : %f", goal_position_tolerance_);
+        RCLCPP_INFO (this->get_logger (), "goal_yaw_tolerance_rad : %f", goal_yaw_tolerance_);
+        RCLCPP_INFO (this->get_logger (), "goal_speed_tolerance_xy_m_s : %f", goal_speed_tolerance_xy_m_s_);
+        RCLCPP_INFO (this->get_logger (), "goal_speed_tolerance_z_rad_s : %f", goal_speed_tolerance_z_rad_s_);
+    }
+}
+
+void pure_pursuit::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+    current_pose_ = *msg;
+}
+
+void pure_pursuit::path_callback (const nav_msgs::msg::Path::SharedPtr msg) {
+    path_ = *msg;
+}
+
+void pure_pursuit::timer_callback () {
 
     if (path_.poses.empty ()) {
         geometry_msgs::msg::TwistStamped cmd_vel;
@@ -99,6 +128,11 @@ void pure_pursuit::timer_callback () {
     geometry_msgs::msg::Pose goal_pose     = path_.poses.back ().pose;
     double                   goal_distance = std::hypot (goal_pose.position.x - current_pose_.pose.position.x, goal_pose.position.y - current_pose_.pose.position.y);
 
+    // lookahead距離は現在の速度に基づいて決める（直前のコマンド速度から算出）
+    // これを先に更新しておかないと、lookahead点が近すぎてdx,dyが小さくなり target_speed が小さくなる
+    double last_speed   = std::hypot (last_cmd_vel_.twist.linear.x, last_cmd_vel_.twist.linear.y);
+    lookahead_distance_ = std::clamp (lookahead_time_ * last_speed, min_lookahead_distance_, max_lookahead_distance_);
+
     // lookahead点の探索
     int    lookahead_index     = closest_index;
     double min_lookahead_error = 1e9;
@@ -118,9 +152,7 @@ void pure_pursuit::timer_callback () {
     double angle_diff  = std::atan2 (dy, dx) - current_yaw;
 
     // 加速度制限付き速度推定
-    double delta_t      = 0.05;  // 50ms
-    double last_speed   = std::hypot (last_cmd_vel_.twist.linear.x, last_cmd_vel_.twist.linear.y);
-    double target_speed = std::hypot (dx, dy) / delta_t;
+    double target_speed = std::hypot (dx, dy) / lookahead_time_;
     // 最大速度制限
     target_speed = std::clamp (target_speed, 0.0, max_speed_xy_m_s_);
 
@@ -134,8 +166,8 @@ void pure_pursuit::timer_callback () {
     double ratio     = std::clamp (d / slow_dist, 0.0, 1.0);
 
     // cos補間で滑らかに0へ
-    double speed_scale  = 0.5 * (1 - std::cos (M_PI * ratio));
-    target_speed = target_speed * speed_scale;
+    double speed_scale = 0.5 * (1 - std::cos (M_PI * ratio));
+    target_speed       = target_speed * speed_scale;
 
     // 曲率に応じた速度制限
     int p1 = closest_index;
@@ -156,20 +188,24 @@ void pure_pursuit::timer_callback () {
 
     target_speed = std::min (target_speed, std::max (curvature_speed, min_curvature_speed_m_s_));
 
-    double acceleration = (target_speed - last_speed) / delta_t;
+    double delta_t_s    = 0.05;
+    double acceleration = (target_speed - last_speed) / delta_t_s;
     acceleration        = std::clamp (acceleration, -max_acceleration_xy_m_s2_, max_acceleration_xy_m_s2_);
-    double speed        = last_speed + acceleration * delta_t;
-    lookahead_distance_ = std::clamp (lookahead_time_ * speed, min_lookahead_distance_, max_lookahead_distance_);
+    double speed        = last_speed + acceleration * delta_t_s;
+    // lookahead_distance_ = std::clamp (lookahead_time_ * speed, min_lookahead_distance_, max_lookahead_distance_);
 
     double yaw_diff = nhk2025b_utils::get_yaw_2d (path_.poses[lookahead_index].pose.orientation) - current_yaw;
     while (yaw_diff > +M_PI) yaw_diff -= 2.0 * M_PI;
     while (yaw_diff < -M_PI) yaw_diff += 2.0 * M_PI;
     double yaw_speed = yaw_diff / lookahead_time_ * angle_speed_p_;
     // 加速度を考慮
-    double angle_acceleration = (yaw_speed - last_cmd_vel_.twist.angular.z) / delta_t;
+    double angle_acceleration = (yaw_speed - last_cmd_vel_.twist.angular.z) / delta_t_s;
     angle_acceleration        = std::clamp (angle_acceleration, -max_acceleration_z_rad_s2_, max_acceleration_z_rad_s2_);
-    yaw_speed                 = last_cmd_vel_.twist.angular.z + angle_acceleration * delta_t;
+    yaw_speed                 = last_cmd_vel_.twist.angular.z + angle_acceleration * delta_t_s;
     yaw_speed                 = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
+
+    // info target_speed, acceleration
+    RCLCPP_INFO (this->get_logger (), "lookahead index : %d, target_speed : %f, acceleration : %f", lookahead_index, target_speed, acceleration);
 
     if (!goal_yaw_reached) {
         if (yaw_speed < 0) {
@@ -191,8 +227,8 @@ void pure_pursuit::timer_callback () {
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.header.stamp    = this->now ();
     cmd_vel.header.frame_id = "base_link";
-    cmd_vel.twist.linear.x  = speed * std::cos (angle_diff - yaw_speed * delta_t * angle_decceleration_p_);
-    cmd_vel.twist.linear.y  = speed * std::sin (angle_diff - yaw_speed * delta_t * angle_decceleration_p_);
+    cmd_vel.twist.linear.x  = speed * std::cos (angle_diff - yaw_speed * lookahead_time_ * angle_decceleration_p_);
+    cmd_vel.twist.linear.y  = speed * std::sin (angle_diff - yaw_speed * lookahead_time_ * angle_decceleration_p_);
     cmd_vel.twist.angular.z = yaw_speed;
     cmd_vel_publisher_->publish (cmd_vel);
 

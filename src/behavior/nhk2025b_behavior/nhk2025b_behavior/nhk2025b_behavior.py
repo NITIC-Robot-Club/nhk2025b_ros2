@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int32, Bool, Float32
 from geometry_msgs.msg import PoseStamped
-from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command, EArm, BoxArm, Conveyor, PylonArm
+from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command, EArm, BoxArm, Conveyor, PylonArm, ControlLimit
 import math
 import re
 import time
@@ -101,8 +101,7 @@ class nhk2025b_behavior(Node):
             "set_e_arm": self.set_e_arm,
             "set_box_arm_height": self.set_box_arm_height,
             "set_box_arm_expand": self.set_box_arm_expand,
-            "set_box_arm_strong": self.set_box_arm_strong,
-            "set_box_arm_weak": self.set_box_arm_weak,
+            "set_box_arm_hand": self.set_box_arm_hand,
             "set_conveyor_rpm": self.set_conveyor_rpm,
             "set_pylon_arm_height": self.set_pylon_arm_height,
             "set_pylon_arm_expand": self.set_pylon_arm_expand,
@@ -426,18 +425,12 @@ class nhk2025b_behavior(Node):
         if right is not None:
             self.box_arm_target.height[1] = right
         
-    def set_box_arm_strong(self, left=None, right=None):
+    def set_box_arm_hand(self, left=None, right=None):
         if left is not None:
-            self.box_arm_target.strong[0] = left
+            self.box_arm_target.hand_position[0] = left
         if right is not None:
-            self.box_arm_target.strong[1] = right
+            self.box_arm_target.hand_position[1] = right
     
-    def set_box_arm_weak(self, left=None, right=None):
-        if left is not None:
-            self.box_arm_target.weak[0] = left
-        if right is not None:
-            self.box_arm_target.weak[1] = right
-
     def set_conveyor_rpm(self, left=None, right=None):
         if left is not None:
             self.conveyor_target.conveyor_rpm[0] = left

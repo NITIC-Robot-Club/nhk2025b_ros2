@@ -8,6 +8,7 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/path.hpp>
+#include <nhk2025b_msgs/msg/control_limit.hpp>
 
 namespace pure_pursuit {
 
@@ -47,11 +48,12 @@ class pure_pursuit : public rclcpp::Node {
     void path_callback (const nav_msgs::msg::Path::SharedPtr msg);
 
     // ROS2通信
-    rclcpp::TimerBase::SharedPtr                                     timer_;
-    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr   cmd_vel_publisher_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    lookahead_publisher_;
-    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subscriber_;
-    rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr             path_subscriber_;
+    rclcpp::TimerBase::SharedPtr                                      timer_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr    cmd_vel_publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr     lookahead_publisher_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  pose_subscriber_;
+    rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr              path_subscriber_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::ControlLimit>::SharedPtr control_limit_subscriber_;
 };
 
 }  // namespace pure_pursuit
