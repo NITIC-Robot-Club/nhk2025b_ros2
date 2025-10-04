@@ -10,6 +10,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/BoxArray.msg"
   "msg/BoxInfo.msg"
   "msg/Command.msg"
+  "msg/ControlLimit.msg"
   "msg/Conveyor.msg"
   "msg/EArm.msg"
   "msg/PcState.msg"
