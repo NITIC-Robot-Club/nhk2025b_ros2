@@ -131,8 +131,8 @@ stateDiagram-v2
 
     gate_0_init : ゲート作成0
     gate_0_init : set_position(3.5, 2.0, 90.0)
-    gate_0_turn : set_position(3.5, 2.0, 180.0)
-    gate_0_out  : set_position(2.0, 2.0, 180.0)
+    gate_0_turn : set_position(3.5, 2.0, 0.0)
+    gate_0_out  : set_position(2.0, 2.0, 0.0)
 
     ex_0_get_ok --> gate_0_init
     gate_0_init --> gate_0_turn
