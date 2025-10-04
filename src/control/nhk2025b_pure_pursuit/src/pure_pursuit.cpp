@@ -174,7 +174,7 @@ void pure_pursuit::timer_callback () {
     double speed_scale = 0.5 * (1 - std::cos (M_PI * ratio));
     target_speed       = target_speed * speed_scale;
 
-    RCLCPP_INFO (this->get_logger (), "stopping: last_speed=%f achievable_decel=%f slow_dist=%f d=%f ratio=%f speed_scale=%f", last_speed, achievable_decel, slow_dist, d, ratio, speed_scale);
+    // RCLCPP_INFO (this->get_logger (), "stopping: last_speed=%f achievable_decel=%f slow_dist=%f d=%f ratio=%f speed_scale=%f", last_speed, achievable_decel, slow_dist, d, ratio, speed_scale);
     
         // // ここでさらに物理的に止まれる最大速度で上限をかける（安全側）
         // double max_stop_speed = std::sqrt (2.0 * achievable_decel * std::max (0.0, d));
