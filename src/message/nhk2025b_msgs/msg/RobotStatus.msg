@@ -2,8 +2,8 @@ bool signal
 float32[3] voltage
 bool[2] reset_pylon_height
 bool[2] reset_pylon_expand
+bool[2] reset_box_arm_expand
 bool[2] reset_box_arm_height
-bool[2] reset_box_arm_strong
-bool[2] reset_box_arm_weak
+bool[2] reset_box_arm_hand
 bool reset_e_arm_expand
 bool reset_e_arm_get

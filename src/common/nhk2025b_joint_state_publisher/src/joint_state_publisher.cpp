@@ -24,13 +24,13 @@ void joint_state_publisher::timer_callback () {
     joint_state_msg.name[1]     = "r_box_arm_to_r_box_arm_height";
     if(box_arm_msg.height.size() > 1) joint_state_msg.position[1] = box_arm_msg.height[1];
     joint_state_msg.name[2]     = "r_box_arm_height_to_r_box_arm_strong";
-    if(box_arm_msg.arm_position_strong.size() > 1) joint_state_msg.position[2] = box_arm_msg.arm_position_strong[1];
+    if(box_arm_msg.hand_position.size() > 1) joint_state_msg.position[2] = box_arm_msg.hand_position[1];
     joint_state_msg.name[3]     = "c_nhk2025b_to_l_box_arm";
     if(box_arm_msg.expand.size() > 1) joint_state_msg.position[3] = box_arm_msg.expand[0];
     joint_state_msg.name[4]     = "l_box_arm_to_l_box_arm_height";
     if(box_arm_msg.height.size() > 1) joint_state_msg.position[4] = box_arm_msg.height[0];
     joint_state_msg.name[5]     = "l_box_arm_height_to_l_box_arm_strong";
-    if(box_arm_msg.arm_position_strong.size() > 0) joint_state_msg.position[5] = box_arm_msg.arm_position_strong[0];
+    if(box_arm_msg.hand_position.size() > 0) joint_state_msg.position[5] = box_arm_msg.hand_position[0];
     joint_state_msg.name[6]     = "c_nhk2025b_to_c_E_arm";
     joint_state_msg.position[6] = e_arm_msg.expand;
     joint_state_msg.name[7]     = "c_nhk2025b_to_l_pylon_arm_height";
