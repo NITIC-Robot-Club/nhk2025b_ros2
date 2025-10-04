@@ -6,8 +6,8 @@
 #include <tf2_ros/transform_listener.hpp>
 
 #include <geometry_msgs/msg/point_stamped.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/pose_array.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nhk2025b_msgs/msg/box.hpp>
@@ -67,7 +67,6 @@ class e_box_perception : public rclcpp::Node {
     std::vector<Point>                 cloud_to_points (const sensor_msgs::msg::PointCloud2 &cloud);
     std::tuple<double, double, double> ransac (const std::vector<Point> &points, std::vector<Point> &inliers_out);
     std::vector<Point>                 filtering_points (std::vector<Point> data);
-    Point                              line_centre (e_box_perception::Line line);
     Point                              find_box_centre (e_box_perception::Line line, e_box_perception::Point point, double normal_distance);
     Point                              find_collect_point (e_box_perception::Line line, e_box_perception::Point point, double normal_distance);
     double                             point_line_distance (const Point &pt, double a, double b, double c);

@@ -11,16 +11,15 @@ e_box_perception::e_box_perception (const rclcpp::NodeOptions& options) : rclcpp
     lidar_subscriber_         = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&e_box_perception::lidar_callback, this, std::placeholders::_1));
     is_red_subscriber_        = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&e_box_perception::is_red_callback, this, std::placeholders::_1));
     current_pose_subscriber_  = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&e_box_perception::current_pose_callback, this, std::placeholders::_1));
-    iter                      = this->declare_parameter<int> ("iter", 100);
+    iter                      = this->declare_parameter<int> ("iter", 200);
     distance_threshold        = this->declare_parameter<double> ("distance_threshold", 0.025);
     normal_distance           = this->declare_parameter<double> ("normal_distance", 0.5);
-    min_x                     = this->declare_parameter<double> ("min_x", -5.0);
+    min_x                     = this->declare_parameter<double> ("min_x", 0.5);
     max_x                     = this->declare_parameter<double> ("max_x", 5.0);
-    min_y                     = this->declare_parameter<double> ("min_y", -3.0);
-    max_y                     = this->declare_parameter<double> ("max_y", 3.0);
-
-    tf_buffer_   = std::make_unique<tf2_ros::Buffer> (this->get_clock ());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener> (*tf_buffer_);
+    min_y                     = this->declare_parameter<double> ("min_y", 2.1);
+    max_y                     = this->declare_parameter<double> ("max_y", 5.0);
+    tf_buffer_                = std::make_unique<tf2_ros::Buffer> (this->get_clock ());
+    tf_listener_              = std::make_shared<tf2_ros::TransformListener> (*tf_buffer_);
 }
 
 void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
@@ -29,26 +28,19 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
     std::vector<e_box_perception::Point> points          = cloud_to_points (lidar_data_);  // 点群データをPointの配列に変換
     std::vector<e_box_perception::Point> filtered_points = filtering_points (points);      // 検出範囲に入っている点のみ抽出
     e_box_perception::Line               best_line       = {0, 0, 0};
-    best_line                                            = ransac_line (filtered_points, inliers);  // RANSACで直線を検出
-    RCLCPP_INFO (this->get_logger (), "a: %f, b: %f, c: %f", best_line.a, best_line.b, best_line.c);
-
-    e_box_perception::Point centre_of_line        = line_midpoint (best_line);                                                                                                                                        // 直線の中心点を計算
+    best_line                                            = ransac_line (filtered_points, inliers);                                                                                           // RANSACで直線を検出
+    e_box_perception::Point         centre_of_line       = line_midpoint (best_line);                                                                                                        // 直線の中心点を計算
+    double                          theta                = atan2 (best_line.end.second - best_line.start.second, best_line.end.first - best_line.start.first);                               // 検出線分の傾きを計算
+    e_box_perception::Point         centre_of_box        = {centre_of_line.first - normal_distance * cos (theta - M_PI_2), centre_of_line.second - normal_distance * sin (theta - M_PI_2)};  // ボックスの中心を計算
     geometry_msgs::msg::PoseStamped test;
-    test.header.frame_id  = "map";
-    test.header.stamp     = this->now ();
-    test.pose.position.x         = centre_of_line.first;
-    test.pose.position.y         = centre_of_line.second;
+    test.header.frame_id = "map";
+    test.header.stamp    = this->now ();
+    test.pose.position.x = centre_of_box.first;
+    test.pose.position.y = centre_of_box.second;
     test_publisher_->publish (test);
-    double                  best_line_inclination = atan2 (best_line.end.second - best_line.start.second, best_line.end.first - best_line.start.first);                                                               // 検出線分の傾きを計算
-    e_box_perception::Point centre_of_box         = {centre_of_line.first + normal_distance * cos (best_line_inclination - M_PI_2), centre_of_line.second + normal_distance * sin (best_line_inclination - M_PI_2)};  // ボックスの中心を計算
-    RCLCPP_INFO (this->get_logger (), "Line angle theta: %f°", best_line_inclination * 180.0 / M_PI);
-    RCLCPP_INFO (this->get_logger (), "Box centre: x=%f, y=%f", centre_of_box.first, centre_of_box.second);
-
-    e_box_perception::Point collect_point = {centre_of_box.first + 0.45 * cos (best_line_inclination), centre_of_box.second + 0.45 * sin (best_line_inclination)};  // 回収地点を計算
-    RCLCPP_INFO (this->get_logger (), "Collect point: x=%f, y=%f", collect_point.first, collect_point.second);
-
     tf2::Quaternion q;
-    q.setRPY (0, 0, best_line_inclination);
+    q.setRPY (0, 0, theta);
+    e_box_perception::Point collect_point = {centre_of_box.first + 0.45 * cos (theta), centre_of_box.second + 0.45 * sin (theta)};  // 回収地点を計算
 
     geometry_msgs::msg::PoseStamped collect_pose;
     collect_pose.header.frame_id  = "map";
@@ -74,15 +66,15 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
 void e_box_perception::is_red_callback (const std_msgs::msg::Bool::SharedPtr is_red) {
     is_red_ = is_red->data;
     if (is_red_) {
-        min_x = 0.025;
+        min_x = 0.5;
         max_x = 5.0;
-        min_y = 0.025;
+        min_y = 0.1;
         max_y = 2.1;
     } else {
-        min_x = 0.025;
+        min_x = 0.5;
         max_x = 5.0;
         min_y = 2.1;
-        max_y = 5.2;
+        max_y = 5.0;
     }
 }
 
@@ -93,38 +85,69 @@ void e_box_perception::lidar_callback (const sensor_msgs::msg::PointCloud2::Shar
 
 std::vector<e_box_perception::Point> e_box_perception::cloud_to_points (const sensor_msgs::msg::PointCloud2& cloud) {
     std::vector<e_box_perception::Point> points;
-
-    int offset_x = -1, offset_y = -1;
-    for (size_t i = 0; i < cloud.fields.size (); i++) {
-        if (cloud.fields[i].name == "x") offset_x = cloud.fields[i].offset;
-        if (cloud.fields[i].name == "y") offset_y = cloud.fields[i].offset;
-    }
-    if (offset_x < 0 || offset_y < 0) {
+    if (cloud.width == 0 || cloud.height == 0 || cloud.data.empty ()) {
         return points;
     }
-    points.reserve (cloud.width * cloud.height);
-    for (size_t i = 0; i < cloud.width * cloud.height; i++) {
-        const uint8_t* point_ptr = &cloud.data[i * cloud.point_step];
-        float          x_val, y_val;
-        std::memcpy (&x_val, point_ptr + offset_x, sizeof (float));
-        std::memcpy (&y_val, point_ptr + offset_y, sizeof (float));
 
-        if (std::isfinite (x_val) && std::isfinite (y_val)) {
-            points.emplace_back (static_cast<double> (x_val), static_cast<double> (y_val));
+    // 点群の座標取得
+    sensor_msgs::PointCloud2ConstIterator<float> iter_x (cloud, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> iter_y (cloud, "y");
+
+    // 変換用TF取得
+    geometry_msgs::msg::TransformStamped tf_map_to_cloud;
+    bool                                 need_tf = cloud.header.frame_id != "map";
+    if (need_tf) {
+        try {
+            tf_map_to_cloud = tf_buffer_->lookupTransform ("map", cloud.header.frame_id, tf2::TimePointZero);
+        } catch (const tf2::TransformException& ex) {
+            RCLCPP_WARN (this->get_logger (), "TF lookup failed (%s -> map): %s", cloud.header.frame_id.c_str (), ex.what ());
+            need_tf = false;  // 変換できなければそのまま使う
         }
     }
+
+    // 点群ループ
+    for (; iter_x != iter_x.end (); ++iter_x, ++iter_y) {
+        float x = *iter_x;
+        float y = *iter_y;
+        if (!std::isfinite (x) || !std::isfinite (y)) continue;
+
+        if (need_tf) {
+            // tf2::Transform に変換
+            tf2::Vector3    pt (x, y, 0.0);
+            tf2::Quaternion q (tf_map_to_cloud.transform.rotation.x, tf_map_to_cloud.transform.rotation.y, tf_map_to_cloud.transform.rotation.z, tf_map_to_cloud.transform.rotation.w);
+            tf2::Vector3    t (tf_map_to_cloud.transform.translation.x, tf_map_to_cloud.transform.translation.y, tf_map_to_cloud.transform.translation.z);
+            pt = tf2::quatRotate (q, pt) + t;
+            x  = pt.x ();
+            y  = pt.y ();
+        }
+
+        points.emplace_back (x, y);
+    }
+
     return points;
 }
 
 std::vector<e_box_perception::Point> e_box_perception::filtering_points (std::vector<e_box_perception::Point> data) {
     std::vector<e_box_perception::Point> filtered;
-
+    geometry_msgs::msg::PoseArray        test_data;
+    test_data.header.frame_id = "map";
+    test_data.header.stamp    = this->now ();
+    for (const auto& p : data) {
+        if (p.first >= min_x && p.first <= max_x && p.second >= min_y && p.second <= max_y) {
+            geometry_msgs::msg::Pose pose;
+            pose.position.x = p.first;
+            pose.position.y = p.second;
+            test_data.poses.push_back (pose);
+            filtered.push_back (p);
+        }
+    }
+    pose_array_publisher_->publish (test_data);
     geometry_msgs::msg::PoseArray test_poses;
     test_poses.header.frame_id = "map";
     test_poses.header.stamp    = this->now ();
 
     for (const auto& p : data) {
-        if (p.first >= min_x || p.first <= max_x || p.second >= min_y || p.second <= max_y) {
+        if (p.first >= min_x && p.first <= max_x && p.second >= min_y && p.second <= max_y) {
             geometry_msgs::msg::Pose pose;
             pose.position.x = p.first;
             pose.position.y = p.second;
@@ -135,13 +158,6 @@ std::vector<e_box_perception::Point> e_box_perception::filtering_points (std::ve
     RCLCPP_INFO (this->get_logger (), "Filtered points: %zu", filtered.size ());
     pose_array_publisher_->publish (test_poses);
     return filtered;
-}
-
-e_box_perception::Point e_box_perception::line_centre (e_box_perception::Line line) {
-    Point centre;
-    centre.first  = (line.start.first + line.end.first) / 2.0;
-    centre.second = (line.start.second + line.end.second) / 2.0;
-    return centre;
 }
 
 e_box_perception::Point e_box_perception::find_box_centre (e_box_perception::Line line, e_box_perception::Point point, double normal_distance) {
@@ -227,24 +243,15 @@ e_box_perception::Line e_box_perception::ransac_line (const std::vector<Point>& 
     Line line;
     line.a = line.b = line.c = 0;
     line.start = line.end = {0, 0};
-
     if (points.size () < 2) return line;
-
-    // 既存のransacを使って線の係数とインライア点を取得
     auto [a, b, c] = ransac (points, inliers_out);
-
-    line.a = a;
-    line.b = b;
-    line.c = c;
-
+    line.a         = a;
+    line.b         = b;
+    line.c         = c;
     if (inliers_out.empty ()) return line;
-
-    // 端点を簡易計算：x最小とx最大の点を端点に
     auto minmax_x = std::minmax_element (inliers_out.begin (), inliers_out.end (), [] (const Point& p1, const Point& p2) { return p1.first < p2.first; });
-
-    line.start = *minmax_x.first;
-    line.end   = *minmax_x.second;
-
+    line.start    = *minmax_x.first;
+    line.end      = *minmax_x.second;
     return line;
 }
 
