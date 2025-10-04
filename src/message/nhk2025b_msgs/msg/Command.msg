@@ -1,3 +1,4 @@
 bool signal
 bool allow_automate
-bool reset
+bool reset_claw
+bool reset_wing

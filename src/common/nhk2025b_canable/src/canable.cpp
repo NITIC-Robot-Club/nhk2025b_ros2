@@ -43,10 +43,9 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
     can_receive_timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&canable::check_can_receive, this));  // 100msごとにCAN受信確認
 
     for (int i = 0; i < 2; i++) {
-        box_arm_cmd_.height[i]              = 0.1;
-        box_arm_cmd_.arm_position_strong[i] = 0.0;
-        box_arm_cmd_.arm_position_weak[i]   = 0.60;
-        box_arm_cmd_.expand[i]              = M_PI / 2;
+        box_arm_cmd_.height[i]        = 0.0;
+        box_arm_cmd_.hand_position[i] = 0.0;
+        box_arm_cmd_.expand[i]        = M_PI / 2;
     }
 
     command_.allow_automate = false;
@@ -186,15 +185,13 @@ void canable::read_can_socket () {
                 continue;
             }
 
-            if (0x123 <= frame.can_id && frame.can_id <= 0x124 && frame.len == 8) {
+            if (0x123 <= frame.can_id && frame.can_id <= 0x124 && frame.len == 4) {
                 int               id = frame.can_id - 0x123;
-                union float_bytes arm_position_strong, arm_position_weak;
+                union float_bytes hand_position;
                 for (int b = 0; b < 4; ++b) {
-                    arm_position_strong.bytes[b] = frame.data[b];
-                    arm_position_weak.bytes[b]   = frame.data[b + 4];
+                    hand_position.bytes[b] = frame.data[b];
                 }
-                box_arm_result_.arm_position_strong[id] = arm_position_strong.value;
-                box_arm_result_.arm_position_weak[id]   = arm_position_weak.value;
+                box_arm_result_.hand_position[id] = hand_position.value;
                 continue;
             }
 
@@ -235,10 +232,10 @@ void canable::read_can_socket () {
                 wing_transmit.raw                     = frame.data[0];
                 robot_status_.reset_box_arm_height[0] = wing_transmit.data.reset_height_0;
                 robot_status_.reset_box_arm_height[1] = wing_transmit.data.reset_height_1;
-                robot_status_.reset_box_arm_strong[0] = wing_transmit.data.reset_strong_0;
-                robot_status_.reset_box_arm_strong[1] = wing_transmit.data.reset_strong_1;
-                robot_status_.reset_box_arm_weak[0]   = wing_transmit.data.reset_weak_0;
-                robot_status_.reset_box_arm_weak[1]   = wing_transmit.data.reset_weak_1;
+                robot_status_.reset_box_arm_hand[0]   = wing_transmit.data.reset_hand_0;
+                robot_status_.reset_box_arm_hand[1]   = wing_transmit.data.reset_hand_1;
+                robot_status_.reset_box_arm_expand[0] = wing_transmit.data.reset_expand_0;
+                robot_status_.reset_box_arm_expand[1] = wing_transmit.data.reset_expand_1;
                 robot_status_.reset_e_arm_expand      = wing_transmit.data.reset_e_arm_expand;
                 robot_status_.reset_e_arm_get         = wing_transmit.data.reset_e_arm_get;
                 UInt24 robomas_current;
@@ -360,8 +357,8 @@ void canable::pylon_arm_controller_callback (const nhk2025b_msgs::msg::PylonArm:
 void canable::timer_callback () {
     std::lock_guard<std::mutex> lock (data_mutex_);
 
-    claw_receive.data.reset = command_.reset;
-    wing_receive.data.reset = command_.reset;
+    claw_receive.data.reset = command_.reset_claw;
+    wing_receive.data.reset = command_.reset_wing;
 
     struct can_frame power;
     std::memset (&power, 0, sizeof (struct can_frame));
@@ -464,13 +461,11 @@ void canable::timer_callback () {
         struct can_frame arm;
         std::memset (&arm, 0, sizeof (struct can_frame));
         arm.can_id  = 0x023 + i;
-        arm.can_dlc = 8;
-        union float_bytes arm_position_strong, arm_position_weak;
-        arm_position_strong.value = box_arm_cmd_.arm_position_strong[i];
-        arm_position_weak.value   = box_arm_cmd_.arm_position_weak[i];
+        arm.can_dlc = 4;
+        union float_bytes arm_position_hand;
+        arm_position_hand.value = box_arm_cmd_.hand_position[i];
         for (int b = 0; b < 4; b++) {
-            arm.data[b]     = arm_position_strong.bytes[b];
-            arm.data[b + 4] = arm_position_weak.bytes[b];
+            arm.data[b] = arm_position_hand.bytes[b];
         }
         if (!write (can_socket_, &arm, sizeof (struct can_frame))) {
             RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");

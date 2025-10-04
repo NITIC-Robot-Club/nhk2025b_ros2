@@ -138,7 +138,7 @@ class canable : public rclcpp::Node {
         uint8_t raw;
         struct {
             uint8_t reset : 1;
-            uint8_t : 7;
+            uint8_t : 5;
         } data;
     } wing_receive;
 
@@ -147,15 +147,15 @@ class canable : public rclcpp::Node {
         struct {
             uint8_t reset_height_0 : 1;
             uint8_t reset_height_1 : 1;
-            uint8_t reset_strong_0 : 1;
-            uint8_t reset_strong_1 : 1;
-            uint8_t reset_weak_0 : 1;
-            uint8_t reset_weak_1 : 1;
+            uint8_t reset_hand_0 : 1;
+            uint8_t reset_hand_1 : 1;
+            uint8_t reset_expand_0 : 1;
+            uint8_t reset_expand_1 : 1;
             uint8_t reset_e_arm_expand : 1;
             uint8_t reset_e_arm_get : 1;
         } data;
     } wing_transmit;
-
+    
     class UInt24 {
        private:
         uint32_t value_;
