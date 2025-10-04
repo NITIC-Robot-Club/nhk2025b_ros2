@@ -73,7 +73,7 @@ class path_planner : public rclcpp::Node {
     nav_msgs::msg::Path linear_astar (const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
     nav_msgs::msg::Path path_smoother (const nav_msgs::msg::Path& linear_path, const nav_msgs::msg::OccupancyGrid& use_occ_map);
 
-    std::vector<double> angular_smoother (std::vector<double> theta_path);
+    std::vector<std::pair<int, double>> angular_smoother (std::vector<std::pair<int, double>> theta_path);
     std::pair<int, int> to_grid (double x, double y);
 
     double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {

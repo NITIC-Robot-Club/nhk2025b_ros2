@@ -202,7 +202,7 @@ nav_msgs::msg::Path path_planner::path_smoother (const nav_msgs::msg::Path &line
     }
     return path;
 }
-std::vector<double> path_planner::angular_smoother (std::vector<double> theta_path) {
+std::vector<std::pair<int, double>> path_planner::angular_smoother (std::vector<std::pair<int, double>> theta_path) {
     auto idx_to_rad = [&] (double idx) { return idx * 2 * M_PI / angle_cost_map[0].size (); };
 
     auto rad_to_idx = [&] (double rad) {
@@ -226,11 +226,11 @@ std::vector<double> path_planner::angular_smoother (std::vector<double> theta_pa
     for (int iter = 0; iter < max_iterations; ++iter) {
         for (size_t i = 1; i + 1 < theta_path.size (); ++i) {
             // 曲率項（滑らかさ）
-            double mid_y    = mid_index (theta_path[i - 1], theta_path[i + 1]);
-            double smooth_y = theta_path[i] - mid_y;
+            double mid_y    = mid_index (theta_path[i - 1].second, theta_path[i + 1].second);
+            double smooth_y = theta_path[i].second - mid_y;
 
             // 勾配降下による更新
-            double new_y = theta_path[i] - smooth_y;
+            double new_y = theta_path[i].second - smooth_y;
             if (new_y < 0) {
                 new_y += angle_cost_map[0].size ();
             } else if (new_y >= angle_cost_map[0].size ()) {
@@ -239,7 +239,7 @@ std::vector<double> path_planner::angular_smoother (std::vector<double> theta_pa
             if (angle_cost_map[i][(int)std::round (new_y)] > 50) {
                 continue;
             }
-            theta_path[i] = new_y;
+            theta_path[i].second = new_y;
         }
     }
     return theta_path;
@@ -382,10 +382,10 @@ void path_planner::angular_astar (
             }
         }
     }
-    std::vector<double> theta_path;
+    std::vector<std::pair<int, double>> theta_path;
     auto                curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
     while (curr.first != 0 || curr.second != start_theta) {
-        theta_path.push_back (curr.second);
+        theta_path.push_back (std::make_pair(curr.first, curr.second));
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
             path.poses.clear ();
@@ -393,15 +393,16 @@ void path_planner::angular_astar (
         }
         curr = came_from[idx];
     }
-    theta_path.push_back (start_theta);
+    theta_path.push_back (std::make_pair(0, start_theta));
     std::reverse (theta_path.begin (), theta_path.end ());
     theta_path = angular_smoother (theta_path);
 
     for (int i = 0; i < theta_path.size (); i++) {
         geometry_msgs::msg::PoseStamped pose;
-        pose.pose.position.x    = smoothed_path.poses[i].pose.position.x;
-        pose.pose.position.y    = smoothed_path.poses[i].pose.position.y;
-        double yaw              = theta_path[i] * theta_resolution * M_PI / 180.0;
+        int index = theta_path[i].first;
+        pose.pose.position.x    = smoothed_path.poses[index].pose.position.x;
+        pose.pose.position.y    = smoothed_path.poses[index].pose.position.y;
+        double yaw              = theta_path[i].second * theta_resolution * M_PI / 180.0;
         pose.pose.orientation.z = std::sin (yaw / 2.0);
         pose.pose.orientation.w = std::cos (yaw / 2.0);
         path.poses.push_back (pose);
