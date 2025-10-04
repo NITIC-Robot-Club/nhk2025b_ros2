@@ -3,19 +3,16 @@
 namespace visualize_footprint {
 
 visualize_footprint::visualize_footprint (const rclcpp::NodeOptions &options) : Node ("visualize_footprint", options) {
-    pose_sub_   = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&visualize_footprint::pose_callback, this, std::placeholders::_1));
-    map_sub_    = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&visualize_footprint::map_callback, this, std::placeholders::_1));
-    marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/robot_footprint", 1);
+    pose_sub_        = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&visualize_footprint::pose_callback, this, std::placeholders::_1));
+    map_sub_         = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&visualize_footprint::map_callback, this, std::placeholders::_1));
+    marker_pub_      = this->create_publisher<visualization_msgs::msg::MarkerArray> ("/visualization/robot_footprint", 1);
+    robot_width_sub_ = this->create_subscription<std_msgs::msg::Float32> ("/robot_width", 1, [this] (const std_msgs::msg::Float32::SharedPtr msg) { robot_width = msg->data; });
 
-    // Robot dimensions (in meters)
-    declare_parameter ("robot_width", 0.8);
     declare_parameter ("robot_length", 0.6);
     declare_parameter ("history", 300);
 }
 
 void visualize_footprint::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    // パラメータ取得
-    robot_width  = get_parameter ("robot_width").as_double ();
     robot_length = get_parameter ("robot_length").as_double ();
     history      = get_parameter ("history").as_int ();
     if (history < 1) history = 1;

@@ -6,8 +6,8 @@ wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("whe
     odom_publisher    = this->create_publisher<nav_msgs::msg::Odometry> ("/localization/wheel_odometry", 1);
     pose_publisher    = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/localization/wheel_odometry_pose", 1);
     wheel_radius      = this->declare_parameter ("wheel_radius", 0.0325);
-    robot_width       = this->declare_parameter ("robot_width", 0.8);
-    robot_length      = this->declare_parameter ("robot_length", 0.6);
+    robot_width       = this->declare_parameter ("swerve_width", 0.8);
+    robot_length      = this->declare_parameter ("swerve_length", 0.6);
 
     publish_rate_hz       = this->declare_parameter<int> ("publish_rate_hz", 10);
 

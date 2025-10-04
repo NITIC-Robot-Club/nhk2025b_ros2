@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32, Bool
+from std_msgs.msg import Int32, Bool, Float32
 from geometry_msgs.msg import PoseStamped
 from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command, EArm, BoxArm, Conveyor, PylonArm
 import math
@@ -87,13 +87,16 @@ class nhk2025b_behavior(Node):
         self.box_arm_result = BoxArm()
         self.pylon_arm_result = PylonArm()
 
-        self.pylon_arm_height_tolerance = 0.02
-        self.pylon_arm_expand_tolerance = 0.3
-        self.box_arm_height_tolerance = 0.02
-        self.box_arm_expand_tolerance = 0.3
-        self.e_arm_expand_tolerance = 0.3
+        self.pylon_arm_height_tolerance = 0.01
+        self.pylon_arm_expand_tolerance = 0.1
+        self.box_arm_height_tolerance = 0.01
+        self.box_arm_expand_tolerance = 0.1
+        self.e_arm_expand_tolerance = 0.1
         self.e_arm_get_tolerance = 0.01
 
+        self.robot_default_width = 1.0
+        self.robot_expanded_width = 1.4
+        
         self.function_dict = {
             "set_e_arm": self.set_e_arm,
             "set_box_arm_height": self.set_box_arm_height,
@@ -116,6 +119,7 @@ class nhk2025b_behavior(Node):
         self.label_to_state, self.state_to_pose, self.state_to_actions, self.state_id_map, self.transitions = parse_labels_and_positions(state_graph_path)
         self.id_to_label = {v: k for k, v in self.label_to_state.items()}
         self.id_to_state = {v: s for s, v in self.state_id_map.items()}
+        self.label_snapshots = self.build_state_snapshots()
 
         self.state_array_pub = self.create_publisher(StateArray, '/behavior/avaiable_state_array', 1)
         self.pose_pub = self.create_publisher(PoseStamped, '/behavior/goal_pose', 1)
@@ -124,6 +128,7 @@ class nhk2025b_behavior(Node):
         self.box_arm_pub = self.create_publisher(BoxArm, '/box_arm/cmd', 1)
         self.conveyor_pub = self.create_publisher(Conveyor, '/conveyor/cmd', 1)
         self.pylon_arm_pub = self.create_publisher(PylonArm, '/pylon_arm/cmd', 1)
+        self.robot_width_pub = self.create_publisher(Float32, '/robot_width', 1)
 
         self.create_subscription(PoseStamped, '/localization/current_pose', self.current_pose_callback, 1)
         self.create_subscription(RobotStatus, '/robot_status', self.robot_status_callback, 1)
@@ -166,6 +171,26 @@ class nhk2025b_behavior(Node):
             msg.state.append(state_msg)
         return msg
 
+    def build_state_snapshots(self):
+        snapshots = {}
+        for label, state in self.label_to_state.items():
+            actions = []
+            visited = set()
+            def dfs(s):
+                if s in visited:
+                    return
+                visited.add(s)
+                if s in self.state_to_actions:
+                    for act in self.state_to_actions[s]:
+                        actions.append(act)
+                for src, dst, cond in self.transitions:
+                    if dst == s:  # 逆向きに辿る
+                        dfs(src)
+            dfs(state)
+            snapshots[label] = actions
+        return snapshots
+
+
     def publish_state_array(self):
         self.state_array_pub.publish(self.state_array)
     
@@ -183,6 +208,15 @@ class nhk2025b_behavior(Node):
 
     def box_arm_callback(self, msg):
         self.box_arm_result = msg
+        expanded = False
+        for i in range(2):
+            if msg.expand[i] > 0.1:
+                expanded = True
+        if expanded:
+            self.robot_width_pub.publish(Float32(data=self.robot_expanded_width))
+        else:
+            self.robot_width_pub.publish(Float32(data=self.robot_default_width))
+
 
     def check_allow_automate(self):
         return self.command.allow_automate 
@@ -248,10 +282,20 @@ class nhk2025b_behavior(Node):
         label = found.name
         state = self.label_to_state[label]
         self.get_logger().info(f'[set_status_num] ラベル {label}({state}) へ強制遷移')
+
+        # ---- 状態復元 ----
+        if label in self.label_snapshots:
+            for act in self.label_snapshots[label]:
+                try:
+                    eval(act, {}, self.function_dict)
+                except Exception as e:
+                    self.get_logger().warn(f"スナップショット復元失敗: {act} ({e})")
+
         self.goal_pose.pose.position.x = -1.0
         self.current_state = state
         self.waiting_for_goal = False
         self.finished = False
+
 
     def current_pose_callback(self, msg):
         self.current_pose = msg
@@ -396,9 +440,9 @@ class nhk2025b_behavior(Node):
 
     def set_conveyor_rpm(self, left=None, right=None):
         if left is not None:
-            self.conveyor_target.rpm[0] = left
+            self.conveyor_target.conveyor_rpm[0] = left
         if right is not None:
-                self.conveyor_target.rpm[1] = right
+            self.conveyor_target.conveyor_rpm[1] = right
 
     def set_pylon_arm_height(self, left=None, right=None):
         if left is not None:

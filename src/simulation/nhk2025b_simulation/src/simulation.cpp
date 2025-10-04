@@ -10,8 +10,8 @@ simulation::simulation (const rclcpp::NodeOptions& options) : Node ("simulation"
     is_red_subscriber_      = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&simulation::is_red_callback, this, std::placeholders::_1));
     imu_publisher_          = this->create_publisher<sensor_msgs::msg::Imu> ("/sensor/imu", 1);
     timer_                  = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&simulation::timer_callback, this));
-    robot_length            = this->declare_parameter<double> ("robot_length", 0.6);
-    robot_width             = this->declare_parameter<double> ("robot_width", 0.8);
+    robot_length            = this->declare_parameter<double> ("swerve_length", 0.6);
+    robot_width             = this->declare_parameter<double> ("swerve_width", 0.8);
     wheel_radius            = this->declare_parameter<double> ("wheel_radius", 0.0325);
     initial_x_blue          = this->declare_parameter<double> ("initial_positions.blue.x", 1.0);
     initial_y_blue          = this->declare_parameter<double> ("initial_positions.blue.y", 1.0);
