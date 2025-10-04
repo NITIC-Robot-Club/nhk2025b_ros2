@@ -16,7 +16,7 @@ stateDiagram-v2
     start_pylon_expand   --> start_box_arm_height
     start_box_arm_height --> start_box_arm_expand
     start_box_arm_expand --> start_e_arm
-    start_e_arm          --> start_position_1 : check_pylon_arm() and check_e_arm()
+    start_e_arm          --> start_position_1 : check_pylon_arm() and check_e_arm() and check_box_arm()
 
 
     pylon_0_position_get   : パイロン0 移動
@@ -25,12 +25,14 @@ stateDiagram-v2
     pylon_0_position_out_0 : set_position(6.0, 1.0, 90.0)
     pylon_0_position_out_1 : set_position(6.0, 2.0, 90.0)
     pylon_0_box_arm_expand : set_box_arm_expand(right = 90, left = 90)
+    pylon_0_box_arm_height : set_box_arm_height(right = 0.05, left = 0.05)
 
 #    start_position_1       --> pylon_0_position_get
     pylon_0_position_get   --> pylon_0_position_drop
     pylon_0_position_drop  --> pylon_0_position_out_0
     pylon_0_position_out_0 --> pylon_0_position_out_1
     pylon_0_position_out_1 --> pylon_0_box_arm_expand
+    pylon_0_box_arm_expand --> pylon_0_box_arm_height
     
 
     e_01_pylon_height_init : E01 回収
@@ -38,12 +40,12 @@ stateDiagram-v2
     e_01_pylon_expand_init : set_pylon_arm_expand(right = 0, left = 0)
     e_01_pylon_rpm_init    : set_pylon_arm_rpm(right = 250, left = 250)
     e_01_conveyor_init     : set_conveyor_rpm(right = 400, left = 400)
-    e_01_position_init_0   : set_position(8.78, 3.0, 90.0)
+    e_01_position_init_0   : set_position(8.78, 3.5, 90.0)
     e_01_position_init_1   : set_position(8.78, 4.0, 90.0)
     e_01_position_get      : set_position(8.78, 4.7, 90.0)
     e_01_pylon_expand_get  : set_pylon_arm_expand(right = 30, left = 30)
 
-    pylon_0_box_arm_expand --> e_01_pylon_height_init
+    pylon_0_box_arm_height --> e_01_pylon_height_init
     e_01_pylon_height_init --> e_01_pylon_expand_init
     e_01_pylon_expand_init --> e_01_pylon_rpm_init
     e_01_pylon_rpm_init    --> e_01_conveyor_init
@@ -95,10 +97,10 @@ stateDiagram-v2
 
 
     pylon_12_position_setup_0 : パイロン12　移動
-    pylon_12_position_setup_0 : set_position(1.5, 2.0, 0.0)
+    pylon_12_position_setup_0 : set_position(1.5, 2.0, 180.0)
     pylon_12_pylon_expand     : set_pylon_arm_expand(right = 90, left = 90)
     pylon_12_conveyor_stop    : set_conveyor_rpm(right = 0, left = 0)
-    pylon_12_position_setup_1 : set_position(1.5, 0.7, 0.0)
+    pylon_12_position_setup_1 : set_position(1.5, 1.2, 180.0)
 
     e_1_position_drop_out     --> pylon_12_position_setup_0
     pylon_12_position_setup_0 --> pylon_12_pylon_expand
@@ -106,11 +108,38 @@ stateDiagram-v2
     pylon_12_conveyor_stop    --> pylon_12_position_setup_1
 
 
-    pylon_12_position_get  : set_position(2.62, 0.7, 0.0)
-    pylon_12_position_drop : set_position(5.0, 0.7, 0.0)
-    pylon_12_position_out  : set_position(4.0, 1.0, 0.0)
+    pylon_12_position_get  : set_position(2.6, 1.2, 180.0)
+    pylon_12_position_drop : set_position(6.0, 1.2, 180.0)
+    pylon_12_position_out  : set_position(5.0, 1.2, 180.0)
 
     pylon_12_position_setup_1 --> pylon_12_position_get
     pylon_12_position_get     --> pylon_12_position_drop
     pylon_12_position_drop    --> pylon_12_position_out
+
+    
+    ex_0_init   : 専有0
+    ex_0_init   : set_position(8.4, 3.4, 90.0)
+    ex_0_setup  : set_position(9.5, 3.4, 90.0)
+    ex_0_get    : set_position(9.5, 2.0, 90.0)
+    ex_0_get_ok : set_position(9.5, 3.5, 90.0)
+
+    pylon_12_position_out --> ex_0_init
+    ex_0_init             --> ex_0_setup
+    ex_0_setup            --> ex_0_get
+    ex_0_get              --> ex_0_get_ok
+
+
+    gate_0_init : ゲート作成0
+    gate_0_init : set_position(3.5, 2.0, 90.0)
+    gate_0_turn : set_position(3.5, 2.0, 180.0)
+    gate_0_out  : set_position(2.0, 2.0, 180.0)
+
+    ex_0_get_ok --> gate_0_init
+    gate_0_init --> gate_0_turn
+    gate_0_turn --> gate_0_out
+
+    e_init : E回収
+    e_init : set_position(2.0, 2.5, 0.0)
+    
+    gate_0_out --> e_init
 ```
