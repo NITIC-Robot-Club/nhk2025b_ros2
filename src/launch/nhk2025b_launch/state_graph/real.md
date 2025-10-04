@@ -1,7 +1,7 @@
 ```mermaid
 stateDiagram-v2
 
-    start_position_0     : スタートゾーンに収める
+    start_position_0     : 収納後スタートゾーンに
     start_position_0     : set_position(1.0, 1.0, 0.0)
     start_pylon_height   : set_pylon_arm_height(right = 0.0, left = 0.0)
     start_pylon_expand   : set_pylon_arm_expand(right = 90,  left = 90)
@@ -21,8 +21,8 @@ stateDiagram-v2
 
     pylon_0_position_get  : パイロン0 移動
     pylon_0_position_get  : set_position(3.2, 1.19, 0.0)
-    pylon_0_position_drop : set_position(8.0, 1.19, 0.0)
-    pylon_0_position_out  : set_position(7.5, 1.19, 0.0)
+    pylon_0_position_drop : set_position(7.0, 1.19, 0.0)
+    pylon_0_position_out  : set_position(6.5, 1.19, 0.0)
     pylon_0_box_arm_expand    : set_box_arm_expand(right = 90, left = 90)
 
     start_position_1 --> pylon_0_position_get
@@ -60,7 +60,7 @@ stateDiagram-v2
     e_01_conveyor_hold     --> e_01_position_hold : check_pylon_arm()
     
 
-    e_01_position_drop     : E01 おとす
+    e_01_position_drop     : E01 吐き出し
     e_01_position_drop     : set_position(4.0, 3.0, 90.0)
     e_01_pylon_height_drop : set_pylon_arm_height(right = 0.2, left = 0.2)
     e_01_pylon_expand_drop : set_pylon_arm_expand(right = 0, left = 0)
@@ -74,7 +74,7 @@ stateDiagram-v2
     e_01_pylon_rpm_drop    --> e_01_conveyor_drop
 
 
-    pylon_12_pylon_expand     : パイロン12
+    pylon_12_pylon_expand     : パイロン12　移動
     pylon_12_pylon_expand     : set_pylon_arm_expand(right = 90, left = 90)
     pylon_12_position_setup_0 : set_position(1.5, 2.0, 0.0)
     pylon_12_position_setup_1 : set_position(1.5, 1.0, 0.0)
@@ -85,7 +85,7 @@ stateDiagram-v2
 
 
     pylon_12_position_get  : set_position(2.62, 1.0, 0.0)
-    pylon_12_position_drop : set_position(7.0, 1.0, -90.0)
+    pylon_12_position_drop : set_position(7.0, 1.5, -90.0)
     pylon_12_position_out  : set_position(7.0, 2.0, -90.0)
 
     pylon_12_position_setup_1 --> pylon_12_position_get
