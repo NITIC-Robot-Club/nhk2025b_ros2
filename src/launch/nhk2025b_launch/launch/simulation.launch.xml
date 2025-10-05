@@ -24,7 +24,6 @@
   <node pkg="nhk2025b_behavior" exec="behavior" name="behavior" output="screen">
     <param name="state_graph_path" value="$(find-pkg-share nhk2025b_launch)/state_graph/simulation.md"/>
   </node>
-  <include file="$(find-pkg-share nhk2025b_launch)/launch/urdf.launch.py"/>
   <node
       pkg="rviz2"
       exec="rviz2"
