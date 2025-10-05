@@ -51,6 +51,7 @@ class e_box_perception : public rclcpp::Node {
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr             is_red_subscriber_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr current_pose_subscriber_;
     rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr      detection_area_publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr      centre_of_detected_line_;
     int                                                              iter;
     double                                                           distance_threshold;
     bool                                                             is_red_;

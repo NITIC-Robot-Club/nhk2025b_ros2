@@ -12,8 +12,11 @@ Panels:
         - /Visualization1
         - /Private1
         - /urdf1
+        - /filtered points1
         - /e collect pose1
         - /line centre1
+        - /detection area1
+        - /centre of detected line1
       Splitter Ratio: 0.5264706015586853
     Tree Height: 766
   - Class: rviz_common/Selection
@@ -594,7 +597,8 @@ Visualization Manager:
           Enabled: true
           Name: 独ステ可視化
           Namespaces:
-            {}
+            swerve: true
+            swerve_angle_text: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -773,7 +777,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.07000000029802322
       Head Radius: 0.029999999329447746
-      Name: PoseArray
+      Name: filtered points
       Shaft Length: 0.23000000417232513
       Shaft Radius: 0.009999999776482582
       Shape: Arrow (Flat)
@@ -825,6 +829,47 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /perception/test_pose
       Value: true
+    - Alpha: 1
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz_default_plugins/PoseArray
+      Color: 255; 25; 255
+      Enabled: true
+      Head Length: 0.07000000029802322
+      Head Radius: 0.029999999329447746
+      Name: detection area
+      Shaft Length: 0.23000000417232513
+      Shaft Radius: 0.009999999776482582
+      Shape: Arrow (Flat)
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /perception/detection_area
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 0; 255; 0
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: centre of detected line
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /perception/centre_of_detected_line
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -873,16 +918,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 13.841073036193848
+      Distance: 2.0594425201416016
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.984276056289673
-        Y: 3.4989144802093506
-        Z: -0.0020157143007963896
+        X: 2.3230748176574707
+        Y: 2.9098596572875977
+        Z: -0.002676919335499406
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
