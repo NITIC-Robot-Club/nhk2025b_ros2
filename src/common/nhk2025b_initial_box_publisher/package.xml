@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>nhk2025b_initial_box_publisher</name>
+  <version>1.0.0</version>
+  <description>initial_box_publisher</description>
+  <maintainer email="hk@example.com">hk</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>nhk2025b_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
