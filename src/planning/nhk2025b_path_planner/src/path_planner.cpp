@@ -236,7 +236,7 @@ std::vector<std::pair<int, double>> path_planner::angular_smoother (std::vector<
             } else if (new_y >= angle_cost_map[0].size ()) {
                 new_y -= angle_cost_map[0].size ();
             }
-            if (angle_cost_map[i][(int)std::round (new_y)] > 50) {
+            if (angle_cost_map[theta_path[i].first][(int)std::round (new_y)] > 50) {
                 continue;
             }
             theta_path[i].second = new_y;
@@ -396,7 +396,6 @@ void path_planner::angular_astar (
     theta_path.push_back (std::make_pair(0, start_theta));
     std::reverse (theta_path.begin (), theta_path.end ());
     theta_path = angular_smoother (theta_path);
-
     for (int i = 0; i < theta_path.size (); i++) {
         geometry_msgs::msg::PoseStamped pose;
         int index = theta_path[i].first;
