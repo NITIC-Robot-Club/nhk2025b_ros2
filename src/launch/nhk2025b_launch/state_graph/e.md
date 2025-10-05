@@ -5,9 +5,9 @@ stateDiagram-v2
     e_0_pylon_expand_init : set_pylon_arm_expand(right = 0, left = 0)
     e_0_pylon_rpm_init    : set_pylon_arm_rpm(right = 250, left = 250)
     e_0_conveyor_init     : set_conveyor_rpm(right = 400, left = 400)
-    e_0_position_init_0   : set_position(8.70, 3.5, 90.0)
-    e_0_position_init_1   : set_position(8.70, 4.0, 90.0)
-    e_0_position_get      : set_position(8.75, 4.7, 90.0)
+    e_0_position_init_0   : set_position(8.75, 3.5, 90.0)
+    e_0_position_init_1   : set_position(8.75, 4.0, 90.0)
+    e_0_position_get      : set_position(8.8, 4.7, 90.0)
     e_0_pylon_expand_get  : set_pylon_arm_expand(right = 30, left = 30)
 
     pylon_0_box_arm_height --> e_0_pylon_height_init
@@ -33,6 +33,15 @@ stateDiagram-v2
     e_0_conveyor_hold     --> e_0_position_hold
 
 
+    e_0_pylon_height_drop : E0 排出
+    e_0_pylon_height_drop : set_pylon_arm_height(right = 0.2, left = 0.2)
+    e_0_pylon_rpm_drop    : set_pylon_arm_rpm(right = 0, left = 0)
+    e_0_conveyor_drop     : set_conveyor_rpm(right = -400, left = -400)
+
+    e_0_position_hold     --> e_0_pylon_height_drop
+    e_0_pylon_height_drop --> e_0_pylon_rpm_drop
+    e_0_pylon_rpm_drop    --> e_0_conveyor_drop
+
     e_12_pylon_height_init : E12 回収
     e_12_pylon_height_init : set_pylon_arm_height(right = 0.16, left = 0.16)
     e_12_pylon_expand_init : set_pylon_arm_expand(right = 0, left = 0)
@@ -43,7 +52,8 @@ stateDiagram-v2
     e_12_position_get      : set_position(9.10, 4.7, 90.0)
     e_12_pylon_expand_get  : set_pylon_arm_expand(right = 30, left = 30)
 
-    e_0_position_drop_out  --> e_12_pylon_height_init
+
+    e_0_conveyor_drop      --> e_12_pylon_height_init
     e_12_pylon_height_init --> e_12_pylon_expand_init
     e_12_pylon_expand_init --> e_12_pylon_rpm_init
     e_12_pylon_rpm_init    --> e_12_conveyor_init
@@ -65,4 +75,16 @@ stateDiagram-v2
     e_12_pylon_rpm_hold    --> e_12_conveyor_hold
     e_12_conveyor_hold     --> e_12_position_hold
 
+
+    e_12_pylon_height_drop : E12 排出
+    e_12_pylon_height_drop : set_pylon_arm_height(right = 0.2, left = 0.2)
+    e_12_pylon_rpm_drop    : set_pylon_arm_rpm(right = 0, left = 0)
+    e_12_conveyor_drop     : set_conveyor_rpm(right = -400, left = -400)
+
+    e_12_position_hold     --> e_12_pylon_height_drop
+    e_12_pylon_height_drop --> e_12_pylon_rpm_drop
+    e_12_pylon_rpm_drop    --> e_12_conveyor_drop
+
+
+    e_12_conveyor_drop --> pylon_0_box_arm_height
 ```
