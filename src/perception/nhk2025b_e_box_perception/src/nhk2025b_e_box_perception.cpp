@@ -52,12 +52,12 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
 
     // 手順4 短辺・長辺判定
     bool is_short_line;
-    if (fabs (best_line_length - 1.0) < fabs (best_line_length - 0.3)) {
+    if (best_line_length > 0.35) {
+        RCLCPP_INFO (this->get_logger (), "Detected line is long line.");
         is_short_line = false;
-        RCLCPP_INFO (this->get_logger (), "Long line detected");
     } else {
+        RCLCPP_INFO (this->get_logger (), "Detected line is short line.");
         is_short_line = true;
-        RCLCPP_INFO (this->get_logger (), "Short line detected");
     }
 
     Point centre_of_line = line_midpoint (best_line);
@@ -103,9 +103,9 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
     }
 
     RCLCPP_INFO (this->get_logger (), "Collect point: (%f, %f)", collect_point.first, collect_point.second);
-    tf2::Quaternion q;
+    tf2::Quaternion                 q;
     geometry_msgs::msg::PoseStamped collect_pose;
-    if (is_short_line){
+    if (is_short_line) {
         q.setRPY (0, 0, theta);
         collect_pose;
         collect_pose.header.frame_id  = "map";
