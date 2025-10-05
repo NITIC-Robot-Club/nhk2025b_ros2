@@ -19,6 +19,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
+#include <tf2/utils.h>
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -48,14 +50,17 @@ class e_box_perception : public rclcpp::Node {
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr   lidar_subscriber_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr             is_red_subscriber_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr current_pose_subscriber_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr      detection_area_publisher_;
     int                                                              iter;
     double                                                           distance_threshold;
     bool                                                             is_red_;
     double                                                           min_x, max_x, min_y, max_y;
+    Point                                                            fl, fr, bl, br;
     double                                                           normal_distance;
     double                                                           front_line_length, side_line_length;
     int                                                              detection_count_ = 0;
-    std::vector<std::vector<Point>>                                 detection_areas_;
+    std::vector<Point>                                               detection_areas_;
+    std::vector<std::vector<Point>>                                  detected_areas_;
     geometry_msgs::msg::PoseStamped                                  e_drop_pose_;
     nhk2025b_msgs::msg::BoxArray                                     box_array_;
     sensor_msgs::msg::PointCloud2                                    lidar_data_;
@@ -69,14 +74,16 @@ class e_box_perception : public rclcpp::Node {
     void                               current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr current_pose);
     std::vector<Point>                 cloud_to_points (const sensor_msgs::msg::PointCloud2 &cloud);
     std::tuple<double, double, double> ransac (const std::vector<Point> &points, std::vector<Point> &inliers_out);
-    std::vector<Point>                 filtering_points (std::vector<Point> data);
+    std::vector<Point>                 filtering_points (std::vector<e_box_perception::Point> data, const std::vector<Point> &polygon);
     Point                              find_box_centre (e_box_perception::Line line, e_box_perception::Point point, double normal_distance);
     Point                              find_collect_point (e_box_perception::Line line, e_box_perception::Point point, double normal_distance);
     double                             point_line_distance (const Point &pt, double a, double b, double c);
     void                               update_detection_area (const geometry_msgs::msg::PoseStamped &pose);
     Line                               ransac_line (const std::vector<Point> &points, std::vector<Point> &inliers_out);
     Point                              line_midpoint (e_box_perception::Line line);
-    std::vector<Point>                 remove_detected_points(const std::vector<Point> &points, const std::vector<std::vector<Point>> &detected_points);
+    std::vector<Point>                 remove_detected_points (const std::vector<Point> &points, const std::vector<std::vector<Point>> &detected_points);
+    void                               get_robot_forward_area (const geometry_msgs::msg::PoseStamped &pose);
+    bool                               isInsidePolygon (const Point &pt, const std::vector<Point> &polygon);
 };
 }  // namespace e_box_perception
 
