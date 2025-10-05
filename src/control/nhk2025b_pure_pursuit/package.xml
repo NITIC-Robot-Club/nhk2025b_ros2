@@ -13,6 +13,7 @@
   <depend>nav_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>nhk2025b_utils</depend>
+  <depend>nhk2025b_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

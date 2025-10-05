@@ -426,7 +426,7 @@ Visualization Manager:
           Axes Radius: 0.10000000149011612
           Class: rviz_default_plugins/Pose
           Color: 249; 240; 107
-          Enabled: false
+          Enabled: true
           Head Length: 0.30000001192092896
           Head Radius: 0.10000000149011612
           Name: 注視点
@@ -439,28 +439,8 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /control/lookahead_position
-          Value: false
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz_default_plugins/Pose
-          Color: 198; 70; 0
-          Enabled: false
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: 角度注視点
-          Shaft Length: 1
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic:
-            Depth: 5
-            Durability Policy: Volatile
-            Filter size: 10
-            History Policy: Keep Last
-            Reliability Policy: Reliable
-            Value: /control/lookahead_angle
-          Value: false
+            Value: /control/lookahead
+          Value: true
         - Alpha: 0.6000000238418579
           Class: rviz_default_plugins/Map
           Color Scheme: costmap

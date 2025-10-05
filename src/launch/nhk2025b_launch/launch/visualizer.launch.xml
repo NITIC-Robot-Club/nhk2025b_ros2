@@ -26,4 +26,5 @@
         pkg="rviz2"
         exec="rviz2"
         args="-d $(find-pkg-share nhk2025b_launch)/rviz/$(var rviz_config).rviz"/>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/urdf.launch.py"/>
 </launch>
