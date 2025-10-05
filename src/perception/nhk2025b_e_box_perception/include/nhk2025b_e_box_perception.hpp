@@ -51,7 +51,7 @@ class e_box_perception : public rclcpp::Node {
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr             is_red_subscriber_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr current_pose_subscriber_;
     rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr      detection_area_publisher_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr      centre_of_detected_line_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr    centre_of_detected_line_;
     int                                                              iter;
     double                                                           distance_threshold;
     bool                                                             is_red_;
@@ -60,6 +60,7 @@ class e_box_perception : public rclcpp::Node {
     double                                                           normal_distance;
     double                                                           front_line_length, side_line_length;
     int                                                              detection_count_ = 0;
+    double                                                           permissible_segment_distance;
     std::vector<Point>                                               detection_areas_;
     std::vector<std::vector<Point>>                                  detected_areas_;
     geometry_msgs::msg::PoseStamped                                  e_drop_pose_;
@@ -85,6 +86,7 @@ class e_box_perception : public rclcpp::Node {
     std::vector<Point>                 remove_detected_points (const std::vector<Point> &points, const std::vector<std::vector<Point>> &detected_points);
     void                               get_robot_forward_area (const geometry_msgs::msg::PoseStamped &pose);
     bool                               isInsidePolygon (const Point &pt, const std::vector<Point> &polygon);
+    double                             lineLength (const Line &line, const std::vector<Point> &inliers);
 };
 }  // namespace e_box_perception
 

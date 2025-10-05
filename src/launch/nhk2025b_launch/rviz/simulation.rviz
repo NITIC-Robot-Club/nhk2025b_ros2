@@ -16,7 +16,7 @@ Panels:
         - /e collect pose1
         - /line centre1
         - /detection area1
-        - /centre of detected line1
+        - /first line1
       Splitter Ratio: 0.5264706015586853
     Tree Height: 766
   - Class: rviz_common/Selection
@@ -590,7 +590,7 @@ Visualization Manager:
           Enabled: true
           Name: 経路当たり判定
           Namespaces:
-            {}
+            path_collision: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -834,11 +834,31 @@ Visualization Manager:
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
-      Color: 0; 255; 0
+      Color: 255; 25; 0
       Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: centre of detected line
+      Name: first line
+      Shaft Length: 1
+      Shaft Radius: 0.5
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /perception/first_line
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: second line
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -848,7 +868,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /perception/centre_of_detected_line
+        Value: /perception/second_line
       Value: true
   Enabled: true
   Global Options:
@@ -898,16 +918,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.0594425201416016
+      Distance: 7.8550028800964355
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.3230748176574707
-        Y: 2.9098596572875977
-        Z: -0.002676919335499406
+        X: 3.793447732925415
+        Y: 4.66454553604126
+        Z: -0.0012065476039424539
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
