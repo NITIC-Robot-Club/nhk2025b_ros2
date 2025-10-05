@@ -13,6 +13,6 @@
     </composable_node>
   </node_container>
   <node pkg="nhk2025b_behavior" exec="behavior" name="behavior" output="screen">
-    <param name="state_graph_path" value="$(find-pkg-share nhk2025b_launch)/state_graph/e.md"/>
+    <param name="state_graph_path" value="$(find-pkg-share nhk2025b_launch)/state_graph/real.md"/>
   </node>
 </launch>
