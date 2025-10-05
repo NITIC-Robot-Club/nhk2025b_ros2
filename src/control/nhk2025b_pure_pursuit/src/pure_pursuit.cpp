@@ -25,6 +25,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->declare_parameter ("min_curvature_speed_m_s", 0.3);
     this->declare_parameter ("angle_decceleration_p", 1.0);
     this->declare_parameter ("max_speed_xy_m_s", 3.0);
+    this->declare_parameter ("min_speed_xy_m_s", 0.1);
     this->declare_parameter ("max_speed_z_rad_s", 3.14);
     this->declare_parameter ("min_speed_z_rad_s", 0.3);
     this->declare_parameter ("max_acceleration_xy_m_s2_", 10.0);
@@ -44,6 +45,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->get_parameter ("min_curvature_speed_m_s", min_curvature_speed_m_s_);
     this->get_parameter ("angle_decceleration_p", angle_decceleration_p_);
     this->get_parameter ("max_speed_xy_m_s", max_speed_xy_m_s_);
+    this->get_parameter ("min_speed_xy_m_s", min_speed_xy_m_s_);
     this->get_parameter ("max_speed_z_rad_s", max_speed_z_rad_s_);
     this->get_parameter ("min_speed_z_rad_s", min_speed_z_rad_s_);
     this->get_parameter ("max_acceleration_xy_m_s2_", max_acceleration_xy_m_s2_);
@@ -64,6 +66,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
         RCLCPP_INFO (this->get_logger (), "min_curvature_speed_m_s : %f", min_curvature_speed_m_s_);
         RCLCPP_INFO (this->get_logger (), "angle_decceleration_p : %f", angle_decceleration_p_);
         RCLCPP_INFO (this->get_logger (), "max_speed_xy_m_s : %f", max_speed_xy_m_s_);
+        RCLCPP_INFO (this->get_logger (), "min_speed_xy_m_s : %f", min_speed_xy_m_s_);
         RCLCPP_INFO (this->get_logger (), "max_speed_z_rad_s : %f", max_speed_z_rad_s_);
         RCLCPP_INFO (this->get_logger (), "min_speed_z_rad_s : %f", min_speed_z_rad_s_);
         RCLCPP_INFO (this->get_logger (), "max_acceleration_xy_m_s2_ : %f", max_acceleration_xy_m_s2_);
@@ -198,6 +201,8 @@ void pure_pursuit::timer_callback () {
     double curvature_speed = target_speed / (std::abs (curvature * curvature_decceleration_p_) + 1e-6);
 
     target_speed = std::min (target_speed, std::max (curvature_speed, min_curvature_speed_m_s_));
+
+    target_speed = std::max (target_speed, min_speed_xy_m_s_);
 
     double delta_t_s    = 0.05;
     double acceleration = (target_speed - last_speed) / delta_t_s;
