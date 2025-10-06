@@ -15,7 +15,7 @@ stateDiagram-v2
     start_pylon_expand   --> start_box_arm_height
     start_box_arm_height --> start_box_arm_expand
     start_box_arm_expand --> start_e_arm
-    start_e_arm          --> start_position_1 : check_pylon_arm() and check_e_arm()
+    start_e_arm          --> start_position_1 : check_pylon_arm() and check_e_arm() and check_box_arm()
 
 
     pylon_0_position_get   : パイロン0 移動

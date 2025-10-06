@@ -87,16 +87,49 @@ class nhk2025b_behavior(Node):
         self.box_arm_result = BoxArm()
         self.pylon_arm_result = PylonArm()
 
-        self.pylon_arm_height_tolerance = 0.01
-        self.pylon_arm_expand_tolerance = 0.1
-        self.box_arm_height_tolerance = 0.01
-        self.box_arm_expand_tolerance = 0.1
-        self.e_arm_expand_tolerance = 0.1
-        self.e_arm_get_tolerance = 0.01
+        self.get_box_mode = False
 
-        self.robot_default_width = 1.0
-        self.robot_expanded_width = 1.4
-        
+        # parameter
+        self.declare_parameter('pylon_arm_height_tolerance', 0.01)
+        self.declare_parameter('pylon_arm_expand_tolerance', 0.1)
+        self.declare_parameter('box_arm_height_tolerance', 0.01)
+        self.declare_parameter('box_arm_expand_tolerance', 0.1)
+        self.declare_parameter('e_arm_expand_tolerance', 0.1)
+        self.declare_parameter('e_arm_get_tolerance', 0.01)
+        self.declare_parameter('robot_default_width', 1.0)
+        self.declare_parameter('robot_expanded_width', 1.4)
+        self.declare_parameter('robot_box_get_width', 1.0)
+        self.declare_parameter('default_acceleration_m_s2', 4.0)
+        self.declare_parameter('default_speed_m_s', 4.0)
+        self.declare_parameter('default_yaw_acceleration_deg_s2', 360.0)
+        self.declare_parameter('default_yaw_speed_deg_s', 180.0)
+        self.declare_parameter('slow_acceleration_m_s2', 0.3)
+        self.declare_parameter('slow_speed_m_s', 1.0)
+        self.declare_parameter('slow_yaw_acceleration_deg_s2', 30.0)
+        self.declare_parameter('slow_yaw_speed_deg_s', 30.0)
+        self.declare_parameter('goal_xy_tolerance_m', 0.05)
+        self.declare_parameter('goal_yaw_tolerance_deg', 5.0)
+
+        self.pylon_arm_height_tolerance = self.get_parameter('pylon_arm_height_tolerance').get_parameter_value().double_value
+        self.pylon_arm_expand_tolerance = self.get_parameter('pylon_arm_expand_tolerance').get_parameter_value().double_value
+        self.box_arm_height_tolerance = self.get_parameter('box_arm_height_tolerance').get_parameter_value().double_value
+        self.box_arm_expand_tolerance = self.get_parameter('box_arm_expand_tolerance').get_parameter_value().double_value
+        self.e_arm_expand_tolerance = self.get_parameter('e_arm_expand_tolerance').get_parameter_value().double_value
+        self.e_arm_get_tolerance = self.get_parameter('e_arm_get_tolerance').get_parameter_value().double_value
+        self.robot_default_width = self.get_parameter('robot_default_width').get_parameter_value().double_value
+        self.robot_expanded_width = self.get_parameter('robot_expanded_width').get_parameter_value().double_value
+        self.robot_box_get_width = self.get_parameter('robot_box_get_width').get_parameter_value().double_value
+        self.slow_acceleration_m_s2 = self.get_parameter('slow_acceleration_m_s2').get_parameter_value().double_value
+        self.default_acceleration_m_s2 = self.get_parameter('default_acceleration_m_s2').get_parameter_value().double_value
+        self.default_speed_m_s = self.get_parameter('default_speed_m_s').get_parameter_value().double_value
+        self.default_yaw_acceleration_deg_s2 = self.get_parameter('default_yaw_acceleration_deg_s2').get_parameter_value().double_value
+        self.default_yaw_speed_deg_s = self.get_parameter('default_yaw_speed_deg_s').get_parameter_value().double_value
+        self.slow_speed_m_s = self.get_parameter('slow_speed_m_s').get_parameter_value().double_value
+        self.slow_yaw_acceleration_deg_s2 = self.get_parameter('slow_yaw_acceleration_deg_s2').get_parameter_value().double_value
+        self.slow_yaw_speed_deg_s = self.get_parameter('slow_yaw_speed_deg_s').get_parameter_value().double_value
+        self.goal_xy_tolerance_m = self.get_parameter('goal_xy_tolerance_m').get_parameter_value().double_value
+        self.goal_yaw_tolerance_deg = self.get_parameter('goal_yaw_tolerance_deg').get_parameter_value().double_value
+
         self.function_dict = {
             "set_e_arm": self.set_e_arm,
             "set_box_arm_height": self.set_box_arm_height,
@@ -106,6 +139,7 @@ class nhk2025b_behavior(Node):
             "set_pylon_arm_height": self.set_pylon_arm_height,
             "set_pylon_arm_expand": self.set_pylon_arm_expand,
             "set_pylon_arm_rpm": self.set_pylon_arm_rpm,
+            "set_get_box_mode" : self.set_get_box_mode,
         }
         
         self.cond_env = {
@@ -128,6 +162,7 @@ class nhk2025b_behavior(Node):
         self.conveyor_pub = self.create_publisher(Conveyor, '/conveyor/cmd', 1)
         self.pylon_arm_pub = self.create_publisher(PylonArm, '/pylon_arm/cmd', 1)
         self.robot_width_pub = self.create_publisher(Float32, '/robot_width', 1)
+        self.control_limit_pub = self.create_publisher(ControlLimit, '/control_limit', 1)
 
         self.create_subscription(PoseStamped, '/localization/current_pose', self.current_pose_callback, 1)
         self.create_subscription(RobotStatus, '/robot_status', self.robot_status_callback, 1)
@@ -211,7 +246,10 @@ class nhk2025b_behavior(Node):
         for i in range(2):
             if msg.expand[i] > 0.1:
                 expanded = True
-        if expanded:
+        
+        if self.get_box_mode:
+            self.robot_width_pub.publish(Float32(data=self.robot_box_get_width))
+        elif expanded:
             self.robot_width_pub.publish(Float32(data=self.robot_expanded_width))
         else:
             self.robot_width_pub.publish(Float32(data=self.robot_default_width))
@@ -406,6 +444,20 @@ class nhk2025b_behavior(Node):
         self.box_arm_pub.publish(self.box_arm_target)
         self.conveyor_pub.publish(self.conveyor_target)
         self.pylon_arm_pub.publish(self.pylon_arm_target)
+        if self.get_box_mode:
+            self.control_limit_pub.publish(ControlLimit(
+                max_acceleration_xy = self.slow_acceleration_m_s2,
+                max_speed_xy = self.slow_speed_m_s,
+                max_acceleration_yaw = self.slow_yaw_acceleration_deg_s2,
+                max_speed_yaw = self.slow_yaw_speed_deg_s,
+            ))
+        else:
+            self.control_limit_pub.publish(ControlLimit(
+                max_acceleration_xy = self.default_acceleration_m_s2,
+                max_speed_xy = self.default_speed_m_s,
+                max_acceleration_yaw = self.default_yaw_acceleration_deg_s2,
+                max_speed_yaw = self.default_yaw_speed_deg_s,
+            ))
     
     def set_e_arm(self, expand = None, get = None):
         if expand is not None:
@@ -413,18 +465,14 @@ class nhk2025b_behavior(Node):
         if get is not None:
             self.e_arm_target.get = get / 180 * math.pi
 
-    def set_box_arm_expand(self, left=None, right=None):
-        if left is not None:
-            self.box_arm_target.expand[0] = left / 180 * math.pi
-        if right is not None:
-            self.box_arm_target.expand[1] = right / 180 * math.pi
-    
-    def set_box_arm_height(self, left=None, right=None):
-        if left is not None:
-            self.box_arm_target.height[0] = left
-        if right is not None:
-            self.box_arm_target.height[1] = right
-        
+    def set_box_arm_expand(self, deg):
+        self.box_arm_target.expand[0] = deg / 180 * math.pi
+        self.box_arm_target.expand[1] = deg / 180 * math.pi
+
+    def set_box_arm_height(self, height):
+        self.box_arm_target.height[0] = height
+        self.box_arm_target.height[1] = height
+
     def set_box_arm_hand(self, left=None, right=None):
         if left is not None:
             self.box_arm_target.hand_position[0] = left
@@ -455,6 +503,8 @@ class nhk2025b_behavior(Node):
         if right is not None:
             self.pylon_arm_target.collect_rpm[1] = right
 
+    def set_get_box_mode(self, mode):
+        self.get_box_mode = mode
 
 def main(args=None):
     rclpy.init(args=args)
