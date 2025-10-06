@@ -32,6 +32,7 @@ class pure_pursuit : public rclcpp::Node {
     double max_acceleration_xy_m_s2_;      // 最大加速度
     double max_acceleration_z_deg_s2_;     // 最大角加速度 [deg/s^2]
     double goal_deceleration_m_s2_;        // ゴール減速用の減速度 [m/s^2]
+    double goal_deceleration_distance_p_;  // ゴール減速用の距離比例ゲイン
     double goal_position_tolerance_;       // ゴール位置許容誤差 [m]
     double goal_yaw_tolerance_deg_;        // ゴールヨー許容誤差 [deg]
     double goal_speed_tolerance_xy_m_s_;   // ゴール速度許容誤差 [m/s]

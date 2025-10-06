@@ -31,6 +31,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->declare_parameter ("max_acceleration_xy_m_s2_", 10.0);
     this->declare_parameter ("max_acceleration_z_deg_s2", 500.0);
     this->declare_parameter ("goal_deceleration_m_s2", 4.0);
+    this->declare_parameter ("goal_deceleration_distance_p", 1.5);
     this->declare_parameter ("goal_position_tolerance_m", 0.03);
     this->declare_parameter ("goal_yaw_tolerance_deg", 10.0);
     this->declare_parameter ("goal_speed_tolerance_xy_m_s", 0.3);
@@ -51,6 +52,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->get_parameter ("max_acceleration_xy_m_s2_", max_acceleration_xy_m_s2_);
     this->get_parameter ("max_acceleration_z_deg_s2", max_acceleration_z_deg_s2_);
     this->get_parameter ("goal_deceleration_m_s2", goal_deceleration_m_s2_);
+    this->get_parameter ("goal_deceleration_distance_p", goal_deceleration_distance_p_);
     this->get_parameter ("goal_position_tolerance_m", goal_position_tolerance_);
     this->get_parameter ("goal_yaw_tolerance_deg", goal_yaw_tolerance_deg_);
     this->get_parameter ("goal_speed_tolerance_xy_m_s", goal_speed_tolerance_xy_m_s_);
@@ -153,6 +155,10 @@ void pure_pursuit::timer_callback () {
         if (acc_dist >= lookahead_distance_) break;
     }
 
+    if(goal_position_reached) {
+        lookahead_index = path_.poses.size() - 1;
+    }
+
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
 
@@ -167,7 +173,7 @@ void pure_pursuit::timer_callback () {
     double d = std::max (goal_distance, 0.0);
 
     double achievable_decel = std::max (1e-3, std::min (goal_deceleration_m_s2_, max_acceleration_xy_m_s2_));
-    double slow_dist = last_speed * last_speed / (2 * achievable_decel);  // 実際に停止できる距離
+    double slow_dist = last_speed * last_speed / (2 * achievable_decel) * goal_deceleration_distance_p_;  // 実際に停止できる距離
     double ratio = 1.0;
     if (slow_dist > 1e-6) {
         ratio = std::clamp (d / slow_dist, 0.0, 1.0);

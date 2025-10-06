@@ -1,7 +1,8 @@
 ```mermaid
 stateDiagram-v2
 
-    start_position_0     : 収納後スタートゾーンに
+    start_get_box     : 収納後スタートゾーンに
+    start_get_box        : set_get_box_mode(False)
     start_position_0     : set_position(1.0, 1.0, 180.0)
     start_pylon_height   : set_pylon_arm_height(right = 0.0, left = 0.0)
     start_pylon_expand   : set_pylon_arm_expand(right = 90,  left = 90)
@@ -10,8 +11,9 @@ stateDiagram-v2
     start_e_arm          : set_e_arm(expand = 0, get = 0.00)
     start_position_1     : set_position(0.6, 0.5, 180.0)
 
-    [*]                  --> start_position_0
+    [*]                  --> start_get_box
 
+    start_get_box        --> start_position_0
     start_position_0     --> start_pylon_height
     start_pylon_height   --> start_pylon_expand
     start_pylon_expand   --> start_box_arm_height
@@ -29,6 +31,8 @@ stateDiagram-v2
     pylon_0_box_arm_height : set_box_arm_height(0.0)
 
     start_position_1       --> pylon_0_position_get
+
+#    start_position_1       --> pylon_12_position_out
     
     pylon_0_position_get   --> pylon_0_position_drop
     pylon_0_position_drop  --> pylon_0_position_out_0
@@ -209,4 +213,15 @@ stateDiagram-v2
     ex_1_get         --> ex_1_get_ok : check_box_arm()
     ex_1_get_ok      --> ex_1_height_ok
     ex_1_height_ok   --> ex_1_hand_ok : check_box_arm()
+
+    gate_1_init   : ゲート作成1
+    gate_1_init   : set_position(4.0, 2.0, 0.0)
+    gate_1_height : set_box_arm_height(0.9)
+    gate_1_ok     : set_position(3.5, 2.0, 0.0)
+    gate_1_out    : set_position(4.0, 2.0, 0.0)
+
+    ex_1_hand_ok  --> gate_1_init
+    gate_1_init   --> gate_1_height
+    gate_1_height --> gate_1_ok
+    gate_1_ok     --> gate_1_out
 ```

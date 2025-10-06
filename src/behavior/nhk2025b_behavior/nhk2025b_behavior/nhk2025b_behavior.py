@@ -6,6 +6,7 @@ from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command, EArm, Box
 import math
 import re
 import time
+from copy import deepcopy
 
 def parse_labels_and_positions(md_path):
     with open(md_path, encoding="utf-8") as f:
@@ -101,11 +102,11 @@ class nhk2025b_behavior(Node):
         self.declare_parameter('robot_box_get_width', 1.0)
         self.declare_parameter('default_acceleration_m_s2', 4.0)
         self.declare_parameter('default_speed_m_s', 4.0)
-        self.declare_parameter('default_yaw_acceleration_deg_s2', 360.0)
+        self.declare_parameter('default_yaw_acceleration_deg_s2', 1000.0)
         self.declare_parameter('default_yaw_speed_deg_s', 180.0)
         self.declare_parameter('slow_acceleration_m_s2', 0.3)
         self.declare_parameter('slow_speed_m_s', 1.0)
-        self.declare_parameter('slow_yaw_acceleration_deg_s2', 30.0)
+        self.declare_parameter('slow_yaw_acceleration_deg_s2', 60.0)
         self.declare_parameter('slow_yaw_speed_deg_s', 30.0)
         self.declare_parameter('goal_xy_tolerance_m', 0.05)
         self.declare_parameter('goal_yaw_tolerance_deg', 5.0)
@@ -153,6 +154,7 @@ class nhk2025b_behavior(Node):
         self.id_to_label = {v: k for k, v in self.label_to_state.items()}
         self.id_to_state = {v: s for s, v in self.state_id_map.items()}
         self.label_snapshots = self.build_state_snapshots()
+
 
         self.state_array_pub = self.create_publisher(StateArray, '/behavior/avaiable_state_array', 1)
         self.pose_pub = self.create_publisher(PoseStamped, '/behavior/goal_pose', 1)
@@ -207,21 +209,37 @@ class nhk2025b_behavior(Node):
 
     def build_state_snapshots(self):
         snapshots = {}
-        for label, state in self.label_to_state.items():
-            actions = []
-            visited = set()
-            def dfs(s):
-                if s in visited:
-                    return
-                visited.add(s)
-                if s in self.state_to_actions:
-                    for act in self.state_to_actions[s]:
-                        actions.append(act)
-                for src, dst, cond in self.transitions:
-                    if dst == s:  # 逆向きに辿る
-                        dfs(src)
-            dfs(state)
-            snapshots[label] = actions
+
+        def simulate(state, visited):
+            if state in visited:
+                return
+            visited.add(state)
+
+            # この状態のアクションを適用
+            if state in self.state_to_actions:
+                for act in self.state_to_actions[state]:
+                    try:
+                        eval(act, {}, {**self.function_dict, "self": self})
+                    except Exception as e:
+                        self.get_logger().warn(f"eval失敗: {act} ({e})")
+
+            # ラベル付きなら現在の状態を記録
+            for label, st in self.label_to_state.items():
+                if st == state:
+                    snapshots[label] = {
+                        "e_arm_target": deepcopy(self.e_arm_target),
+                        "box_arm_target": deepcopy(self.box_arm_target),
+                        "pylon_arm_target": deepcopy(self.pylon_arm_target),
+                        "conveyor_target": deepcopy(self.conveyor_target),
+                        "get_box_mode": self.get_box_mode,
+                    }
+
+            # 次の状態を再帰探索
+            for src, dst, cond in self.transitions:
+                if src == state:
+                    simulate(dst, visited)
+
+        simulate("[*]", set())
         return snapshots
 
 
@@ -306,32 +324,31 @@ class nhk2025b_behavior(Node):
             msg.id = self.last_state_id if self.last_state_id is not None else -1
         self.state_pub.publish(msg)
 
+
     def set_status_num_callback(self, msg):
         target_id = msg.data
-        found = None
-        for s in self.state_array.state:
-            if s.id == target_id:
-                found = s
-                break
+        found = next((s for s in self.state_array.state if s.id == target_id), None)
         if not found:
             self.get_logger().error(f'ID {target_id} のラベルが見つかりません')
             return
+
         label = found.name
         state = self.label_to_state[label]
-        self.get_logger().info(f'[set_status_num] ラベル {label}({state}) へ強制遷移')
-
-        # ---- 状態復元 ----
-        if label in self.label_snapshots:
-            for act in self.label_snapshots[label]:
-                try:
-                    eval(act, {}, self.function_dict)
-                except Exception as e:
-                    self.get_logger().warn(f"スナップショット復元失敗: {act} ({e})")
-
-        self.goal_pose.pose.position.x = -1.0
         self.current_state = state
         self.waiting_for_goal = False
         self.finished = False
+
+        if label in self.label_snapshots:
+            s = self.label_snapshots[label]
+            self.e_arm_target = deepcopy(s["e_arm_target"])
+            self.box_arm_target = deepcopy(s["box_arm_target"])
+            self.pylon_arm_target = deepcopy(s["pylon_arm_target"])
+            self.conveyor_target = deepcopy(s["conveyor_target"])
+            self.get_box_mode = s["get_box_mode"]
+            self.get_logger().info(f"{label} のスナップショット復元完了")
+        else:
+            self.get_logger().warn(f"{label} のスナップショット未登録")
+
 
 
     def current_pose_callback(self, msg):
