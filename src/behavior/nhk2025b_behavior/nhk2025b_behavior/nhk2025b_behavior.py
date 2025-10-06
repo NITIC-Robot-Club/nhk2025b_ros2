@@ -412,6 +412,7 @@ class nhk2025b_behavior(Node):
     def is_pose_close(self, pose: PoseStamped, goal_x, goal_y, goal_yaw):
         if self.is_red:
             goal_y = -goal_y
+            goal_yaw = -goal_yaw
         dx = pose.pose.position.x - goal_x
         dy = pose.pose.position.y - goal_y
         dist = math.hypot(dx, dy)
@@ -424,6 +425,7 @@ class nhk2025b_behavior(Node):
     def set_position(self, x, y, yaw_deg):
         if self.is_red:
             y = -y
+            yaw_deg = -yaw_deg
         pose = PoseStamped()
         pose.header.frame_id = "map"
         pose.header.stamp = self.get_clock().now().to_msg()
