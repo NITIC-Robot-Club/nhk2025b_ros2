@@ -61,14 +61,6 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
     }
 
     Point centre_of_line = line_midpoint (best_line);
-    // geometry_msgs::msg::PoseStamped col;
-    // col.header.frame_id = "map";
-    // col.header.stamp    = this->now ();
-    // col.pose.position.x = centre_of_line.first;
-    // col.pose.position.y = centre_of_line.second;
-    // centre_of_detected_line_->publish (col);
-    // double theta = atan2 (short_line.end.second - short_line.start.second, short_line.end.first - short_line.start.first);
-    // RCLCPP_INFO (this->get_logger (), "Detected line angle: %f, %f", theta * 180.0 / M_PI, (theta - M_PI_2) * 180.0 / M_PI);  // 検出線分の傾きを計算
 
     // 手順5 辺からbox中心を計算
     Point centre_of_box;
