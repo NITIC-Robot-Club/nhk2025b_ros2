@@ -4,9 +4,10 @@
     <composable_node pkg="nhk2025b_map_publisher" plugin="map_publisher::map_publisher" name="map_publisher">
       <param from="$(find-pkg-share nhk2025b_launch)/param/common.yaml"/>
     </composable_node>
-    <!-- <composable_node pkg="nhk2025b_initial_box_publisher" plugin="initial_box_publisher::initial_box_publisher" name="initial_box_publisher">
+    <composable_node pkg="nhk2025b_initial_box_publisher" plugin="initial_box_publisher::initial_box_publisher" name="initial_box_publisher">
       <param from="$(find-pkg-share nhk2025b_launch)/param/perception.yaml"/>
-    </composable_node> -->
+    </composable_node>
+    <composable_node pkg="nhk2025b_e_box_perception" plugin="e_box_perception::e_box_perception" name="e_box_perception"/>
   </node_container>
   <node pkg="nhk2025b_monitor" exec="monitor" name="monitor" output="screen"/>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/tf.launch.xml"/>  

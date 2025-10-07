@@ -5,6 +5,7 @@ namespace map_publisher {
 map_publisher::map_publisher (const rclcpp::NodeOptions& options) : Node ("map_publisher", options) {
     publisher_         = this->create_publisher<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1);
     box_subscriber_    = this->create_subscription<nhk2025b_msgs::msg::BoxArray> ("/simulation/box_state", 1, std::bind (&map_publisher::box_callback, this, std::placeholders::_1));
+    box_initial_subscriber_    = this->create_subscription<nhk2025b_msgs::msg::BoxArray> ("/box_state_initial", 1, std::bind (&map_publisher::box_initial_callback, this, std::placeholders::_1));
     is_red_subscriber_ = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&map_publisher::is_red_callback, this, std::placeholders::_1));
     timer_             = this->create_wall_timer (std::chrono::milliseconds (1000), std::bind (&map_publisher::publish_map, this));
     this->declare_parameter<double> ("resolution", 0.05);  // 5cm
@@ -119,6 +120,77 @@ void map_publisher::publish_map () {
             }
         }
     }
+    for (const auto& box : boxes_initial.boxes) {
+        if(abs(box.pose.position.z) > 0.01) continue; // z座標が0以外のboxは無視
+        // 1. Box情報の取得
+        double center_x = box.pose.position.x;
+        double center_y = box.pose.position.y;
+        double size_x   = box.size.x;
+        double size_y   = box.size.y;
+        double yaw      = nhk2025b_utils::get_yaw_2d (box.pose.orientation);
+
+        // 2. 回転行列を用意
+        double cos_yaw = std::cos (yaw);
+        double sin_yaw = std::sin (yaw);
+
+        // 逆回転行列（world→box座標変換用）
+        double cos_yaw_inv = std::cos (-yaw);
+        double sin_yaw_inv = std::sin (-yaw);
+
+        // 3. 回転を考慮したBoxのAABBを計算
+        double half_x = size_x / 2.0;
+        double half_y = size_y / 2.0;
+
+        // 4つの角の座標を計算（ボックス座標系からワールド座標系）
+        double corners_x[4] = {
+            center_x + cos_yaw * (-half_x) - sin_yaw * (-half_y),  // left-bottom
+            center_x + cos_yaw * (half_x)-sin_yaw * (-half_y),     // right-bottom
+            center_x + cos_yaw * (half_x)-sin_yaw * (half_y),      // right-top
+            center_x + cos_yaw * (-half_x) - sin_yaw * (half_y)    // left-top
+        };
+        double corners_y[4] = {
+            center_y + sin_yaw * (-half_x) + cos_yaw * (-half_y),  // left-bottom
+            center_y + sin_yaw * (half_x) + cos_yaw * (-half_y),   // right-bottom
+            center_y + sin_yaw * (half_x) + cos_yaw * (half_y),    // right-top
+            center_y + sin_yaw * (-half_x) + cos_yaw * (half_y)    // left-top
+        };
+
+        // 最小・最大座標を求める
+        double min_world_x = *std::min_element (corners_x, corners_x + 4);
+        double max_world_x = *std::max_element (corners_x, corners_x + 4);
+        double min_world_y = *std::min_element (corners_y, corners_y + 4);
+        double max_world_y = *std::max_element (corners_y, corners_y + 4);
+
+        // グリッド座標に変換
+        int min_x = (min_world_x - map.info.origin.position.x) / resolution_;
+        int max_x = (max_world_x - map.info.origin.position.x) / resolution_;
+        int min_y = (min_world_y - map.info.origin.position.y) / resolution_;
+        int max_y = (max_world_y - map.info.origin.position.y) / resolution_;
+
+        for (int mx = min_x; mx <= max_x; ++mx) {
+            for (int my = min_y; my <= max_y; ++my) {
+                // マップ範囲チェック
+                if (mx < 0 || mx >= map.info.width || my < 0 || my >= map.info.height) continue;
+
+                // マップ座標をワールド座標に変換（グリッドセルの中心を使用）
+                double wx = (mx + 0.5) * resolution_ + map.info.origin.position.x;
+                double wy = (my + 0.5) * resolution_ + map.info.origin.position.y;
+
+                // 4. Box中心に対する相対座標に変換
+                double dx = wx - center_x;
+                double dy = wy - center_y;
+
+                // 5. Box座標系に変換（yawの逆回転）
+                double local_x = cos_yaw_inv * dx - sin_yaw_inv * dy;
+                double local_y = sin_yaw_inv * dx + cos_yaw_inv * dy;
+
+                // 6. Box内部か判定
+                if (std::abs (local_x) < size_x / 2.0 && std::abs (local_y) < size_y / 2.0) {
+                    map.data[mx + my * map.info.width] = 100;
+                }
+            }
+        }
+    }
 
     for (int y = 0; y < map.info.height; ++y) {
         for (int x = 0; x < map.info.width; ++x) {
@@ -137,6 +209,11 @@ void map_publisher::publish_map () {
 
 void map_publisher::box_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr msg) {
     boxes = *msg;
+    publish_map ();
+}
+
+void map_publisher::box_initial_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr msg) {
+    boxes_initial = *msg;
     publish_map ();
 }
 void map_publisher::is_red_callback (const std_msgs::msg::Bool::SharedPtr msg) {

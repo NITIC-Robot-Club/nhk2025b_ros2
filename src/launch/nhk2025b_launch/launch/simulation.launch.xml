@@ -16,7 +16,6 @@
       <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
     </composable_node>
     <composable_node pkg="nhk2025b_simulation" plugin="arm_simulation::arm_simulation" name="arm_simulation"/>
-    <!-- <composable_node pkg="nhk2025b_e_box_perception" plugin="e_box_perception::e_box_perception" name="e_box_perception"/> -->
   </node_container>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/default.launch.xml"/>
   <include file="$(find-pkg-share nhk2025b_launch)/launch/localization.launch.xml"/>
