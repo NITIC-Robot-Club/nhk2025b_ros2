@@ -114,7 +114,7 @@ stateDiagram-v2
     e_12_pylon_height_hold : set_pylon_arm_height(right = 0.115, left = 0.115)
     e_12_pylon_expand_hold : set_pylon_arm_expand(right = 0, left = 0)
     e_12_pylon_rpm_hold    : set_pylon_arm_rpm(right = 0, left = 0)
-    e_12_conveyor_hold     : set_conveyor_rpm(right = 200, left = 200)
+    e_12_conveyor_hold     : set_conveyor_rpm(right = 100, left = 100)
     e_12_position_hold     : set_position(9.2, 3.5, 90.0)
 
     e_12_pylon_expand_get  --> e_12_pylon_height_hold : check_box_arm()
@@ -126,11 +126,11 @@ stateDiagram-v2
 
 
     e_12_position_drop     : E12 吐き出し
-    e_12_position_drop     : set_position(4.5, 3.0, 90.0)
+    e_12_position_drop     : set_position(3.0, 4.0, 90.0)
     e_12_pylon_height_drop : set_pylon_arm_height(right = 0.2, left = 0.2)
     e_12_pylon_rpm_drop    : set_pylon_arm_rpm(right = 0, left = 0)
     e_12_conveyor_drop     : set_conveyor_rpm(right = -400, left = -400)
-    e_12_position_drop_out : set_position(4.5, 3.0, 90.0)
+    e_12_position_drop_out : set_position(3.0, 3.0, 90.0)
     
     e_12_position_hold     --> e_12_position_drop
     e_12_position_drop     --> e_12_pylon_height_drop

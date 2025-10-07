@@ -51,7 +51,7 @@ initial_box_publisher::initial_box_publisher (const rclcpp::NodeOptions &options
     }
     box_array_publisher_ = this->create_publisher<nhk2025b_msgs::msg::BoxArray> ("/box_state_initial", 1);
     is_red_subscriber_   = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&initial_box_publisher::is_red_callback, this, std::placeholders::_1));
-    timer_               = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&initial_box_publisher::timer_callback, this));
+    timer_               = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&initial_box_publisher::timer_callback, this));
 
     set_coat_box_array ();
 }

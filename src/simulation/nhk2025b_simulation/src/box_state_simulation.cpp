@@ -5,7 +5,7 @@ box_state_simulation::box_state_simulation (const rclcpp::NodeOptions &options) 
     point_subscriber = this->create_subscription<geometry_msgs::msg::PointStamped> ("/clicked_point", rclcpp::QoS (10), std::bind (&box_state_simulation::point_callback, this, std::placeholders::_1));
 
     box_publisher = this->create_publisher<nhk2025b_msgs::msg::BoxArray> ("/simulation/box_state", rclcpp::QoS (10));
-    timer         = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&box_state_simulation::timer_callback, this));
+    timer         = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&box_state_simulation::timer_callback, this));
     box_size_x    = 1.0;
     box_size_y    = 0.3;
     box_size_z    = 0.3;
