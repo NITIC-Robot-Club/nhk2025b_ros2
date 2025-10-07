@@ -31,7 +31,7 @@ void visualize_swerve::swerve_callback (const nhk2025b_msgs::msg::Swerve::Shared
         marker.color.b = 0.0;
         marker.color.a = 1.0;
 
-        marker.lifetime           = rclcpp::Duration (0, 0);
+        marker.lifetime           = rclcpp::Duration::from_seconds (0.3);
         marker.header.stamp       = this->now ();
         marker.header.frame_id    = "base_link";
         marker.pose.position.x    = wheel_positions[i][0];

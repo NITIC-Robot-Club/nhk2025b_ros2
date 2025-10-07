@@ -49,7 +49,7 @@ void map_publisher::publish_map () {
     }
 
     for (const auto& box : boxes.boxes) {
-        if(box.pose.position.z !=0.0) continue; // z座標が0以外のboxは無視
+        if(abs(box.pose.position.z) > 0.01) continue; // z座標が0以外のboxは無視
         // 1. Box情報の取得
         double center_x = box.pose.position.x;
         double center_y = box.pose.position.y;

@@ -287,7 +287,7 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: false
-          Enabled: true
+          Enabled: false
           Keep: 100
           Name: オドメトリ
           Position Tolerance: 0.029999999329447746
@@ -308,7 +308,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /localization/odometry
-          Value: true
+          Value: false
         - Alpha: 1
           Angular Arrow Scale: 1
           Angular Color: 204; 204; 51
@@ -372,7 +372,7 @@ Visualization Manager:
           Axes Radius: 0.10000000149011612
           Class: rviz_default_plugins/Pose
           Color: 255; 25; 0
-          Enabled: true
+          Enabled: false
           Head Length: 0.30000001192092896
           Head Radius: 0.10000000149011612
           Name: 目標
@@ -386,12 +386,12 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /behavior/goal_pose
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
           Color: 25; 255; 0
-          Enabled: true
+          Enabled: false
           Head Diameter: 0.07000000029802322
           Head Length: 0.10000000149011612
           Length: 0.5
@@ -414,13 +414,13 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /planning/path
-          Value: true
+          Value: false
         - Alpha: 0.699999988079071
           Axes Length: 1
           Axes Radius: 0.10000000149011612
           Class: rviz_default_plugins/Pose
           Color: 249; 240; 107
-          Enabled: false
+          Enabled: true
           Head Length: 0.30000001192092896
           Head Radius: 0.10000000149011612
           Name: 注視点
@@ -433,33 +433,13 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /control/lookahead_position
-          Value: false
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz_default_plugins/Pose
-          Color: 198; 70; 0
-          Enabled: false
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: 角度注視点
-          Shaft Length: 1
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic:
-            Depth: 5
-            Durability Policy: Volatile
-            Filter size: 10
-            History Policy: Keep Last
-            Reliability Policy: Reliable
-            Value: /control/lookahead_angle
-          Value: false
+            Value: /control/lookahead
+          Value: true
         - Alpha: 0.6000000238418579
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
           Draw Behind: false
-          Enabled: true
+          Enabled: false
           Name: コストマップ
           Topic:
             Depth: 5
@@ -475,7 +455,7 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /planning/costmap_updates
           Use Timestamp: false
-          Value: true
+          Value: false
         - Alpha: 0.30000001192092896
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
@@ -535,7 +515,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-      Enabled: true
+      Enabled: false
       Name: Sensor
     - Class: rviz_common/Group
       Displays:
@@ -617,10 +597,10 @@ Visualization Manager:
     - Class: rviz_common/Group
       Displays:
         - Class: rviz_default_plugins/Marker
-          Enabled: true
+          Enabled: false
           Name: フィールドSTL
           Namespaces:
-            field: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -628,7 +608,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /visualize/field
-          Value: true
+          Value: false
         - Class: rviz_default_plugins/Marker
           Enabled: false
           Name: ロボットSTL

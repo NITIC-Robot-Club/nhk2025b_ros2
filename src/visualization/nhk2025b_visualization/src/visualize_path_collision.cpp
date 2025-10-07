@@ -50,7 +50,7 @@ void visualize_path_collision::timer_callback () {
             marker.color.b = 1.0;
         }
         marker.color.a  = 1.0;  // 不透明
-        marker.lifetime = rclcpp::Duration::from_seconds (0.1);
+        marker.lifetime = rclcpp::Duration::from_seconds (0.3);
         // ロボットの四隅の点を追加
         for (const auto &pos : wheel_positions) {
             geometry_msgs::msg::Point point;
