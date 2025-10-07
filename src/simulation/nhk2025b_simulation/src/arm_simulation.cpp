@@ -41,6 +41,7 @@ void arm_simulation::publish_arms () {
     for (size_t i = 0; i < 2; ++i) {
         last_box_arm_.expand[i] += (box_arm_target_.expand[i] - last_box_arm_.expand[i]) * 0.1;
         last_box_arm_.height[i] += (box_arm_target_.height[i] - last_box_arm_.height[i]) * 0.1;
+        last_box_arm_.hand_position[i] += (box_arm_target_.hand_position[i] - last_box_arm_.hand_position[i]) * 0.1;
     }
     box_arm_pub_->publish (last_box_arm_);
 }

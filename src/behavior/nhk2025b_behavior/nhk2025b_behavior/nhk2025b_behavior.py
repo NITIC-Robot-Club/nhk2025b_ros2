@@ -106,8 +106,8 @@ class nhk2025b_behavior(Node):
         self.declare_parameter('default_yaw_speed_deg_s', 180.0)
         self.declare_parameter('slow_acceleration_m_s2', 0.3)
         self.declare_parameter('slow_speed_m_s', 1.0)
-        self.declare_parameter('slow_yaw_acceleration_deg_s2', 30.0)
-        self.declare_parameter('slow_yaw_speed_deg_s', 15.0)
+        self.declare_parameter('slow_yaw_acceleration_deg_s2', 60.0)
+        self.declare_parameter('slow_yaw_speed_deg_s', 20.0)
         self.declare_parameter('goal_xy_tolerance_m', 0.05)
         self.declare_parameter('goal_yaw_tolerance_deg', 5.0)
 
