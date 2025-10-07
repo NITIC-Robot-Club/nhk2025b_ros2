@@ -2,7 +2,7 @@
 
 namespace initial_box_publisher {
 initial_box_publisher::initial_box_publisher (const rclcpp::NodeOptions &options) : Node ("initial_box_publisher", options) {
-    box_array = get_initial_box_array();
+    box_array = get_initial_box_array ();
     for (auto box_name : box_names) {
         nhk2025b_msgs::msg::Box box;
         std::string             param_name = box_name.first + std::to_string (box_name.second);
@@ -38,10 +38,10 @@ initial_box_publisher::initial_box_publisher (const rclcpp::NodeOptions &options
         this->declare_parameter<double> (param_name + ".position.y", 0.0);
         this->declare_parameter<double> (param_name + ".position.z", -1.0);
         this->declare_parameter<double> (param_name + ".orientation.yaw", 0.0);
-        box.pose.position.x = this->get_parameter (param_name + ".position.x").as_double ();
-        box.pose.position.y = this->get_parameter (param_name + ".position.y").as_double ();
-        box.pose.position.z = this->get_parameter (param_name + ".position.z").as_double ();
-        double yaw          = this->get_parameter(param_name + ".orientation.yaw").as_double();
+        box.pose.position.x    = this->get_parameter (param_name + ".position.x").as_double ();
+        box.pose.position.y    = this->get_parameter (param_name + ".position.y").as_double ();
+        box.pose.position.z    = this->get_parameter (param_name + ".position.z").as_double ();
+        double yaw             = this->get_parameter (param_name + ".orientation.yaw").as_double ();
         box.pose.orientation.z = std::sin (yaw / 2.0);
         box.pose.orientation.w = std::cos (yaw / 2.0);
         // Convert yaw to quaternion------------------------------------------------------------------------------------------------------------------
@@ -52,13 +52,22 @@ initial_box_publisher::initial_box_publisher (const rclcpp::NodeOptions &options
     box_array_publisher_ = this->create_publisher<nhk2025b_msgs::msg::BoxArray> ("/box_state", 1);
     is_red_subscriber_   = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&initial_box_publisher::is_red_callback, this, std::placeholders::_1));
     timer_               = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&initial_box_publisher::timer_callback, this));
+
+    set_coat_box_array ();
 }
 void initial_box_publisher::timer_callback () {
-    // Publish the message
     box_array_publisher_->publish (box_array);
 }
 void initial_box_publisher::is_red_callback (const std_msgs::msg::Bool::SharedPtr msg) {
-    is_red = msg->data;
+    if (is_red != msg->data) {
+        is_red = msg->data;
+        set_coat_box_array ();
+    }
+}
+void initial_box_publisher::set_coat_box_array () {
+    for (auto &box : box_array.boxes) {
+        box.pose.position.y = std::abs (box.pose.position.y) * (is_red ? -1.0 : 1.0);
+    }
 }
 nhk2025b_msgs::msg::BoxArray initial_box_publisher::get_initial_box_array () {
     nhk2025b_msgs::msg::BoxArray box_array_msg;

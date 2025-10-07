@@ -7,17 +7,17 @@ pure_pursuit:
     curvature_decceleration_p: 1.0
     min_curvature_speed_m_s: 0.3
     angle_decceleration_p: 0.3
-    max_acceleration_xy_m_s2_: 4.0
+    max_acceleration_xy_m_s2_: 10.0
     max_speed_xy_m_s: 4.0
-    min_speed_xy_m_s: 0.3
-    max_speed_z_rad_s: 3.14
-    min_speed_z_rad_s: 0.2
-    max_acceleration_z_rad_s2: 6.28
-    goal_deceleration_m_s2: 0.5
+    min_speed_xy_m_s: 0.5
+    max_speed_z_deg_s: 180.0
+    min_speed_z_deg_s: 20.0
+    max_acceleration_z_deg_s2: 360.0
+    goal_deceleration_m_s2: 0.8
     goal_position_tolerance_m: 0.1
     goal_yaw_tolerance_rad: 0.1
     goal_speed_tolerance_xy_m_s: 0.6
-    goal_speed_tolerance_z_rad_s: 0.3
+    goal_speed_tolerance_z_deg_s: 20.0
 
 velocity_smoother:
   ros__parameters:

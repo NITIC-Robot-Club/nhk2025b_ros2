@@ -603,10 +603,10 @@ Visualization Manager:
     - Class: rviz_common/Group
       Displays:
         - Class: rviz_default_plugins/Marker
-          Enabled: true
+          Enabled: false
           Name: フィールドSTL
           Namespaces:
-            field: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -614,7 +614,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /visualize/field
-          Value: true
+          Value: false
         - Class: rviz_default_plugins/Marker
           Enabled: false
           Name: ロボットSTL
@@ -918,16 +918,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 7.8550028800964355
+      Distance: 25.088865280151367
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.793447732925415
-        Y: 4.66454553604126
-        Z: -0.0012065476039424539
+        X: 6.155962944030762
+        Y: 0.0014575235545635223
+        Z: 0.0011559620033949614
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false

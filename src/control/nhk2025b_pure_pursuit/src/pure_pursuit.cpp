@@ -10,9 +10,9 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
 
     control_limit_subscriber_ = this->create_subscription<nhk2025b_msgs::msg::ControlLimit> ("/control_limit", 1, [this] (const nhk2025b_msgs::msg::ControlLimit::SharedPtr msg) {
         max_speed_xy_m_s_          = msg->max_speed_xy;
-        max_speed_z_rad_s_         = msg->max_speed_yaw;
+        max_speed_z_deg_s_         = msg->max_speed_yaw;
         max_acceleration_xy_m_s2_  = msg->max_acceleration_xy;
-        max_acceleration_z_rad_s2_ = msg->max_acceleration_yaw;
+        max_acceleration_z_deg_s2_ = msg->max_acceleration_yaw;
     });
 
     timer_ = this->create_wall_timer (std::chrono::milliseconds (50), std::bind (&pure_pursuit::timer_callback, this));
@@ -26,15 +26,16 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->declare_parameter ("angle_decceleration_p", 1.0);
     this->declare_parameter ("max_speed_xy_m_s", 3.0);
     this->declare_parameter ("min_speed_xy_m_s", 0.1);
-    this->declare_parameter ("max_speed_z_rad_s", 3.14);
-    this->declare_parameter ("min_speed_z_rad_s", 0.3);
+    this->declare_parameter ("max_speed_z_deg_s", 180.0);
+    this->declare_parameter ("min_speed_z_deg_s", 18.0);
     this->declare_parameter ("max_acceleration_xy_m_s2_", 10.0);
-    this->declare_parameter ("max_acceleration_z_rad_s2", 10.0);
+    this->declare_parameter ("max_acceleration_z_deg_s2", 500.0);
     this->declare_parameter ("goal_deceleration_m_s2", 4.0);
+    this->declare_parameter ("goal_deceleration_distance_p", 1.5);
     this->declare_parameter ("goal_position_tolerance_m", 0.03);
-    this->declare_parameter ("goal_yaw_tolerance_rad", 0.314);
+    this->declare_parameter ("goal_yaw_tolerance_deg", 10.0);
     this->declare_parameter ("goal_speed_tolerance_xy_m_s", 0.3);
-    this->declare_parameter ("goal_speed_tolerance_z_rad_s", 0.3);
+    this->declare_parameter ("goal_speed_tolerance_z_deg_s", 30.0);
 
     // パラメータ取得
     this->get_parameter ("lookahead_time", lookahead_time_);
@@ -46,15 +47,16 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->get_parameter ("angle_decceleration_p", angle_decceleration_p_);
     this->get_parameter ("max_speed_xy_m_s", max_speed_xy_m_s_);
     this->get_parameter ("min_speed_xy_m_s", min_speed_xy_m_s_);
-    this->get_parameter ("max_speed_z_rad_s", max_speed_z_rad_s_);
-    this->get_parameter ("min_speed_z_rad_s", min_speed_z_rad_s_);
+    this->get_parameter ("max_speed_z_deg_s", max_speed_z_deg_s_);
+    this->get_parameter ("min_speed_z_deg_s", min_speed_z_deg_s_);
     this->get_parameter ("max_acceleration_xy_m_s2_", max_acceleration_xy_m_s2_);
-    this->get_parameter ("max_acceleration_z_rad_s2", max_acceleration_z_rad_s2_);
+    this->get_parameter ("max_acceleration_z_deg_s2", max_acceleration_z_deg_s2_);
     this->get_parameter ("goal_deceleration_m_s2", goal_deceleration_m_s2_);
+    this->get_parameter ("goal_deceleration_distance_p", goal_deceleration_distance_p_);
     this->get_parameter ("goal_position_tolerance_m", goal_position_tolerance_);
-    this->get_parameter ("goal_yaw_tolerance_rad", goal_yaw_tolerance_);
+    this->get_parameter ("goal_yaw_tolerance_deg", goal_yaw_tolerance_deg_);
     this->get_parameter ("goal_speed_tolerance_xy_m_s", goal_speed_tolerance_xy_m_s_);
-    this->get_parameter ("goal_speed_tolerance_z_rad_s", goal_speed_tolerance_z_rad_s_);
+    this->get_parameter ("goal_speed_tolerance_z_deg_s", goal_speed_tolerance_z_deg_s_);
 
     // デバッグ表示
     if (true) {
@@ -67,15 +69,15 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
         RCLCPP_INFO (this->get_logger (), "angle_decceleration_p : %f", angle_decceleration_p_);
         RCLCPP_INFO (this->get_logger (), "max_speed_xy_m_s : %f", max_speed_xy_m_s_);
         RCLCPP_INFO (this->get_logger (), "min_speed_xy_m_s : %f", min_speed_xy_m_s_);
-        RCLCPP_INFO (this->get_logger (), "max_speed_z_rad_s : %f", max_speed_z_rad_s_);
-        RCLCPP_INFO (this->get_logger (), "min_speed_z_rad_s : %f", min_speed_z_rad_s_);
+        RCLCPP_INFO (this->get_logger (), "max_speed_z_deg_s : %f", max_speed_z_deg_s_);
+        RCLCPP_INFO (this->get_logger (), "min_speed_z_deg_s : %f", min_speed_z_deg_s_);
         RCLCPP_INFO (this->get_logger (), "max_acceleration_xy_m_s2_ : %f", max_acceleration_xy_m_s2_);
-        RCLCPP_INFO (this->get_logger (), "max_acceleration_z_rad_s2 : %f", max_acceleration_z_rad_s2_);
+        RCLCPP_INFO (this->get_logger (), "max_acceleration_z_deg_s2 : %f", max_acceleration_z_deg_s2_);
         RCLCPP_INFO (this->get_logger (), "goal_deceleration_m_s2 : %f", goal_deceleration_m_s2_);
         RCLCPP_INFO (this->get_logger (), "goal_position_tolerance_m : %f", goal_position_tolerance_);
-        RCLCPP_INFO (this->get_logger (), "goal_yaw_tolerance_rad : %f", goal_yaw_tolerance_);
+        RCLCPP_INFO (this->get_logger (), "goal_yaw_tolerance_deg : %f", goal_yaw_tolerance_deg_);
         RCLCPP_INFO (this->get_logger (), "goal_speed_tolerance_xy_m_s : %f", goal_speed_tolerance_xy_m_s_);
-        RCLCPP_INFO (this->get_logger (), "goal_speed_tolerance_z_rad_s : %f", goal_speed_tolerance_z_rad_s_);
+        RCLCPP_INFO (this->get_logger (), "goal_speed_tolerance_z_deg_s : %f", goal_speed_tolerance_z_deg_s_);
     }
 }
 
@@ -107,12 +109,12 @@ void pure_pursuit::timer_callback () {
     while (yaw_error > +M_PI) yaw_error -= 2.0 * M_PI;
     while (yaw_error < -M_PI) yaw_error += 2.0 * M_PI;
     yaw_error             = std::abs (yaw_error);
-    bool goal_yaw_reached = (yaw_error < goal_yaw_tolerance_);
+    bool goal_yaw_reached = (yaw_error < goal_yaw_tolerance_deg_ * M_PI / 180.0);
 
     double current_speed_xy      = std::hypot (last_cmd_vel_.twist.linear.x, last_cmd_vel_.twist.linear.y);
     bool   goal_speed_xy_reached = (current_speed_xy < goal_speed_tolerance_xy_m_s_);
     double current_speed_z       = std::abs (last_cmd_vel_.twist.angular.z);
-    bool   goal_speed_z_reached  = (current_speed_z < goal_speed_tolerance_z_rad_s_);
+    bool   goal_speed_z_reached  = (current_speed_z < goal_speed_tolerance_z_deg_s_ * M_PI / 180.0);
 
     // 最近傍点の探索
     double min_distance  = std::numeric_limits<double>::max ();
@@ -153,6 +155,10 @@ void pure_pursuit::timer_callback () {
         if (acc_dist >= lookahead_distance_) break;
     }
 
+    if(goal_position_reached) {
+        lookahead_index = path_.poses.size() - 1;
+    }
+
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
     double dy = path_.poses[lookahead_index].pose.position.y - current_pose_.pose.position.y;
 
@@ -167,7 +173,7 @@ void pure_pursuit::timer_callback () {
     double d = std::max (goal_distance, 0.0);
 
     double achievable_decel = std::max (1e-3, std::min (goal_deceleration_m_s2_, max_acceleration_xy_m_s2_));
-    double slow_dist = last_speed * last_speed / (2 * achievable_decel);  // 実際に停止できる距離
+    double slow_dist = last_speed * last_speed / (2 * achievable_decel) * goal_deceleration_distance_p_;  // 実際に停止できる距離
     double ratio = 1.0;
     if (slow_dist > 1e-6) {
         ratio = std::clamp (d / slow_dist, 0.0, 1.0);
@@ -215,15 +221,15 @@ void pure_pursuit::timer_callback () {
     double yaw_speed = yaw_diff / lookahead_time_ * angle_speed_p_;
     // 加速度を考慮
     double angle_acceleration = (yaw_speed - last_cmd_vel_.twist.angular.z) / delta_t_s;
-    angle_acceleration        = std::clamp (angle_acceleration, -max_acceleration_z_rad_s2_, max_acceleration_z_rad_s2_);
+    angle_acceleration        = std::clamp (angle_acceleration, -max_acceleration_z_deg_s2_ * M_PI / 180.0, max_acceleration_z_deg_s2_ * M_PI / 180.0);
     yaw_speed                 = last_cmd_vel_.twist.angular.z + angle_acceleration * delta_t_s;
-    yaw_speed                 = std::clamp (yaw_speed, -max_speed_z_rad_s_, max_speed_z_rad_s_);
+    yaw_speed                 = std::clamp (yaw_speed, -max_speed_z_deg_s_ * M_PI / 180.0, max_speed_z_deg_s_ * M_PI / 180.0);
 
     if (!goal_yaw_reached) {
         if (yaw_speed < 0) {
-            yaw_speed = std::min (yaw_speed, -min_speed_z_rad_s_);
+            yaw_speed = std::min (yaw_speed, -min_speed_z_deg_s_ * M_PI / 180.0);
         } else {
-            yaw_speed = std::max (yaw_speed, min_speed_z_rad_s_);
+            yaw_speed = std::max (yaw_speed, min_speed_z_deg_s_ * M_PI / 180.0);
         }
     }
 
