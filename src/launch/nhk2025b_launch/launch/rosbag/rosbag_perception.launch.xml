@@ -1,0 +1,18 @@
+<launch>
+    <arg name="is_red" default="false"/>
+    <node_container pkg="rclcpp_components" exec="component_container" name="rosbag_robot_viewer" namespace="">
+        <composable_node pkg="nhk2025b_visualization" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
+        <composable_node pkg="nhk2025b_visualization" plugin="visualize_stl::visualize_stl" name="visualize_field">
+            <remap from="output/maker" to="/visualize/field"/>
+            <param from="$(find-pkg-share nhk2025b_launch)/config/visualize_field.yaml"/>
+            <param name="marker.meshpath" value="$(find-pkg-share nhk2025b_launch)/stl/field.stl"/>
+        </composable_node>
+        <composable_node pkg="nhk2025b_visualization" plugin="visualize_stl::visualize_stl" name="visualize_robot">
+            <remap from="output/maker" to="/visualize/robot"/>
+            <param from="$(find-pkg-share nhk2025b_launch)/config/visualize_robot.yaml"/>
+            <param name="marker.meshpath" value="$(find-pkg-share nhk2025b_launch)/stl/robot.stl"/>
+        </composable_node>
+    </node_container>
+    <include file="$(find-pkg-share nhk2025b_launch)/launch/tf.launch.xml"/>
+    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nhk2025b_launch)/rviz/rosbag_robot.rviz"/>
+</launch>

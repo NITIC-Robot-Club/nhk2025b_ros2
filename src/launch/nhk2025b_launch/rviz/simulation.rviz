@@ -10,8 +10,9 @@ Panels:
         - /Sensor1
         - /Simulation1
         - /Visualization1
-        - /Private1
+        - /stl1
         - /urdf1
+        - /perception1
       Splitter Ratio: 0.5264706015586853
     Tree Height: 898
   - Class: rviz_common/Selection
@@ -33,7 +34,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: 合成点群
+    SyncSource: ""
   - Class: rviz_common/Displays
     Help Height: 70
     Name: Displays
@@ -392,7 +393,7 @@ Visualization Manager:
           Buffer Length: 1
           Class: rviz_default_plugins/Path
           Color: 25; 255; 0
-          Enabled: true
+          Enabled: false
           Head Diameter: 0.07000000029802322
           Head Length: 0.10000000149011612
           Length: 0.5
@@ -415,13 +416,13 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /planning/path
-          Value: true
+          Value: false
         - Alpha: 0.699999988079071
           Axes Length: 1
           Axes Radius: 0.10000000149011612
           Class: rviz_default_plugins/Pose
           Color: 249; 240; 107
-          Enabled: true
+          Enabled: false
           Head Length: 0.30000001192092896
           Head Radius: 0.10000000149011612
           Name: 注視点
@@ -435,7 +436,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /control/lookahead
-          Value: true
+          Value: false
         - Alpha: 0.6000000238418579
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
@@ -516,7 +517,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-      Enabled: true
+      Enabled: false
       Name: Sensor
     - Class: rviz_common/Group
       Displays:
@@ -548,7 +549,7 @@ Visualization Manager:
           Enabled: true
           Name: 箱
           Namespaces:
-            boxes: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -611,10 +612,10 @@ Visualization Manager:
             Value: /visualize/field
           Value: false
         - Class: rviz_default_plugins/Marker
-          Enabled: false
+          Enabled: true
           Name: ロボットSTL
           Namespaces:
-            {}
+            robot: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -622,9 +623,9 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /visualize/robot
-          Value: false
+          Value: true
       Enabled: true
-      Name: Private
+      Name: stl
     - Class: rviz_common/Group
       Displays:
         - Alpha: 1
@@ -671,68 +672,6 @@ Visualization Manager:
             Expand Link Details: false
             Expand Tree: false
             Link Tree Style: Links in Alphabetic Order
-            base_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            c_E_arm:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            c_nhk2025b:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            l_box_arm:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            l_box_arm_height:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            l_box_arm_strong:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            l_pylon_arm:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            l_pylon_arm_height:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            r_box_arm:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            r_box_arm_height:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            r_box_arm_strong:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            r_pylon_arm:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            r_pylon_arm_height:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
           Mass Properties:
             Inertia: false
             Mass: false
@@ -741,8 +680,134 @@ Visualization Manager:
           Update Interval: 0
           Value: true
           Visual Enabled: true
-      Enabled: true
+      Enabled: false
       Name: urdf
+    - Class: rviz_common/Group
+      Displays:
+        - Alpha: 1
+          Axes Length: 1
+          Axes Radius: 0.10000000149011612
+          Class: rviz_default_plugins/Pose
+          Color: 255; 25; 0
+          Enabled: true
+          Head Length: 0.30000001192092896
+          Head Radius: 0.10000000149011612
+          Name: second line
+          Shaft Length: 1
+          Shaft Radius: 0.05000000074505806
+          Shape: Arrow
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /perception/second_line
+          Value: true
+        - Alpha: 1
+          Axes Length: 1
+          Axes Radius: 0.10000000149011612
+          Class: rviz_default_plugins/Pose
+          Color: 255; 25; 0
+          Enabled: true
+          Head Length: 0.30000001192092896
+          Head Radius: 0.10000000149011612
+          Name: first line
+          Shaft Length: 1
+          Shaft Radius: 0.5
+          Shape: Arrow
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /perception/first_line
+          Value: true
+        - Alpha: 1
+          Arrow Length: 0.30000001192092896
+          Axes Length: 0.30000001192092896
+          Axes Radius: 0.009999999776482582
+          Class: rviz_default_plugins/PoseArray
+          Color: 255; 25; 255
+          Enabled: true
+          Head Length: 0.07000000029802322
+          Head Radius: 0.029999999329447746
+          Name: detection area
+          Shaft Length: 0.23000000417232513
+          Shaft Radius: 0.009999999776482582
+          Shape: Arrow (Flat)
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /perception/detection_area
+          Value: true
+        - Alpha: 1
+          Axes Length: 1
+          Axes Radius: 0.10000000149011612
+          Class: rviz_default_plugins/Pose
+          Color: 255; 255; 0
+          Enabled: true
+          Head Length: 0.30000001192092896
+          Head Radius: 0.10000000149011612
+          Name: line centre
+          Shaft Length: 1
+          Shaft Radius: 0.05000000074505806
+          Shape: Arrow
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /perception/test_pose
+          Value: true
+        - Alpha: 1
+          Axes Length: 1
+          Axes Radius: 0.10000000149011612
+          Class: rviz_default_plugins/Pose
+          Color: 25; 25; 0
+          Enabled: true
+          Head Length: 0.30000001192092896
+          Head Radius: 0.10000000149011612
+          Name: e collect pose
+          Shaft Length: 1
+          Shaft Radius: 0.05000000074505806
+          Shape: Arrow
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /perception/e_collect_pose
+          Value: true
+        - Alpha: 1
+          Arrow Length: 0.30000001192092896
+          Axes Length: 0.30000001192092896
+          Axes Radius: 0.009999999776482582
+          Class: rviz_default_plugins/PoseArray
+          Color: 255; 25; 0
+          Enabled: true
+          Head Length: 0.07000000029802322
+          Head Radius: 0.029999999329447746
+          Name: filtered points
+          Shaft Length: 0.23000000417232513
+          Shaft Radius: 0.009999999776482582
+          Shape: Arrow (Flat)
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /perception/pose_array
+          Value: true
+      Enabled: true
+      Name: perception
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -769,6 +834,13 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /localization/initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /behavior/e_drop_pose
     - Class: rviz_default_plugins/PublishPoint
       Single click: true
       Topic:
@@ -784,7 +856,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 25.088865280151367
+      Distance: 23.928892135620117
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
