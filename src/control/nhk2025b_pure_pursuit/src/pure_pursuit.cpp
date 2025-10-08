@@ -137,26 +137,26 @@ void pure_pursuit::timer_callback () {
     double last_speed = std::hypot (last_cmd_vel_.twist.linear.x, last_cmd_vel_.twist.linear.y);
     // double predict_dt = std::min (lookahead_time_, 0.5);  // 最大0.5s先まで予測
     double predicted_speed = last_speed + max_acceleration_xy_m_s2_ * lookahead_time_;
-    predicted_speed = std::clamp (predicted_speed, 0.0, max_speed_xy_m_s_);
-    lookahead_distance_ = std::clamp (lookahead_time_ * predicted_speed, min_lookahead_distance_, max_lookahead_distance_);
+    predicted_speed        = std::clamp (predicted_speed, 0.0, max_speed_xy_m_s_);
+    lookahead_distance_    = std::clamp (lookahead_time_ * predicted_speed, min_lookahead_distance_, max_lookahead_distance_);
 
-    int lookahead_index = closest_index;
-    double acc_dist = 0.0;
-    double prev_x = current_pose_.pose.position.x;
-    double prev_y = current_pose_.pose.position.y;
+    int    lookahead_index = closest_index;
+    double acc_dist        = 0.0;
+    double prev_x          = current_pose_.pose.position.x;
+    double prev_y          = current_pose_.pose.position.y;
     for (int i = closest_index; i < path_.poses.size (); i++) {
-        double px = path_.poses[i].pose.position.x;
-        double py = path_.poses[i].pose.position.y;
+        double px  = path_.poses[i].pose.position.x;
+        double py  = path_.poses[i].pose.position.y;
         double seg = std::hypot (px - prev_x, py - prev_y);
         acc_dist += seg;
-        prev_x = px;
-        prev_y = py;
+        prev_x          = px;
+        prev_y          = py;
         lookahead_index = i;
         if (acc_dist >= lookahead_distance_) break;
     }
 
-    if(goal_position_reached) {
-        lookahead_index = path_.poses.size() - 1;
+    if (goal_position_reached) {
+        lookahead_index = path_.poses.size () - 1;
     }
 
     double dx = path_.poses[lookahead_index].pose.position.x - current_pose_.pose.position.x;
@@ -172,22 +172,9 @@ void pure_pursuit::timer_callback () {
 
     double d = std::max (goal_distance, 0.0);
 
-    double achievable_decel = std::max (1e-3, std::min (goal_deceleration_m_s2_, max_acceleration_xy_m_s2_));
-    double slow_dist = last_speed * last_speed / (2 * achievable_decel) * goal_deceleration_distance_p_;  // 実際に停止できる距離
-    double ratio = 1.0;
-    if (slow_dist > 1e-6) {
-        ratio = std::clamp (d / slow_dist, 0.0, 1.0);
-    }
-
-    // cos補間で滑らかに0へ
-    double speed_scale = 0.5 * (1 - std::cos (M_PI * ratio));
-    target_speed       = target_speed * speed_scale;
-
-    // RCLCPP_INFO (this->get_logger (), "stopping: last_speed=%f achievable_decel=%f slow_dist=%f d=%f ratio=%f speed_scale=%f", last_speed, achievable_decel, slow_dist, d, ratio, speed_scale);
-    
-        // // ここでさらに物理的に止まれる最大速度で上限をかける（安全側）
-        // double max_stop_speed = std::sqrt (2.0 * achievable_decel * std::max (0.0, d));
-        // target_speed = std::min (target_speed, max_stop_speed);
+    // // ここでさらに物理的に止まれる最大速度で上限をかける（安全側）
+    double max_stop_speed = std::sqrt (2.0 * std::min (goal_deceleration_m_s2_, max_acceleration_xy_m_s2_) * std::max (0.0, d / goal_deceleration_distance_p_));
+    target_speed          = std::min (target_speed, max_stop_speed);
 
     // 曲率に応じた速度制限
     int p1 = closest_index;
@@ -225,13 +212,13 @@ void pure_pursuit::timer_callback () {
     yaw_speed                 = last_cmd_vel_.twist.angular.z + angle_acceleration * delta_t_s;
     yaw_speed                 = std::clamp (yaw_speed, -max_speed_z_deg_s_ * M_PI / 180.0, max_speed_z_deg_s_ * M_PI / 180.0);
 
-    if (!goal_yaw_reached) {
-        if (yaw_speed < 0) {
-            yaw_speed = std::min (yaw_speed, -min_speed_z_deg_s_ * M_PI / 180.0);
-        } else {
-            yaw_speed = std::max (yaw_speed, min_speed_z_deg_s_ * M_PI / 180.0);
-        }
-    }
+    // if (!goal_yaw_reached) {
+    //     if (yaw_speed < 0) {
+    //         yaw_speed = std::min (yaw_speed, -min_speed_z_deg_s_ * M_PI / 180.0);
+    //     } else {
+    //         yaw_speed = std::max (yaw_speed, min_speed_z_deg_s_ * M_PI / 180.0);
+    //     }
+    // }
 
     if (goal_position_reached && goal_speed_xy_reached) {
         speed = 0.0;

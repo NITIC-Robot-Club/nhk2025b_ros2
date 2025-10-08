@@ -13,5 +13,6 @@
   <include file="$(find-pkg-share nhk2025b_launch)/launch/planning.launch.xml"/>
   <node pkg="nhk2025b_behavior" exec="behavior" name="behavior" output="screen">
     <param name="state_graph_path" value="$(find-pkg-share nhk2025b_launch)/state_graph/real.md"/>
+    <param from="$(find-pkg-share nhk2025b_launch)/param/control.yaml"/>
   </node>
 </launch>
