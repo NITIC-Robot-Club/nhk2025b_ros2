@@ -31,7 +31,7 @@ pure_pursuit::pure_pursuit (const rclcpp::NodeOptions &options) : Node ("pure_pu
     this->declare_parameter ("max_acceleration_xy_m_s2_", 10.0);
     this->declare_parameter ("max_acceleration_z_deg_s2", 500.0);
     this->declare_parameter ("goal_deceleration_m_s2", 4.0);
-    this->declare_parameter ("goal_deceleration_distance_p", 1.5);
+    this->declare_parameter ("goal_deceleration_distance_p", 1.0);
     this->declare_parameter ("goal_position_tolerance_m", 0.03);
     this->declare_parameter ("goal_yaw_tolerance_deg", 10.0);
     this->declare_parameter ("goal_speed_tolerance_xy_m_s", 0.3);
