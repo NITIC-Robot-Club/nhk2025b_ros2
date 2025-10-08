@@ -18,8 +18,10 @@ class map_publisher : public rclcpp::Node {
 
    private:
     nhk2025b_msgs::msg::BoxArray boxes;
+    nhk2025b_msgs::msg::BoxArray boxes_initial;
 
     void   box_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr msg);
+    void   box_initial_callback (const nhk2025b_msgs::msg::BoxArray::SharedPtr msg);
     void   is_red_callback (const std_msgs::msg::Bool::SharedPtr msg);
     void   publish_map ();
     bool   is_red;
@@ -38,6 +40,7 @@ class map_publisher : public rclcpp::Node {
 
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr    publisher_;
     rclcpp::Subscription<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_subscriber_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_initial_subscriber_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr          is_red_subscriber_;
     rclcpp::TimerBase::SharedPtr                                  timer_;
 };

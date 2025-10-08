@@ -6,6 +6,7 @@ from nhk2025b_msgs.msg import State, StateArray, RobotStatus, Command, EArm, Box
 import math
 import re
 import time
+from copy import deepcopy
 
 def parse_labels_and_positions(md_path):
     with open(md_path, encoding="utf-8") as f:
@@ -87,16 +88,49 @@ class nhk2025b_behavior(Node):
         self.box_arm_result = BoxArm()
         self.pylon_arm_result = PylonArm()
 
-        self.pylon_arm_height_tolerance = 0.01
-        self.pylon_arm_expand_tolerance = 0.1
-        self.box_arm_height_tolerance = 0.01
-        self.box_arm_expand_tolerance = 0.1
-        self.e_arm_expand_tolerance = 0.1
-        self.e_arm_get_tolerance = 0.01
+        self.get_box_mode = False
 
-        self.robot_default_width = 1.0
-        self.robot_expanded_width = 1.4
-        
+        # parameter
+        self.declare_parameter('pylon_arm_height_tolerance', 0.01)
+        self.declare_parameter('pylon_arm_expand_tolerance', 0.1)
+        self.declare_parameter('box_arm_height_tolerance', 0.01)
+        self.declare_parameter('box_arm_expand_tolerance', 0.1)
+        self.declare_parameter('e_arm_expand_tolerance', 0.1)
+        self.declare_parameter('e_arm_get_tolerance', 0.01)
+        self.declare_parameter('robot_default_width', 1.0)
+        self.declare_parameter('robot_expanded_width', 1.4)
+        self.declare_parameter('robot_box_get_width', 1.0)
+        self.declare_parameter('default_acceleration_m_s2', 10.0)
+        self.declare_parameter('default_speed_m_s', 4.0)
+        self.declare_parameter('default_yaw_acceleration_deg_s2', 1000.0)
+        self.declare_parameter('default_yaw_speed_deg_s', 180.0)
+        self.declare_parameter('slow_acceleration_m_s2', 0.3)
+        self.declare_parameter('slow_speed_m_s', 1.0)
+        self.declare_parameter('slow_yaw_acceleration_deg_s2', 60.0)
+        self.declare_parameter('slow_yaw_speed_deg_s', 30.0)
+        self.declare_parameter('goal_xy_tolerance_m', 0.05)
+        self.declare_parameter('goal_yaw_tolerance_deg', 5.0)
+
+        self.pylon_arm_height_tolerance = self.get_parameter('pylon_arm_height_tolerance').get_parameter_value().double_value
+        self.pylon_arm_expand_tolerance = self.get_parameter('pylon_arm_expand_tolerance').get_parameter_value().double_value
+        self.box_arm_height_tolerance = self.get_parameter('box_arm_height_tolerance').get_parameter_value().double_value
+        self.box_arm_expand_tolerance = self.get_parameter('box_arm_expand_tolerance').get_parameter_value().double_value
+        self.e_arm_expand_tolerance = self.get_parameter('e_arm_expand_tolerance').get_parameter_value().double_value
+        self.e_arm_get_tolerance = self.get_parameter('e_arm_get_tolerance').get_parameter_value().double_value
+        self.robot_default_width = self.get_parameter('robot_default_width').get_parameter_value().double_value
+        self.robot_expanded_width = self.get_parameter('robot_expanded_width').get_parameter_value().double_value
+        self.robot_box_get_width = self.get_parameter('robot_box_get_width').get_parameter_value().double_value
+        self.slow_acceleration_m_s2 = self.get_parameter('slow_acceleration_m_s2').get_parameter_value().double_value
+        self.default_acceleration_m_s2 = self.get_parameter('default_acceleration_m_s2').get_parameter_value().double_value
+        self.default_speed_m_s = self.get_parameter('default_speed_m_s').get_parameter_value().double_value
+        self.default_yaw_acceleration_deg_s2 = self.get_parameter('default_yaw_acceleration_deg_s2').get_parameter_value().double_value
+        self.default_yaw_speed_deg_s = self.get_parameter('default_yaw_speed_deg_s').get_parameter_value().double_value
+        self.slow_speed_m_s = self.get_parameter('slow_speed_m_s').get_parameter_value().double_value
+        self.slow_yaw_acceleration_deg_s2 = self.get_parameter('slow_yaw_acceleration_deg_s2').get_parameter_value().double_value
+        self.slow_yaw_speed_deg_s = self.get_parameter('slow_yaw_speed_deg_s').get_parameter_value().double_value
+        self.goal_xy_tolerance_m = self.get_parameter('goal_xy_tolerance_m').get_parameter_value().double_value
+        self.goal_yaw_tolerance_deg = self.get_parameter('goal_yaw_tolerance_deg').get_parameter_value().double_value
+
         self.function_dict = {
             "set_e_arm": self.set_e_arm,
             "set_box_arm_height": self.set_box_arm_height,
@@ -106,6 +140,7 @@ class nhk2025b_behavior(Node):
             "set_pylon_arm_height": self.set_pylon_arm_height,
             "set_pylon_arm_expand": self.set_pylon_arm_expand,
             "set_pylon_arm_rpm": self.set_pylon_arm_rpm,
+            "set_get_box_mode" : self.set_get_box_mode,
         }
         
         self.cond_env = {
@@ -120,6 +155,7 @@ class nhk2025b_behavior(Node):
         self.id_to_state = {v: s for s, v in self.state_id_map.items()}
         self.label_snapshots = self.build_state_snapshots()
 
+
         self.state_array_pub = self.create_publisher(StateArray, '/behavior/avaiable_state_array', 1)
         self.pose_pub = self.create_publisher(PoseStamped, '/behavior/goal_pose', 1)
         self.state_pub = self.create_publisher(State, '/behavior/state_now', 1)
@@ -128,6 +164,7 @@ class nhk2025b_behavior(Node):
         self.conveyor_pub = self.create_publisher(Conveyor, '/conveyor/cmd', 1)
         self.pylon_arm_pub = self.create_publisher(PylonArm, '/pylon_arm/cmd', 1)
         self.robot_width_pub = self.create_publisher(Float32, '/robot_width', 1)
+        self.control_limit_pub = self.create_publisher(ControlLimit, '/control_limit', 1)
 
         self.create_subscription(PoseStamped, '/localization/current_pose', self.current_pose_callback, 1)
         self.create_subscription(RobotStatus, '/robot_status', self.robot_status_callback, 1)
@@ -172,21 +209,37 @@ class nhk2025b_behavior(Node):
 
     def build_state_snapshots(self):
         snapshots = {}
-        for label, state in self.label_to_state.items():
-            actions = []
-            visited = set()
-            def dfs(s):
-                if s in visited:
-                    return
-                visited.add(s)
-                if s in self.state_to_actions:
-                    for act in self.state_to_actions[s]:
-                        actions.append(act)
-                for src, dst, cond in self.transitions:
-                    if dst == s:  # 逆向きに辿る
-                        dfs(src)
-            dfs(state)
-            snapshots[label] = actions
+
+        def simulate(state, visited):
+            if state in visited:
+                return
+            visited.add(state)
+
+            # この状態のアクションを適用
+            if state in self.state_to_actions:
+                for act in self.state_to_actions[state]:
+                    try:
+                        eval(act, {}, {**self.function_dict, "self": self})
+                    except Exception as e:
+                        self.get_logger().warn(f"eval失敗: {act} ({e})")
+
+            # ラベル付きなら現在の状態を記録
+            for label, st in self.label_to_state.items():
+                if st == state:
+                    snapshots[label] = {
+                        "e_arm_target": deepcopy(self.e_arm_target),
+                        "box_arm_target": deepcopy(self.box_arm_target),
+                        "pylon_arm_target": deepcopy(self.pylon_arm_target),
+                        "conveyor_target": deepcopy(self.conveyor_target),
+                        "get_box_mode": self.get_box_mode,
+                    }
+
+            # 次の状態を再帰探索
+            for src, dst, cond in self.transitions:
+                if src == state:
+                    simulate(dst, visited)
+
+        simulate("[*]", set())
         return snapshots
 
 
@@ -211,7 +264,10 @@ class nhk2025b_behavior(Node):
         for i in range(2):
             if msg.expand[i] > 0.1:
                 expanded = True
-        if expanded:
+        
+        if self.get_box_mode:
+            self.robot_width_pub.publish(Float32(data=self.robot_box_get_width))
+        elif expanded:
             self.robot_width_pub.publish(Float32(data=self.robot_expanded_width))
         else:
             self.robot_width_pub.publish(Float32(data=self.robot_default_width))
@@ -268,32 +324,31 @@ class nhk2025b_behavior(Node):
             msg.id = self.last_state_id if self.last_state_id is not None else -1
         self.state_pub.publish(msg)
 
+
     def set_status_num_callback(self, msg):
         target_id = msg.data
-        found = None
-        for s in self.state_array.state:
-            if s.id == target_id:
-                found = s
-                break
+        found = next((s for s in self.state_array.state if s.id == target_id), None)
         if not found:
             self.get_logger().error(f'ID {target_id} のラベルが見つかりません')
             return
+
         label = found.name
         state = self.label_to_state[label]
-        self.get_logger().info(f'[set_status_num] ラベル {label}({state}) へ強制遷移')
-
-        # ---- 状態復元 ----
-        if label in self.label_snapshots:
-            for act in self.label_snapshots[label]:
-                try:
-                    eval(act, {}, self.function_dict)
-                except Exception as e:
-                    self.get_logger().warn(f"スナップショット復元失敗: {act} ({e})")
-
-        self.goal_pose.pose.position.x = -1.0
         self.current_state = state
         self.waiting_for_goal = False
         self.finished = False
+
+        if label in self.label_snapshots:
+            s = self.label_snapshots[label]
+            self.e_arm_target = deepcopy(s["e_arm_target"])
+            self.box_arm_target = deepcopy(s["box_arm_target"])
+            self.pylon_arm_target = deepcopy(s["pylon_arm_target"])
+            self.conveyor_target = deepcopy(s["conveyor_target"])
+            self.get_box_mode = s["get_box_mode"]
+            self.get_logger().info(f"{label} のスナップショット復元完了")
+        else:
+            self.get_logger().warn(f"{label} のスナップショット未登録")
+
 
 
     def current_pose_callback(self, msg):
@@ -357,6 +412,7 @@ class nhk2025b_behavior(Node):
     def is_pose_close(self, pose: PoseStamped, goal_x, goal_y, goal_yaw):
         if self.is_red:
             goal_y = -goal_y
+            goal_yaw = -goal_yaw
         dx = pose.pose.position.x - goal_x
         dy = pose.pose.position.y - goal_y
         dist = math.hypot(dx, dy)
@@ -369,6 +425,7 @@ class nhk2025b_behavior(Node):
     def set_position(self, x, y, yaw_deg):
         if self.is_red:
             y = -y
+            yaw_deg = -yaw_deg
         pose = PoseStamped()
         pose.header.frame_id = "map"
         pose.header.stamp = self.get_clock().now().to_msg()
@@ -406,6 +463,20 @@ class nhk2025b_behavior(Node):
         self.box_arm_pub.publish(self.box_arm_target)
         self.conveyor_pub.publish(self.conveyor_target)
         self.pylon_arm_pub.publish(self.pylon_arm_target)
+        if self.get_box_mode:
+            self.control_limit_pub.publish(ControlLimit(
+                max_acceleration_xy = self.slow_acceleration_m_s2,
+                max_speed_xy = self.slow_speed_m_s,
+                max_acceleration_yaw = self.slow_yaw_acceleration_deg_s2,
+                max_speed_yaw = self.slow_yaw_speed_deg_s,
+            ))
+        else:
+            self.control_limit_pub.publish(ControlLimit(
+                max_acceleration_xy = self.default_acceleration_m_s2,
+                max_speed_xy = self.default_speed_m_s,
+                max_acceleration_yaw = self.default_yaw_acceleration_deg_s2,
+                max_speed_yaw = self.default_yaw_speed_deg_s,
+            ))
     
     def set_e_arm(self, expand = None, get = None):
         if expand is not None:
@@ -413,18 +484,14 @@ class nhk2025b_behavior(Node):
         if get is not None:
             self.e_arm_target.get = get / 180 * math.pi
 
-    def set_box_arm_expand(self, left=None, right=None):
-        if left is not None:
-            self.box_arm_target.expand[0] = left / 180 * math.pi
-        if right is not None:
-            self.box_arm_target.expand[1] = right / 180 * math.pi
-    
-    def set_box_arm_height(self, left=None, right=None):
-        if left is not None:
-            self.box_arm_target.height[0] = left
-        if right is not None:
-            self.box_arm_target.height[1] = right
-        
+    def set_box_arm_expand(self, deg):
+        self.box_arm_target.expand[0] = deg / 180 * math.pi
+        self.box_arm_target.expand[1] = deg / 180 * math.pi
+
+    def set_box_arm_height(self, height):
+        self.box_arm_target.height[0] = height
+        self.box_arm_target.height[1] = height
+
     def set_box_arm_hand(self, left=None, right=None):
         if left is not None:
             self.box_arm_target.hand_position[0] = left
@@ -455,6 +522,8 @@ class nhk2025b_behavior(Node):
         if right is not None:
             self.pylon_arm_target.collect_rpm[1] = right
 
+    def set_get_box_mode(self, mode):
+        self.get_box_mode = mode
 
 def main(args=None):
     rclpy.init(args=args)

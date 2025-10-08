@@ -91,7 +91,7 @@ void mcl::map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr map_msg) {
     if (!map_) {
         map_ = map_msg;
         create_distance_map ();
-        initialize_particles_gaussian (map_->info.origin);
+        initialize_particles_gaussian (geometry_msgs::msg::Pose{});
     }
     map_ = map_msg;
     create_distance_map ();

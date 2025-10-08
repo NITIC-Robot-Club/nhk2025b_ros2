@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /Common1
         - /Localization1
         - /Planning&Control1
@@ -27,12 +28,12 @@ Panels:
     Expanded:
       - /Current View1
     Name: Views
-    Splitter Ratio: 0.5501858592033386
+    Splitter Ratio: 0.5464683771133423
   - Class: rviz_common/Time
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: 合成点群
+    SyncSource: ""
   - Class: rviz_common/Displays
     Help Height: 70
     Name: Displays
@@ -287,7 +288,7 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: false
-          Enabled: true
+          Enabled: false
           Keep: 100
           Name: オドメトリ
           Position Tolerance: 0.029999999329447746
@@ -308,7 +309,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /localization/odometry
-          Value: true
+          Value: false
         - Alpha: 1
           Angular Arrow Scale: 1
           Angular Color: 204; 204; 51
@@ -372,7 +373,7 @@ Visualization Manager:
           Axes Radius: 0.10000000149011612
           Class: rviz_default_plugins/Pose
           Color: 255; 25; 0
-          Enabled: true
+          Enabled: false
           Head Length: 0.30000001192092896
           Head Radius: 0.10000000149011612
           Name: 目標
@@ -386,12 +387,12 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /behavior/goal_pose
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
           Color: 25; 255; 0
-          Enabled: true
+          Enabled: false
           Head Diameter: 0.07000000029802322
           Head Length: 0.10000000149011612
           Length: 0.5
@@ -414,13 +415,13 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /planning/path
-          Value: true
+          Value: false
         - Alpha: 0.699999988079071
           Axes Length: 1
           Axes Radius: 0.10000000149011612
           Class: rviz_default_plugins/Pose
           Color: 249; 240; 107
-          Enabled: false
+          Enabled: true
           Head Length: 0.30000001192092896
           Head Radius: 0.10000000149011612
           Name: 注視点
@@ -433,33 +434,13 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /control/lookahead_position
-          Value: false
-        - Alpha: 1
-          Axes Length: 1
-          Axes Radius: 0.10000000149011612
-          Class: rviz_default_plugins/Pose
-          Color: 198; 70; 0
-          Enabled: false
-          Head Length: 0.30000001192092896
-          Head Radius: 0.10000000149011612
-          Name: 角度注視点
-          Shaft Length: 1
-          Shaft Radius: 0.05000000074505806
-          Shape: Arrow
-          Topic:
-            Depth: 5
-            Durability Policy: Volatile
-            Filter size: 10
-            History Policy: Keep Last
-            Reliability Policy: Reliable
-            Value: /control/lookahead_angle
-          Value: false
+            Value: /control/lookahead
+          Value: true
         - Alpha: 0.6000000238418579
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
           Draw Behind: false
-          Enabled: true
+          Enabled: false
           Name: コストマップ
           Topic:
             Depth: 5
@@ -475,7 +456,7 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /planning/costmap_updates
           Use Timestamp: false
-          Value: true
+          Value: false
         - Alpha: 0.30000001192092896
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
@@ -535,7 +516,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-      Enabled: true
+      Enabled: false
       Name: Sensor
     - Class: rviz_common/Group
       Displays:
@@ -604,13 +585,26 @@ Visualization Manager:
           Enabled: true
           Name: 経路当たり判定
           Namespaces:
-            path_collision: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /visualization/path_collision
+          Value: true
+        - Class: rviz_default_plugins/MarkerArray
+          Enabled: true
+          Name: 箱
+          Namespaces:
+            box_edges: true
+            boxes: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /visualization/box_initial
           Value: true
       Enabled: true
       Name: Visualization
@@ -765,7 +759,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: base_link
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -803,25 +797,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 3.700000047683716
+      Distance: 3.1256909370422363
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.022888343781232834
-        Y: -0.005469229072332382
-        Z: 0.604449450969696
+        X: 0.07696637511253357
+        Y: 0.0171394981443882
+        Z: 0.6933627724647522
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5147967338562012
-      Target Frame: <Fixed Frame>
+      Pitch: 0.5903984308242798
+      Target Frame: base_link
       Value: Orbit (rviz_default_plugins)
-      Yaw: 2.575396776199341
+      Yaw: 3.6203956604003906
     Saved: ~
 Window Geometry:
   Displays:

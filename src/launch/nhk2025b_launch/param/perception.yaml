@@ -1,0 +1,98 @@
+initial_box_publisher:
+  ros__parameters:
+    a0:
+      position:
+        x: 8.56
+        y: 1.75
+        z: 0.0
+      orientation:
+        yaw: 0.0
+
+    a1:
+      position:
+        x: 8.56
+        y: 1.75
+        z: 0.3
+      orientation:
+        yaw: 0.0
+
+    a2:
+      position:
+        x: 8.56
+        y: 1.75
+        z: 0.6
+      orientation:
+        yaw: 0.0
+
+    a3:
+      position:
+        x: 8.56
+        y: 1.75
+        z: 0.9
+      orientation:
+        yaw: 0.0
+
+    a4:
+      position:
+        x: 8.56
+        y: 0.15
+        z: 0.0
+      orientation:
+        yaw: 0.0
+
+    a5:
+      position:
+        x: 8.56
+        y: 0.15
+        z: 0.3
+      orientation:
+        yaw: 0.0
+
+    a6:
+      position:
+        x: 8.56
+        y: 0.15
+        z: 0.6
+      orientation:
+        yaw: 0.0
+
+    a7:
+      position:
+        x: 8.56
+        y: 0.15
+        z: 0.9
+      orientation:
+        yaw: 0.0
+
+    b0:
+      position:
+        x: 8.7
+        y: 2.3
+        z: 0.0
+      orientation:
+        yaw: 0.0
+
+    b1:
+      position:
+        x: 8.7
+        y: 2.3
+        z: 0.4
+      orientation:
+        yaw: 0.0
+
+    b2:
+      position:
+        x: 10.3
+        y: 2.3
+        z: 0.0
+      orientation:
+        yaw: 0.0
+
+    b3:
+      position:
+        x: 10.3
+        y: 2.3
+        z: 0.4
+      orientation:
+        yaw: 0.0
+

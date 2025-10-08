@@ -3,6 +3,10 @@
     <node_container pkg="rclcpp_components" exec="component_container" name="nhk2025b_visualization_container" namespace="">
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_swerve::visualize_swerve" name="visualize_swerve"/>
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_box::visualize_box" name="visualize_box"/>
+        <composable_node pkg="nhk2025b_visualization" plugin="visualize_box::visualize_box" name="visualize_box_initial">
+            <remap from="/visualization/box" to="/visualization/box_initial"/>
+            <remap from="/simulation/box_state" to="/box_state_initial"/>
+        </composable_node>
         <composable_node pkg="nhk2025b_visualization" plugin="visualize_footprint::visualize_footprint" name="visualize_footprint">
             <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
             <param from="$(find-pkg-share nhk2025b_launch)/param/visualization.yaml"/>

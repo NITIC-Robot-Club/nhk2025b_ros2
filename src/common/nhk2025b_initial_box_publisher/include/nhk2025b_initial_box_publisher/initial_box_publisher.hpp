@@ -14,7 +14,7 @@ class initial_box_publisher : public rclcpp::Node {
     initial_box_publisher (const rclcpp::NodeOptions &options);
 
    private:
-    bool                                                       is_red;
+    bool                                                       is_red = false;
     rclcpp::Publisher<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_array_publisher_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr       is_red_subscriber_;
     rclcpp::TimerBase::SharedPtr                               timer_;
@@ -22,6 +22,7 @@ class initial_box_publisher : public rclcpp::Node {
     void                         timer_callback ();
     void                         is_red_callback (const std_msgs::msg::Bool::SharedPtr msg);
     nhk2025b_msgs::msg::BoxArray get_initial_box_array ();
+    void set_coat_box_array ();
 
     nhk2025b_msgs::msg::BoxArray             box_array;
     std::vector<std::pair<std::string, int>> box_names = {
