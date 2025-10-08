@@ -10,6 +10,7 @@
 #include "nhk2025b_msgs/msg/pylon_arm.hpp"
 #include "nhk2025b_msgs/msg/robot_status.hpp"
 #include "nhk2025b_msgs/msg/swerve.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/int32.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp"
@@ -46,6 +47,7 @@ class canable : public rclcpp::Node {
     // === サブスクコールバック ===
     void e_arm_callback (const nhk2025b_msgs::msg::EArm::SharedPtr msg);
     void swerve_callback (const nhk2025b_msgs::msg::Swerve::SharedPtr msg);
+    void is_red_callback (const std_msgs::msg::Bool::SharedPtr msg);
     void box_arm_callback (const nhk2025b_msgs::msg::BoxArm::SharedPtr msg);
     void command_callback (const nhk2025b_msgs::msg::Command::SharedPtr msg);
     void conveyor_callback (const nhk2025b_msgs::msg::Conveyor::SharedPtr msg);
@@ -82,10 +84,15 @@ class canable : public rclcpp::Node {
     nhk2025b_msgs::msg::Conveyor    conveyor_result_;
     nhk2025b_msgs::msg::PylonArm    pylon_arm_result_;
 
-    bool       swerve_flag_[4]          = {false};
-    bool       robot_status_flag_       = false;
-    int        robomas_current_[2]      = {0};
-    bool       robomas_current_flag_[2] = {false};
+    bool swerve_flag_[4]          = {false};
+    bool robot_status_flag_       = false;
+    int  robomas_current_[2]      = {0};
+    bool robomas_current_flag_[2] = {false};
+
+    bool is_red_   = false;
+    int  led_step_ = 0;
+    static const int  max_led   = 110;
+
     std::mutex data_mutex_;
 
     int  id_list[17] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x116, 0x117, 0x118, 0x120, 0x121, 0x122, 0x123, 0x124, 0x125};
@@ -155,7 +162,7 @@ class canable : public rclcpp::Node {
             uint8_t reset_e_arm_get : 1;
         } data;
     } wing_transmit;
-    
+
     class UInt24 {
        private:
         uint32_t value_;
@@ -190,6 +197,7 @@ class canable : public rclcpp::Node {
     };
 
     // === ROS 通信 ===
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr          is_red_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::EArm>::SharedPtr     e_arm_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::Swerve>::SharedPtr   swerve_sub_;
     rclcpp::Subscription<nhk2025b_msgs::msg::BoxArm>::SharedPtr   box_arm_sub_;

@@ -15,6 +15,7 @@ canable::canable (const rclcpp::NodeOptions &node_options) : Node ("canable", no
         // return;
     }
 
+    is_red_sub_    = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&canable::is_red_callback, this, std::placeholders::_1));
     e_arm_sub_     = this->create_subscription<nhk2025b_msgs::msg::EArm> ("/e_arm/cmd", 1, std::bind (&canable::e_arm_callback, this, std::placeholders::_1));
     swerve_sub_    = this->create_subscription<nhk2025b_msgs::msg::Swerve> ("/swerve/cmd", 1, std::bind (&canable::swerve_callback, this, std::placeholders::_1));
     box_arm_sub_   = this->create_subscription<nhk2025b_msgs::msg::BoxArm> ("/box_arm/cmd", 1, std::bind (&canable::box_arm_callback, this, std::placeholders::_1));
@@ -288,6 +289,11 @@ void canable::check_can_receive () {
     can_alive_ = can_exists;
 }
 
+void canable::is_red_callback (const std_msgs::msg::Bool::SharedPtr msg) {
+    std::lock_guard<std::mutex> lock (data_mutex_);
+    is_red_ = msg->data;
+}
+
 void canable::e_arm_callback (const nhk2025b_msgs::msg::EArm::SharedPtr msg) {
     if (command_.allow_automate) {
         std::lock_guard<std::mutex> lock (data_mutex_);
@@ -362,14 +368,56 @@ void canable::timer_callback () {
 
     struct can_frame power;
     std::memset (&power, 0, sizeof (struct can_frame));
-    power.can_id           = 0x000;
-    power.can_dlc          = 1;
-    power_receive.data.sig = command_.signal;
-    power.data[0]          = power_receive.raw;
+    power.can_id              = 0x000;
+    power.can_dlc             = 2;
+    power_receive.data.sig    = command_.signal;
+    power_receive.data.is_red = is_red_;
+    power.data[0]             = power_receive.raw;
+    power.data[1]             = 128;
     if (!write (can_socket_, &power, sizeof (struct can_frame))) {
         RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
     }
     std::this_thread::sleep_for (std::chrono::microseconds (500));
+
+    std::array<uint8_t, max_led> leds{};
+    leds.fill (0);
+
+    // 正逆方向計算
+    int led_index = (led_step_ <= max_led / 2) ? led_step_ : max_led - led_step_;
+    if (led_index >= 0 && led_index < max_led) leds[led_index] = 1;
+
+    // --- 0x001: LED0〜63 ---
+    struct can_frame led_frame1{};
+    led_frame1.can_id  = 0x001;
+    led_frame1.can_dlc = 8;
+    for (int i = 0; i < 8; ++i) {      // 8バイト
+        for (int b = 0; b < 8; ++b) {  // 8ビット
+            int idx = i * 8 + b;
+            if (idx < 64 && leds[idx]) led_frame1.data[i] |= (1 << b);
+        }
+    }
+    if (write (can_socket_, &led_frame1, sizeof (led_frame1)) <= 0) {
+        RCLCPP_ERROR (this->get_logger (), "Failed to write LED frame 0x001");
+    }
+    std::this_thread::sleep_for (std::chrono::microseconds (500));
+
+    // --- 0x002: LED64〜109 ---
+    struct can_frame led_frame2{};
+    led_frame2.can_id  = 0x002;
+    led_frame2.can_dlc = 8;
+    for (int i = 0; i < 8; ++i) {      // 8バイト
+        for (int b = 0; b < 8; ++b) {  // 8ビット
+            int idx = 64 + i * 8 + b;
+            if (idx < max_led && leds[idx]) led_frame2.data[i] |= (1 << b);
+        }
+    }
+    if (write (can_socket_, &led_frame2, sizeof (led_frame2)) <= 0) {
+        RCLCPP_ERROR (this->get_logger (), "Failed to write LED frame 0x002");
+    }
+    std::this_thread::sleep_for (std::chrono::microseconds (500));
+
+    // 次のステップ
+    led_step_ = (led_step_ + 1) % (max_led + 1);
 
     struct can_frame claw_frame;
     std::memset (&claw_frame, 0, sizeof (struct can_frame));
