@@ -3,6 +3,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include <geometry_msgs/msg/pose_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
@@ -56,7 +57,7 @@ class path_planner : public rclcpp::Node {
     bool is_map_changed = true;
 
     void   current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
-    void   goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void   goal_pose_callback (const geometry_msgs::msg::PoseArray::SharedPtr msg);
     void   map_callback (const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void   vel_callback (const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void   create_path ();
@@ -66,6 +67,7 @@ class path_planner : public rclcpp::Node {
     void   init_rotated_footprint ();
     bool   is_collision (int x, int y, int theta, const std::vector<std::vector<int8_t>>& use_inflated_map);
     bool   is_same_map ();
+    void   unit_path (nav_msgs::msg::Path& path, const geometry_msgs::msg::PoseStamped& use_start_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose);
     double theta_heuristic (int dx, int theta);
     void   angular_astar (
           nav_msgs::msg::Path& path, const nav_msgs::msg::Path& smoothed_path, const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
@@ -74,7 +76,7 @@ class path_planner : public rclcpp::Node {
     nav_msgs::msg::Path path_smoother (const nav_msgs::msg::Path& linear_path, const nav_msgs::msg::OccupancyGrid& use_occ_map);
 
     std::vector<std::pair<int, double>> angular_smoother (std::vector<std::pair<int, double>> theta_path);
-    std::pair<int, int> to_grid (double x, double y);
+    std::pair<int, int>                 to_grid (double x, double y);
 
     double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));
@@ -92,7 +94,7 @@ class path_planner : public rclcpp::Node {
         return static_cast<int> (rad * 180.0 / M_PI);
     }
     geometry_msgs::msg::PoseStamped  current_pose;
-    geometry_msgs::msg::PoseStamped  goal_pose;
+    geometry_msgs::msg::PoseArray    goal_pose_array;
     geometry_msgs::msg::PoseStamped  safe_goal_pose;
     nav_msgs::msg::OccupancyGrid     original_map;
     nav_msgs::msg::OccupancyGrid     last_map;
@@ -102,7 +104,7 @@ class path_planner : public rclcpp::Node {
 
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr                 path_publisher;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  current_pose_subscriber;
-    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr  goal_pose_subscriber;
+    rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr    goal_pose_subscriber;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr     map_subscriber;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr vel_subscriber;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr           robot_width_subscriber;

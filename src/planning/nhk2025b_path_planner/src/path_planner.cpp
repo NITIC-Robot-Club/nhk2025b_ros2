@@ -15,7 +15,7 @@ path_planner::path_planner (const rclcpp::NodeOptions &options) : Node ("path_pl
 
     path_publisher          = this->create_publisher<nav_msgs::msg::Path> ("/planning/path", 1);
     current_pose_subscriber = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/localization/current_pose", 1, std::bind (&path_planner::current_pose_callback, this, std::placeholders::_1));
-    goal_pose_subscriber    = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/goal_pose", 1, std::bind (&path_planner::goal_pose_callback, this, std::placeholders::_1));
+    goal_pose_subscriber    = this->create_subscription<geometry_msgs::msg::PoseArray> ("/behavior/goal_array", 1, std::bind (&path_planner::goal_pose_callback, this, std::placeholders::_1));
     map_subscriber          = this->create_subscription<nav_msgs::msg::OccupancyGrid> ("/behavior/map", 1, std::bind (&path_planner::map_callback, this, std::placeholders::_1));
     vel_subscriber          = this->create_subscription<geometry_msgs::msg::TwistStamped> ("/cmd_vel", 1, std::bind (&path_planner::vel_callback, this, std::placeholders::_1));
     robot_width_subscriber  = this->create_subscription<std_msgs::msg::Float32> ("/robot_width", 1, [this] (const std_msgs::msg::Float32::SharedPtr msg) {
@@ -59,17 +59,18 @@ void path_planner::timer_callback () {
 void path_planner::current_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     current_pose = *msg;
 }
-void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-    goal_pose = *msg;
+void path_planner::goal_pose_callback (const geometry_msgs::msg::PoseArray::SharedPtr msg) {
+    goal_pose_array = *msg;
     create_path ();
 }
 
 void path_planner::create_path () {
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
-    if (goal_pose.header.stamp.sec == 0) return;
+    if (goal_pose_array.header.stamp.sec == 0) return;
+    RCLCPP_INFO (this->get_logger (), "create path");
 
-    geometry_msgs::msg::PoseStamped  use_goal         = goal_pose;
+    geometry_msgs::msg::PoseArray    use_goal_array   = goal_pose_array;
     geometry_msgs::msg::PoseStamped  use_current      = current_pose;
     nav_msgs::msg::OccupancyGrid     use_occ_map      = occ_map;
     std::vector<std::vector<int8_t>> use_inflated_map = inflated_map;
@@ -77,10 +78,28 @@ void path_planner::create_path () {
     nav_msgs::msg::Path path;
     path.header.frame_id = "map";
 
-    nav_msgs::msg::Path linear_path = linear_astar (use_current, use_goal, use_inflated_map);
-    nav_msgs::msg::Path smoothed_path = path_smoother (linear_path, use_occ_map);
-
-    angular_astar (path, smoothed_path, use_current, use_goal, use_inflated_map);
+    geometry_msgs::msg::PoseStamped unit_goal;
+    geometry_msgs::msg::PoseStamped unit_start;
+    unit_start.pose = use_current.pose;
+    for (int i = 0; i < use_goal_array.poses.size (); i++) {
+        if (i != 0) {
+            unit_start.pose = unit_goal.pose;
+        }
+        unit_goal.pose = use_goal_array.poses[i];
+        nav_msgs::msg::Path unit_path;
+        nav_msgs::msg::Path linear_path   = linear_astar (unit_start, unit_goal, use_inflated_map);
+        nav_msgs::msg::Path smoothed_path = path_smoother (linear_path, use_occ_map);
+        angular_astar (unit_path, smoothed_path, unit_start, unit_goal, use_inflated_map);
+        if (unit_path.poses.size () == 0) {
+            RCLCPP_WARN (this->get_logger (), "path not found");
+            return;
+        }
+        if (i == 0) {
+            path.poses = unit_path.poses;
+            continue;
+        }
+        path.poses.insert (path.poses.end (), unit_path.poses.begin (), unit_path.poses.end ());
+    }
     // RCLCPP_INFO (this->get_logger (), "num %d, %d, %d", linear_path.poses.size (), smoothed_path.poses.size (), path.poses.size ());
     path.header.stamp = this->now ();
     for (int i = 0; i < path.poses.size (); i++) {
@@ -383,9 +402,9 @@ void path_planner::angular_astar (
         }
     }
     std::vector<std::pair<int, double>> theta_path;
-    auto                curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
+    auto                                curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
     while (curr.first != 0 || curr.second != start_theta) {
-        theta_path.push_back (std::make_pair(curr.first, curr.second));
+        theta_path.push_back (std::make_pair (curr.first, curr.second));
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
             path.poses.clear ();
@@ -393,17 +412,17 @@ void path_planner::angular_astar (
         }
         curr = came_from[idx];
     }
-    theta_path.push_back (std::make_pair(0, start_theta));
+    theta_path.push_back (std::make_pair (0, start_theta));
     std::reverse (theta_path.begin (), theta_path.end ());
     theta_path = angular_smoother (theta_path);
     for (int i = 0; i < theta_path.size (); i++) {
         geometry_msgs::msg::PoseStamped pose;
-        int index = theta_path[i].first;
-        pose.pose.position.x    = smoothed_path.poses[index].pose.position.x;
-        pose.pose.position.y    = smoothed_path.poses[index].pose.position.y;
-        double yaw              = theta_path[i].second * theta_resolution * M_PI / 180.0;
-        pose.pose.orientation.z = std::sin (yaw / 2.0);
-        pose.pose.orientation.w = std::cos (yaw / 2.0);
+        int                             index = theta_path[i].first;
+        pose.pose.position.x                  = smoothed_path.poses[index].pose.position.x;
+        pose.pose.position.y                  = smoothed_path.poses[index].pose.position.y;
+        double yaw                            = theta_path[i].second * theta_resolution * M_PI / 180.0;
+        pose.pose.orientation.z               = std::sin (yaw / 2.0);
+        pose.pose.orientation.w               = std::cos (yaw / 2.0);
         path.poses.push_back (pose);
     }
 }

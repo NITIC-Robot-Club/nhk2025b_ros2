@@ -17,6 +17,11 @@ rclcpp_components_register_node(${PROJECT_NAME}
     EXECUTABLE path_planner
 )
 
+rclcpp_components_register_node(${PROJECT_NAME}
+    PLUGIN "pose_array_publisher::pose_array_publisher"
+    EXECUTABLE pose_array_publisher
+)
+
 if($ENV{ROS_DISTRO} STREQUAL "iron" OR $ENV{ROS_DISTRO} STREQUAL "jazzy" OR $ENV{ROS_DISTRO} STREQUAL "rolling")
   ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)
 else()
