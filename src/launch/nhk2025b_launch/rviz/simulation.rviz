@@ -13,6 +13,8 @@ Panels:
         - /stl1
         - /urdf1
         - /perception1
+        - /perception1/検出範囲1/Status1
+        - /perception1/検出範囲1/Namespaces1
       Splitter Ratio: 0.5264706015586853
     Tree Height: 898
   - Class: rviz_common/Selection
@@ -549,7 +551,8 @@ Visualization Manager:
           Enabled: true
           Name: 箱
           Namespaces:
-            {}
+            box_edges: true
+            boxes: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -598,6 +601,7 @@ Visualization Manager:
           Enabled: true
           Name: 箱
           Namespaces:
+            box_edges: true
             boxes: true
           Topic:
             Depth: 5
@@ -737,27 +741,6 @@ Visualization Manager:
             Value: /perception/first_line
           Value: true
         - Alpha: 1
-          Arrow Length: 0.30000001192092896
-          Axes Length: 0.30000001192092896
-          Axes Radius: 0.009999999776482582
-          Class: rviz_default_plugins/PoseArray
-          Color: 255; 25; 255
-          Enabled: true
-          Head Length: 0.07000000029802322
-          Head Radius: 0.029999999329447746
-          Name: detection area
-          Shaft Length: 0.23000000417232513
-          Shaft Radius: 0.009999999776482582
-          Shape: Arrow (Flat)
-          Topic:
-            Depth: 5
-            Durability Policy: Volatile
-            Filter size: 10
-            History Policy: Keep Last
-            Reliability Policy: Reliable
-            Value: /perception/detection_area
-          Value: true
-        - Alpha: 1
           Axes Length: 1
           Axes Radius: 0.10000000149011612
           Class: rviz_default_plugins/Pose
@@ -818,6 +801,19 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /perception/pose_array
           Value: true
+        - Class: rviz_default_plugins/Marker
+          Enabled: true
+          Name: 検出範囲
+          Namespaces:
+            "": true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /perception/detection_area
+          Value: true
       Enabled: true
       Name: perception
   Enabled: true
@@ -868,25 +864,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 23.928892135620117
+      Distance: 9.591957092285156
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 6.155962944030762
-        Y: 0.0014575235545635223
-        Z: 0.0011559620033949614
+        X: 4.0569329261779785
+        Y: 3.5653107166290283
+        Z: -0.03463001921772957
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 0.8797973990440369
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 3.1415927410125732
+      Yaw: 3.6015899181365967
     Saved: ~
 Window Geometry:
   Displays:

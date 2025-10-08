@@ -7,7 +7,7 @@ e_box_perception::e_box_perception (const rclcpp::NodeOptions& options) : Node (
     e_collect_pose_publisher_    = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/perception/e_collect_pose", rclcpp::QoS (10));
     test_publisher_              = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/perception/test_pose", rclcpp::QoS (10));
     pose_array_publisher_        = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/pose_array", rclcpp::QoS (10));
-    detection_area_publisher_    = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/detection_area", rclcpp::QoS (10));
+    detection_area_publisher_    = this->create_publisher<visualization_msgs::msg::Marker> ("/perception/detection_area", rclcpp::QoS (10));
     centre_of_detected_line_     = this->create_publisher<geometry_msgs::msg::PoseStamped> ("/perception/centre_of_detected_line", rclcpp::QoS (10));
     e_drop_pose_subscriber_      = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/e_drop_pose", 1, std::bind (&e_box_perception::pose_callback, this, std::placeholders::_1));
     lidar_subscriber_            = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&e_box_perception::lidar_callback, this, std::placeholders::_1));
@@ -32,8 +32,13 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
     e_drop_pose_ = *pose;
     RCLCPP_INFO (this->get_logger (), "pose degree: %f", atan2 (2.0 * e_drop_pose_.pose.orientation.w * e_drop_pose_.pose.orientation.z, 1.0 - 2.0 * e_drop_pose_.pose.orientation.z * e_drop_pose_.pose.orientation.z) * 180.0 / M_PI);
     std::vector<e_box_perception::Point> points = cloud_to_points (lidar_data_);
+
+    // 修正: get_robot_forward_area はメンバ fl/fr/bl/br を更新する（ロボット中心基準）
     get_robot_forward_area (e_drop_pose_);
-    detection_areas_                                     = {(fl), (fr), (br), (bl)};
+
+    // detection_areas_ をメンバ変数の四隅で作る（順序は CW/CCW を保つ）
+    detection_areas_ = { (fl), (fr), (br), (bl) };
+
     std::vector<e_box_perception::Point> filtered_points = filtering_points (points, detection_areas_);
 
     if (detection_count_ >= 1) {
@@ -74,7 +79,7 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
         test_publisher_->publish (test);
         tf2::Quaternion q;
         q.setRPY (0, 0, theta);
-    } else if (!is_short_line) {
+    } else {
         centre_of_box = {centre_of_line.first - 0.15 * cos (theta - M_PI_2), centre_of_line.second - 0.15 * sin (theta - M_PI_2)};
         geometry_msgs::msg::PoseStamped test;
         test.header.frame_id = "map";
@@ -90,7 +95,7 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
     Point collect_point;
     if (is_short_line) {
         collect_point = {centre_of_box.first + 0.425 * cos (theta), centre_of_box.second + 0.425 * sin (theta)};  // 回収地点を計算
-    } else if (!is_short_line) {
+    } else {
         collect_point = {centre_of_box.first - 0.425 * cos (theta - M_PI_2), centre_of_box.second - 0.425 * sin (theta - M_PI_2)};  // 回収地点を計算
     }
 
@@ -99,7 +104,6 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
     geometry_msgs::msg::PoseStamped collect_pose;
     if (is_short_line) {
         q.setRPY (0, 0, theta);
-        collect_pose;
         collect_pose.header.frame_id  = "map";
         collect_pose.header.stamp     = this->now ();
         collect_pose.pose.position.x  = collect_point.first;
@@ -108,7 +112,6 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
         collect_pose.pose.orientation = tf2::toMsg (q);
     } else {
         q.setRPY (0, 0, theta + M_PI_2);
-        collect_pose;
         collect_pose.header.frame_id  = "map";
         collect_pose.header.stamp     = this->now ();
         collect_pose.pose.position.x  = collect_point.first;
@@ -135,12 +138,12 @@ void e_box_perception::is_red_callback (const std_msgs::msg::Bool::SharedPtr is_
     if (is_red_) {
         min_x = 0.5;
         max_x = 5.0;
-        min_y = 0.1;
-        max_y = 2.1;
+        min_y = -5.0;
+        max_y = -2.0;
     } else {
         min_x = 0.5;
         max_x = 5.0;
-        min_y = 2.1;
+        min_y = 2.0;
         max_y = 5.0;
     }
 }
@@ -307,6 +310,7 @@ e_box_perception::Line e_box_perception::ransac_line (const std::vector<Point>& 
     line.b         = b;
     line.c         = c;
     if (inliers_out.empty ()) return line;
+    // min/max x で端点を取る（既存ロジックを維持）
     auto minmax_x = std::minmax_element (inliers_out.begin (), inliers_out.end (), [] (const Point& p1, const Point& p2) { return p1.first < p2.first; });
     line.start    = *minmax_x.first;
     line.end      = *minmax_x.second;
@@ -344,49 +348,67 @@ std::vector<e_box_perception::Point> e_box_perception::remove_detected_points (c
 }
 
 void e_box_perception::get_robot_forward_area (const geometry_msgs::msg::PoseStamped& pose) {
-    double short_side = 0.45, long_side = 1.15;
-    double cx  = pose.pose.position.x;
-    double cy  = pose.pose.position.y;
-    double yaw = -tf2::getYaw (pose.pose.orientation);
-    double fx = cos (yaw), fy = sin (yaw);
-    double lx = -sin (yaw), ly = cos (yaw);
-    fl = {cx + fx * long_side + lx * short_side, cy + fy * long_side + ly * short_side};
-    fr = {cx + fx * long_side - lx * short_side, cy + fy * long_side - ly * short_side};
-    bl = {cx - fx * long_side + lx * short_side, cy - fy * long_side + ly * short_side};
-    br = {cx - fx * long_side - lx * short_side, cy - fy * long_side - ly * short_side};
-    geometry_msgs::msg::PoseArray detection_area;
+    // 要望に合わせた範囲: 前方 0.4m ~ 1.2m, 左右 ±1.0m
+    double front_min = 0.4;
+    double front_max = 1.5;
+    double side_half = 0.6;
+
+    double yaw = tf2::getYaw (pose.pose.orientation);
+    double fx  = cos (yaw);
+    double fy  = sin (yaw);
+    double lx  = -sin (yaw);
+    double ly  = cos (yaw);
+
+    // NOTE: メンバ変数 fl, fr, bl, br を上書きする（ヘッダにメンバがある前提）
+    fl.first = pose.pose.position.x + fx * front_max + lx * side_half;
+    fl.second = pose.pose.position.y + fy * front_max + ly * side_half;
+
+    fr.first = pose.pose.position.x + fx * front_max - lx * side_half;
+    fr.second = pose.pose.position.y + fy * front_max - ly * side_half;
+
+    bl.first = pose.pose.position.x + fx * front_min + lx * side_half;
+    bl.second = pose.pose.position.y + fy * front_min + ly * side_half;
+
+    br.first = pose.pose.position.x + fx * front_min - lx * side_half;
+    br.second = pose.pose.position.y + fy * front_min - ly * side_half;
+
+    visualization_msgs::msg::Marker detection_area;
     detection_area.header.frame_id = "map";
     detection_area.header.stamp    = this->now ();
-    geometry_msgs::msg::Pose p1, p2, p3, p4;
-    p1.position.x = fl.first;
-    p1.position.y = fl.second;
-    p1.position.z = 0.0;
-    p2.position.x = fr.first;
-    p2.position.y = fr.second;
-    p2.position.z = 0.0;
-    p3.position.x = bl.first;
-    p3.position.y = bl.second;
-    p3.position.z = 0.0;
-    p4.position.x = br.first;
-    p4.position.y = br.second;
-    p4.position.z = 0.0;
-    detection_area.poses.push_back (p1);
-    detection_area.poses.push_back (p2);
-    detection_area.poses.push_back (p3);
-    detection_area.poses.push_back (p4);
+    detection_area.type            = visualization_msgs::msg::Marker::LINE_STRIP;
+    detection_area.action          = visualization_msgs::msg::Marker::ADD;
+    detection_area.scale.x         = 0.005;
+    detection_area.color.g         = 1.0;
+    detection_area.color.a         = 1.0;
+
+    geometry_msgs::msg::Point p1, p2, p3, p4;
+    p1.x = fl.first; p1.y = fl.second; p1.z = 0.0;
+    p2.x = fr.first; p2.y = fr.second; p2.z = 0.0;
+    p3.x = br.first; p3.y = br.second; p3.z = 0.0;
+    p4.x = bl.first; p4.y = bl.second; p4.z = 0.0;
+
+    detection_area.points = {p1, p2, p3, p4, p1};
     detection_area_publisher_->publish (detection_area);
 }
 
 double e_box_perception::lineLength (const Line& line, const std::vector<Point>& inliers) {
-    if (inliers.empty ()) {
-        return 0.0;
+    // 安定した長さ計算: line.start と line.end の距離を使う
+    if (line.start == line.end) {
+        // フォールバック: inliers から最大距離を算出
+        if (inliers.size () < 2) return 0.0;
+        double maxd = 0.0;
+        for (size_t i = 0; i < inliers.size (); ++i) {
+            for (size_t j = i + 1; j < inliers.size (); ++j) {
+                double dx = inliers[i].first - inliers[j].first;
+                double dy = inliers[i].second - inliers[j].second;
+                double d = std::sqrt (dx * dx + dy * dy);
+                if (d > maxd) maxd = d;
+            }
+        }
+        return maxd;
     }
-    auto [min_x, max_x] = std::minmax_element (inliers.begin (), inliers.end (), [] (const Point& p1, const Point& p2) { return p1.first < p2.first; });
-
-    auto [min_y, max_y] = std::minmax_element (inliers.begin (), inliers.end (), [] (const Point& p1, const Point& p2) { return p1.second < p2.second; });
-
-    double dx = max_x->first - min_x->first;
-    double dy = max_y->second - min_y->second;
+    double dx = line.end.first - line.start.first;
+    double dy = line.end.second - line.start.second;
     return std::sqrt (dx * dx + dy * dy);
 }
 
