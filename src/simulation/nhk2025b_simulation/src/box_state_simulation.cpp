@@ -6,9 +6,9 @@ box_state_simulation::box_state_simulation (const rclcpp::NodeOptions &options) 
 
     box_publisher = this->create_publisher<nhk2025b_msgs::msg::BoxArray> ("/simulation/box_state", rclcpp::QoS (10));
     timer         = this->create_wall_timer (std::chrono::milliseconds (10), std::bind (&box_state_simulation::timer_callback, this));
-    box_size_x    = 1.0;
-    box_size_y    = 0.3;
-    box_size_z    = 0.3;
+    box_size_x    = 0.5;
+    box_size_y    = 0.5;
+    box_size_z    = 0.5;
 }
 
 void box_state_simulation::point_callback (const geometry_msgs::msg::PointStamped::SharedPtr msg) {
@@ -21,8 +21,8 @@ void box_state_simulation::point_callback (const geometry_msgs::msg::PointStampe
     box.size.z        = box_size_z;
     box.pose.orientation.x = 0.0;
     box.pose.orientation.y = 0.0;
-    box.pose.orientation.z = 0.258819045;
-    box.pose.orientation.w = 0.965925826;
+    box.pose.orientation.z = 0.0;
+    box.pose.orientation.w = 0.0;
     current_box_array.boxes.push_back (box);
 }
 

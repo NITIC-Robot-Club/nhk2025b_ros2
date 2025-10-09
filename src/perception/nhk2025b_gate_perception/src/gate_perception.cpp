@@ -1,55 +1,76 @@
 #include "nhk2025b_gate_perception/gate_perception.hpp"
 
+#include <algorithm>  // for std::min / std::max
+#include <limits>
+
 namespace gate_perception {
+
 gate_perception::gate_perception (const rclcpp::NodeOptions &options) : Node ("gate_perception", options) {
-    gate_pose_publisher_             = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/gate_pose", 1);
-    gate_detection_publisher_        = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/gate_detection_area", 1);
-    side_detection_area_publisher_   = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/side_detection_area", 1);
-    centre_detection_area_publisher_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/centre_detection_area", 1);
-    gate_placement_subscriber_       = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/gate_placement_pose", 1, std::bind (&gate_perception::pose_callback, this, std::placeholders::_1));
-    lidar_subscriber_                = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&gate_perception::lidar_callback, this, std::placeholders::_1));
-    tf_buffer_                       = std::make_unique<tf2_ros::Buffer> (this->get_clock ());
-    tf_listener_                     = std::make_shared<tf2_ros::TransformListener> (*tf_buffer_);
-    iter                             = this->declare_parameter<int> ("iter", 500);
-    distance_threshold               = this->declare_parameter<double> ("distance_threshold", 0.025);
-    gate_detection_width             = this->declare_parameter<double> ("gate_detection_width", 2.0);
-    gate_detection_length            = this->declare_parameter<double> ("gate_detection_length", 0.6);
+    gate_pose_publisher_       = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/gate_pose", 1);
+    debug_left_detection_area_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/debug/left_detection_area", 1);
+    debug_right_detection_area_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/debug/right_detection_area", 1);
+    gate_placement_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/gate_placement_pose", 1, std::bind (&gate_perception::pose_callback, this, std::placeholders::_1));
+    lidar_subscriber_          = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&gate_perception::lidar_callback, this, std::placeholders::_1));
+    is_red_subscriber_         = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&gate_perception::is_red_callback, this, std::placeholders::_1));
+    tf_buffer_                 = std::make_unique<tf2_ros::Buffer> (this->get_clock ());
+    tf_listener_               = std::make_shared<tf2_ros::TransformListener> (*tf_buffer_);
+    iter                       = this->declare_parameter<int> ("iter", 500);
+    distance_threshold         = this->declare_parameter<double> ("distance_threshold", 0.025);
+    detection_width            = this->declare_parameter<double> ("detection_width", 2.3);
+    detection_length           = this->declare_parameter<double> ("detection_length", 0.7);
 }
 
 void gate_perception::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     // 手順1　点群フィルタリング
-    std::vector<Point> inliers;
-    gate_placement_pose_                       = *msg;
-    std::vector<gate_perception::Point> points = cloud_to_points (point_cloud);
-    RCLCPP_INFO (this->get_logger (), "pose degree: %f", get_yaw_2d (gate_placement_pose_) * 180.0 / M_PI);
-    gate_detection_area_points   = get_gate_detection_area (gate_placement_pose_, gate_detection_width, gate_detection_length);
-    side_detection_area_points   = get_side_detection_area (gate_placement_pose_, gate_detection_width / 2.0, gate_detection_length / 2.0, true);
-    centre_detection_area_points = get_side_detection_area (gate_placement_pose_, gate_detection_width / 2.0, gate_detection_length / 2.0, false);
-    publish_points_pose_array (gate_detection_area_points);
-    publish_points_pose_array (side_detection_area_points);
-    publish_points_pose_array (centre_detection_area_points);
+    std::vector<Point> inliers, rest_points_;
+    gate_placement_pose_                      = *msg;
+    std::vector<Point> points                 = cloud_to_points (point_cloud);
+    std::vector<Point> detection_areas_       = get_robot_backward_area (gate_placement_pose_, detection_width, detection_length);
+    std::vector<Point> filtered_points        = filtering_points (points, detection_areas_);
+    std::vector<Point> left_detection_areas_  = get_rear_side_detection_area (gate_placement_pose_, detection_width, detection_length, false);
+    std::vector<Point> right_detection_areas_ = get_rear_side_detection_area (gate_placement_pose_, detection_width, detection_length, true);
+    std::vector<Point> left_points            = filtering_points (filtered_points, left_detection_areas_);
+    std::vector<Point> right_points           = filtering_points (filtered_points, right_detection_areas_);
+    RCLCPP_INFO (this->get_logger (), "filtered points size: %lu", filtered_points.size ());
+    geometry_msgs::msg::PoseArray debug_left_area, debug_right_area;
+    for (const auto &p : left_detection_areas_) {
+        geometry_msgs::msg::Pose pose;
+        pose.position.x  = p.first;
+        pose.position.y  = p.second;
+        pose.position.z  = 0.0;
+        pose.orientation = gate_placement_pose_.pose.orientation;
+        debug_left_area.poses.push_back (pose);
+    }
+    debug_left_detection_area_->publish (debug_left_area);
+    for (const auto &p : right_detection_areas_) {
+        geometry_msgs::msg::Pose pose;
+        pose.position.x  = p.first;
+        pose.position.y  = p.second;
+        pose.position.z  = 0.0;
+        pose.orientation = gate_placement_pose_.pose.orientation;
+        debug_right_area.poses.push_back (pose);
+    }
+    debug_right_detection_area_->publish (debug_right_area);
 
     // 手順2 RANSACで直線検出1
     Line best_line1 = {0, 0, 0}, second_line1 = {0, 0, 0};
-    best_line1 = ransac_line (side_detection_area_points, inliers);
-    detected_areas_.push_back (inliers);
-    side_detection_area_points = remove_detected_points (side_detection_area_points, detected_areas_);
-    second_line1               = ransac_line (side_detection_area_points, inliers);
-    detected_areas_.push_back (inliers);
-    side_detection_area_points = remove_detected_points (side_detection_area_points, detected_areas_);
+    best_line1   = ransac_line (left_points, inliers);
+    rest_points_ = remove_inliers_points (left_points, inliers);
+    second_line1 = ransac_line (rest_points_, inliers);
+    rest_points_.clear ();
 
     // 手順3 RANSACで直線検出2
     Line best_line2 = {0, 0, 0}, second_line2 = {0, 0, 0};
-    best_line2 = ransac_line (centre_detection_area_points, inliers);
-    detected_areas_.push_back (inliers);
-    centre_detection_area_points = remove_detected_points (centre_detection_area_points, detected_areas_);
-    second_line2                 = ransac_line (centre_detection_area_points, inliers);
-    detected_areas_.push_back (inliers);
-    centre_detection_area_points = remove_detected_points (centre_detection_area_points, detected_areas_);
+    best_line2   = ransac_line (right_points, inliers);
+    rest_points_ = remove_inliers_points (right_points, inliers);
+    second_line2 = ransac_line (rest_points_, inliers);
+    rest_points_.clear ();
 
     // 手順4 各交点を算出
     Point line_intersection1 = line_intersection (best_line1, second_line1);
+    RCLCPP_INFO (this->get_logger (), "line intersection1: (%f, %f)", line_intersection1.first, line_intersection1.second);
     Point line_intersection2 = line_intersection (best_line2, second_line2);
+    RCLCPP_INFO (this->get_logger (), "line intersection2: (%f, %f)", line_intersection2.first, line_intersection2.second);
 
     // 手順5 交点同士の中点をとり、poseを生成
     Point                         midpoint = compute_midpoint ({line_intersection1, line_intersection2});
@@ -67,10 +88,46 @@ void gate_perception::lidar_callback (const sensor_msgs::msg::PointCloud2::Share
     point_cloud = *msg;
 }
 
-double gate_perception::get_yaw_2d (const geometry_msgs::msg::PoseStamped &q) {
-    double yaw = atan2 (2.0 * (q.pose.orientation.w * q.pose.orientation.z + q.pose.orientation.x * q.pose.orientation.y), 1.0 - 2.0 * (q.pose.orientation.y * q.pose.orientation.y + q.pose.orientation.z * q.pose.orientation.z));
-    return yaw;
+void gate_perception::is_red_callback (const std_msgs::msg::Bool::SharedPtr is_red) {
+    is_red_ = is_red->data;
+    if (is_red_) {
+        min_x = 0.5;
+        max_x = 5.0;
+        min_y = -5.0;
+        max_y = 0.0;
+    } else {
+        min_x = 0.5;
+        max_x = 5.0;
+        min_y = 0.0;
+        max_y = 5.0;
+    }
 }
+
+bool gate_perception::isInsidePolygon (const Point &pt, const std::vector<Point> &polygon) {
+    bool   inside = false;
+    size_t n      = polygon.size ();
+    if (n < 3) return false;
+    for (size_t i = 0, j = n - 1; i < n; j = i++) {
+        const Point &pi        = polygon[i];
+        const Point &pj        = polygon[j];
+        bool         intersect = ((pi.second > pt.second) != (pj.second > pt.second)) && (pt.first < (pj.first - pi.first) * (pt.second - pi.second) / (pj.second - pi.second) + pi.first);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+std::vector<gate_perception::Point> gate_perception::filtering_points (const std::vector<gate_perception::Point> &data, const std::vector<Point> &polygon) {
+    std::vector<Point> filtered;
+    for (const auto &p : data) {
+        if (!isInsidePolygon (p, polygon)) {
+            if (p.first >= min_x && p.first <= max_x && p.second >= min_y && p.second <= max_y) {
+                filtered.push_back (p);
+            }
+        }
+    }
+    return filtered;
+}
+
 std::vector<gate_perception::Point> gate_perception::cloud_to_points (const sensor_msgs::msg::PointCloud2 &cloud) {
     std::vector<gate_perception::Point> points;
     if (cloud.width == 0 || cloud.height == 0 || cloud.data.empty ()) {
@@ -103,62 +160,6 @@ std::vector<gate_perception::Point> gate_perception::cloud_to_points (const sens
         points.emplace_back (x, y);
     }
     return points;
-}
-
-std::vector<gate_perception::Point> gate_perception::get_gate_detection_area (const geometry_msgs::msg::PoseStamped &pose, double width, double length) {
-    double hw  = width * 0.5;
-    double yaw = get_yaw_2d (pose);
-    double fx  = std::cos (yaw);
-    double fy  = std::sin (yaw);
-
-    double rx = fy;
-    double ry = -fx;
-
-    Point left_near  = {pose.pose.position.x - rx * hw, pose.pose.position.y - ry * hw};
-    Point right_near = {pose.pose.position.x + rx * hw, pose.pose.position.y + ry * hw};
-
-    double fx_len = pose.pose.position.x + fx * length;
-    double fy_len = pose.pose.position.y + fy * length;
-
-    Point left_far  = {fx_len - rx * hw, fy_len - ry * hw};
-    Point right_far = {fx_len + rx * hw, fy_len + ry * hw};
-
-    return {left_near, right_near, right_far, left_far};
-}
-
-std::vector<gate_perception::Point> gate_perception::get_side_detection_area (const geometry_msgs::msg::PoseStamped &pose, double width, double length, bool right_side) {
-    double                 yaw        = get_yaw_2d (pose);
-    double                 fx         = std::cos (yaw);
-    double                 fy         = std::sin (yaw);
-    double                 rx         = fy;
-    double                 ry         = -fx;
-    double                 hw         = width * 0.5;
-    double                 qw         = width * 0.25;
-    double                 nx         = pose.pose.position.x;
-    double                 ny         = pose.pose.position.y;
-    double                 fx_len     = nx + fx * length;
-    double                 fy_len     = ny + fy * length;
-    double                 dir        = right_side ? 1.0 : -1.0;
-    gate_perception::Point near_inner = {nx + rx * dir * qw, ny + ry * dir * qw};
-    gate_perception::Point near_outer = {nx + rx * dir * hw, ny + ry * dir * hw};
-    gate_perception::Point far_outer  = {fx_len + rx * dir * hw, fy_len + ry * dir * hw};
-    gate_perception::Point far_inner  = {fx_len + rx * dir * qw, fy_len + ry * dir * qw};
-
-    return {near_inner, near_outer, far_outer, far_inner};
-}
-
-void gate_perception::publish_points_pose_array (const std::vector<gate_perception::Point> points) {
-    geometry_msgs::msg::PoseArray gate_detection_pose_array;
-    for (const auto &point : points) {
-        geometry_msgs::msg::PoseStamped pose;
-        pose.header.frame_id = "map";
-        pose.header.stamp    = this->now ();
-        pose.pose.position.x = point.first;
-        pose.pose.position.y = point.second;
-        pose.pose.position.z = 0.0;
-        gate_detection_pose_array.poses.push_back (pose.pose);
-    }
-    gate_detection_publisher_->publish (gate_detection_pose_array);
 }
 
 std::tuple<double, double, double> gate_perception::ransac (const std::vector<Point> &points, std::vector<Point> &inliers_out) {
@@ -211,29 +212,6 @@ gate_perception::Line gate_perception::ransac_line (const std::vector<Point> &po
     return line;
 }
 
-std::vector<gate_perception::Point> gate_perception::remove_detected_points (const std::vector<Point> &points, const std::vector<std::vector<Point>> &detected_points) {
-    std::vector<Point> remaining_points;
-    double             tolerance = 0.1;
-    for (const auto &pt : points) {
-        bool is_detected = false;
-        for (const auto &area : detected_points) {
-            for (const auto &det_pt : area) {
-                double dx = pt.first - det_pt.first;
-                double dy = pt.second - det_pt.second;
-                if (std::sqrt (dx * dx + dy * dy) < tolerance) {
-                    is_detected = true;
-                    break;
-                }
-            }
-            if (is_detected) break;
-        }
-        if (!is_detected) {
-            remaining_points.push_back (pt);
-        }
-    }
-    return remaining_points;
-}
-
 gate_perception::Point gate_perception::line_intersection (const Line &l1, const Line &l2) {
     double det = l1.a * l2.b - l2.a * l1.b;
     if (std::fabs (det) < 1e-9) {
@@ -249,6 +227,10 @@ double gate_perception::point_line_distance (const Point &pt, double a, double b
 }
 
 gate_perception::Point gate_perception::compute_midpoint (const std::vector<Point> &intersections) {
+    if (intersections.empty ()) {
+        RCLCPP_WARN (this->get_logger (), "compute_midpoint: no intersections provided -> returning (0,0)");
+        return Point{0.0, 0.0};
+    }
     double mx = 0.0, my = 0.0;
     for (const auto &pt : intersections) {
         mx += pt.first;
@@ -259,6 +241,66 @@ gate_perception::Point gate_perception::compute_midpoint (const std::vector<Poin
     return Point{mx, my};
 }
 
+std::vector<gate_perception::Point> gate_perception::get_robot_backward_area (const geometry_msgs::msg::PoseStamped &pose, double width, double length) {
+    double yaw = tf2::getYaw (pose.pose.orientation);
+    double bx = std::cos (yaw + M_PI), by = std::sin (yaw + M_PI);
+    double sx = std::cos (yaw + M_PI_2), sy = std::sin (yaw + M_PI_2);
+
+    double hl = length * 0.5;
+    double hw = width * 0.5;
+
+    double cx = pose.pose.position.x + bx * hl;
+    double cy = pose.pose.position.y + by * hl;
+
+    std::vector<gate_perception::Point> c (4);
+    c[0] = {cx - hl * bx - hw * sx, cy - hl * by - hw * sy};
+    c[1] = {cx + hl * bx - hw * sx, cy + hl * by - hw * sy};
+    c[2] = {cx + hl * bx + hw * sx, cy + hl * by + hw * sy};
+    c[3] = {cx - hl * bx + hw * sx, cy - hl * by + hw * sy};
+    return c;
+}
+
+std::vector<gate_perception::Point> gate_perception::get_rear_side_detection_area (const geometry_msgs::msg::PoseStamped &pose, double width, double length, bool right_side) {
+    double yaw = tf2::getYaw (pose.pose.orientation);
+    double bx = std::cos (yaw + M_PI), by = std::sin (yaw + M_PI);
+    double sx = std::cos (yaw + M_PI_2), sy = std::sin (yaw + M_PI_2);
+
+    double hl = length * 0.5;
+    double hw = width * 0.25;
+    double s  = right_side ? 1.0 : -1.0;
+
+    double cx = pose.pose.position.x + bx * hl + s * hw * sx;
+    double cy = pose.pose.position.y + by * hl + s * hw * sy;
+
+    std::vector<gate_perception::Point> c (4);
+    c[0] = {cx - hl * bx - hw * sx, cy - hl * by - hw * sy};
+    c[1] = {cx + hl * bx - hw * sx, cy + hl * by - hw * sy};
+    c[2] = {cx + hl * bx + hw * sx, cy + hl * by + hw * sy};
+    c[3] = {cx - hl * bx + hw * sx, cy - hl * by + hw * sy};
+    return c;
+}
+
+std::vector<gate_perception::Point> gate_perception::remove_inliers_points (const std::vector<Point> &points, const std::vector<Point> &inliers) {
+    std::vector<Point> result;
+    result.reserve (points.size ());
+    const double epsilon = 1e-6;
+    for (const auto &p : points) {
+        bool is_inlier = false;
+        for (const auto &in : inliers) {
+            double dx    = p.first - in.first;
+            double dy    = p.second - in.second;
+            double dist2 = dx * dx + dy * dy;
+            if (dist2 < epsilon * epsilon) {
+                is_inlier = true;
+                break;
+            }
+        }
+        if (!is_inlier) {
+            result.push_back (p);
+        }
+    }
+    return result;
+}
 }  // namespace gate_perception
 
 #include <rclcpp_components/register_node_macro.hpp>
