@@ -145,7 +145,8 @@ class canable : public rclcpp::Node {
         uint8_t raw;
         struct {
             uint8_t reset : 1;
-            uint8_t : 5;
+            uint8_t reset_e : 1;
+            uint8_t : 6;
         } data;
     } wing_receive;
 

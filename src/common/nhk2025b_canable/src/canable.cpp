@@ -173,8 +173,8 @@ void canable::read_can_socket () {
                 continue;
             }
 
-            if (0x121 <= frame.can_id && frame.can_id <= 0x122 && frame.len == 8) {
-                int               id = frame.can_id - 0x121;
+            if (0x122 <= frame.can_id && frame.can_id <= 0x123 && frame.len == 8) {
+                int               id = frame.can_id - 0x122;
                 union float_bytes height, expand;
                 for (int b = 0; b < 4; b++) {
                     height.bytes[b] = frame.data[b];
@@ -186,25 +186,15 @@ void canable::read_can_socket () {
                 continue;
             }
 
-            if (0x123 <= frame.can_id && frame.can_id <= 0x124 && frame.len == 4) {
-                int               id = frame.can_id - 0x123;
+            if (0x124 <= frame.can_id && frame.can_id <= 0x125 && frame.len == 4) {
+                int               id = frame.can_id - 0x124;
                 union float_bytes hand_position;
+                union float_bytes e;
                 for (int b = 0; b < 4; ++b) {
                     hand_position.bytes[b] = frame.data[b];
+                    e.bytes[b]             = frame.data[b + 4];
                 }
                 box_arm_result_.hand_position[id] = hand_position.value;
-                continue;
-            }
-
-            if (frame.can_id == 0x125 && frame.len == 8) {
-                union float_bytes expand, get;
-                for (int b = 0; b < 4; b++) {
-                    expand.bytes[b] = frame.data[b];
-                    get.bytes[b]    = frame.data[b + 4];
-                }
-                e_arm_result_.expand = expand.value;
-                e_arm_result_.get    = get.value;
-                e_arm_pub_->publish (e_arm_result_);
                 continue;
             }
 
@@ -509,11 +499,18 @@ void canable::timer_callback () {
         struct can_frame arm;
         std::memset (&arm, 0, sizeof (struct can_frame));
         arm.can_id  = 0x023 + i;
-        arm.can_dlc = 4;
+        arm.can_dlc = 8;
         union float_bytes arm_position_hand;
+        union float_bytes arm_position_e;
         arm_position_hand.value = box_arm_cmd_.hand_position[i];
+        if(i == 0) {
+            arm_position_e.value = e_arm_cmd_.expand;
+        } else {
+            arm_position_e.value = e_arm_cmd_.get;
+        }
         for (int b = 0; b < 4; b++) {
             arm.data[b] = arm_position_hand.bytes[b];
+            arm.data[b + 4] = arm_position_e.bytes[b];
         }
         if (!write (can_socket_, &arm, sizeof (struct can_frame))) {
             RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
