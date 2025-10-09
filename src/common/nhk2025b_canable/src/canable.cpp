@@ -186,7 +186,7 @@ void canable::read_can_socket () {
                 continue;
             }
 
-            if (0x124 <= frame.can_id && frame.can_id <= 0x125 && frame.len == 4) {
+            if (0x124 <= frame.can_id && frame.can_id <= 0x125 && frame.len == 8) {
                 int               id = frame.can_id - 0x124;
                 union float_bytes hand_position;
                 union float_bytes e;
@@ -195,6 +195,11 @@ void canable::read_can_socket () {
                     e.bytes[b]             = frame.data[b + 4];
                 }
                 box_arm_result_.hand_position[id] = hand_position.value;
+                if(id == 0) {
+                    e_arm_result_.expand = e.value;
+                } else {
+                    e_arm_result_.get = e.value;
+                }
                 continue;
             }
 
@@ -369,42 +374,42 @@ void canable::timer_callback () {
     }
     std::this_thread::sleep_for (std::chrono::microseconds (500));
 
-    std::array<uint8_t, max_led> leds{};
-    leds.fill (0);
+    // std::array<uint8_t, max_led> leds{};
+    // leds.fill (0);
 
-    // 正逆方向計算
-    int led_index = (led_step_ <= max_led / 2) ? led_step_ : max_led - led_step_;
-    if (led_index >= 0 && led_index < max_led) leds[led_index] = 1;
+    // // 正逆方向計算
+    // int led_index = (led_step_ <= max_led / 2) ? led_step_ : max_led - led_step_;
+    // if (led_index >= 0 && led_index < max_led) leds[led_index] = 1;
 
-    // --- 0x001: LED0〜63 ---
-    struct can_frame led_frame1{};
-    led_frame1.can_id  = 0x001;
-    led_frame1.can_dlc = 8;
-    for (int i = 0; i < 8; ++i) {      // 8バイト
-        for (int b = 0; b < 8; ++b) {  // 8ビット
-            int idx = i * 8 + b;
-            if (idx < 64 && leds[idx]) led_frame1.data[i] |= (1 << b);
-        }
-    }
-    if (write (can_socket_, &led_frame1, sizeof (led_frame1)) <= 0) {
-        RCLCPP_ERROR (this->get_logger (), "Failed to write LED frame 0x001");
-    }
-    std::this_thread::sleep_for (std::chrono::microseconds (500));
+    // // --- 0x001: LED0〜63 ---
+    // struct can_frame led_frame1{};
+    // led_frame1.can_id  = 0x001;
+    // led_frame1.can_dlc = 8;
+    // for (int i = 0; i < 8; ++i) {      // 8バイト
+    //     for (int b = 0; b < 8; ++b) {  // 8ビット
+    //         int idx = i * 8 + b;
+    //         if (idx < 64 && leds[idx]) led_frame1.data[i] |= (1 << b);
+    //     }
+    // }
+    // if (write (can_socket_, &led_frame1, sizeof (led_frame1)) <= 0) {
+    //     RCLCPP_ERROR (this->get_logger (), "Failed to write LED frame 0x001");
+    // }
+    // std::this_thread::sleep_for (std::chrono::microseconds (500));
 
-    // --- 0x002: LED64〜109 ---
-    struct can_frame led_frame2{};
-    led_frame2.can_id  = 0x002;
-    led_frame2.can_dlc = 8;
-    for (int i = 0; i < 8; ++i) {      // 8バイト
-        for (int b = 0; b < 8; ++b) {  // 8ビット
-            int idx = 64 + i * 8 + b;
-            if (idx < max_led && leds[idx]) led_frame2.data[i] |= (1 << b);
-        }
-    }
-    if (write (can_socket_, &led_frame2, sizeof (led_frame2)) <= 0) {
-        RCLCPP_ERROR (this->get_logger (), "Failed to write LED frame 0x002");
-    }
-    std::this_thread::sleep_for (std::chrono::microseconds (500));
+    // // --- 0x002: LED64〜109 ---
+    // struct can_frame led_frame2{};
+    // led_frame2.can_id  = 0x002;
+    // led_frame2.can_dlc = 8;
+    // for (int i = 0; i < 8; ++i) {      // 8バイト
+    //     for (int b = 0; b < 8; ++b) {  // 8ビット
+    //         int idx = 64 + i * 8 + b;
+    //         if (idx < max_led && leds[idx]) led_frame2.data[i] |= (1 << b);
+    //     }
+    // }
+    // if (write (can_socket_, &led_frame2, sizeof (led_frame2)) <= 0) {
+    //     RCLCPP_ERROR (this->get_logger (), "Failed to write LED frame 0x002");
+    // }
+    // std::this_thread::sleep_for (std::chrono::microseconds (500));
 
     // 次のステップ
     led_step_ = (led_step_ + 1) % (max_led + 1);
@@ -517,22 +522,6 @@ void canable::timer_callback () {
         }
         std::this_thread::sleep_for (std::chrono::microseconds (500));
     }
-
-    struct can_frame e_arm;
-    std::memset (&e_arm, 0, sizeof (struct can_frame));
-    e_arm.can_id  = 0x025;
-    e_arm.can_dlc = 8;
-    union float_bytes e_arm_expand, e_arm_get;
-    e_arm_expand.value = e_arm_cmd_.expand;
-    e_arm_get.value    = e_arm_cmd_.get;
-    for (int b = 0; b < 4; b++) {
-        e_arm.data[b]     = e_arm_expand.bytes[b];
-        e_arm.data[b + 4] = e_arm_get.bytes[b];
-    }
-    if (!write (can_socket_, &e_arm, sizeof (struct can_frame))) {
-        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
-    }
-    std::this_thread::sleep_for (std::chrono::microseconds (500));
 }
 
 }  // namespace canable

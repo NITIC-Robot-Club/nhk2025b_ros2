@@ -32,7 +32,6 @@ stateDiagram-v2
     pylon_0_box_arm_hand   : set_box_arm_hand(right = 0.0, left = 0.0)
 
 #    start_position_1       --> pylon_0_position_get
-#    start_position_1       --> pylon_12_position_out
     
     pylon_0_position_get   --> pylon_0_position_drop
     pylon_0_position_drop  --> pylon_0_position_out_0
@@ -114,13 +113,13 @@ stateDiagram-v2
 
 
     e_12_pylon_height_hold : E12 保持完了
-    e_12_pylon_height_hold : set_pylon_arm_height(right = 0.115, left = 0.115)
+    e_12_pylon_height_hold : set_pylon_arm_height(right = 0.1, left = 0.1)
     e_12_pylon_expand_hold : set_pylon_arm_expand(right = 0, left = 0)
     e_12_pylon_rpm_hold    : set_pylon_arm_rpm(right = 0, left = 0)
     e_12_conveyor_hold     : set_conveyor_rpm(right = 0, left = 0)
     e_12_position_hold     : set_position(9.2, 3.5, 90.0)
 
-#    e_12_pylon_expand_get  --> e_12_pylon_height_hold : check_box_arm()
+#    e_12_pylon_expand_get  --> e_12_pylon_height_hold : check_pylon_arm()
 
     e_12_pylon_height_hold --> e_12_pylon_expand_hold
     e_12_pylon_expand_hold --> e_12_pylon_rpm_hold
