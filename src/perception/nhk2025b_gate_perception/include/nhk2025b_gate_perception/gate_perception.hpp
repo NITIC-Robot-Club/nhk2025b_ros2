@@ -14,6 +14,7 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <std_msgs/msg/bool.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <tf2/utils.h>
 
@@ -47,8 +48,8 @@ class gate_perception : public rclcpp::Node {
     int                                                              iter;
     double                                                           detection_width, detection_length;
 
-    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr debug_left_detection_area_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr debug_right_detection_area_;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr debug_left_detection_area_;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr debug_right_detection_area_;
 
     void                               pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void                               lidar_callback (const sensor_msgs::msg::PointCloud2::SharedPtr msg);
@@ -57,17 +58,18 @@ class gate_perception : public rclcpp::Node {
     sensor_msgs::msg::PointCloud2      point_cloud;
     bool                               is_red_;
     double                             min_x, max_x, min_y, max_y;
+    int                                detection_count_ = 0;
     std::vector<Point>                 cloud_to_points (const sensor_msgs::msg::PointCloud2 &cloud);
     std::tuple<double, double, double> ransac (const std::vector<Point> &points, std::vector<Point> &inliers_out);
     Line                               ransac_line (const std::vector<Point> &points, std::vector<Point> &inliers_out);
     Point                              line_intersection (const Line &l1, const Line &l2);
     double                             point_line_distance (const Point &pt, double a, double b, double c);
-    gate_perception::Point             compute_midpoint (const std::vector<Point> &intersections);
+    Point             compute_midpoint (const std::vector<Point> &intersections);
     std::vector<Point>                 filtering_points (const std::vector<Point> &data, const std::vector<Point> &polygon);
     bool                               isInsidePolygon (const Point &pt, const std::vector<Point> &polygon);
     std::vector<Point>                 get_robot_backward_area (const geometry_msgs::msg::PoseStamped &pose, double width, double length);
     std::vector<Point>                 get_rear_side_detection_area (const geometry_msgs::msg::PoseStamped &pose, double width, double length, bool right_side);
-    std::vector<Point>                 remove_inliers_points (const std::vector<Point> &points, const std::vector<Point> &inliers);
+    Point             closest_endpoint_to_robot (const geometry_msgs::msg::PoseStamped &robot_pose, const Line &line);
 };
 }  // namespace gate_perception
 

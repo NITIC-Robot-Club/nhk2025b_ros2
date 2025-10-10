@@ -6,82 +6,142 @@
 namespace gate_perception {
 
 gate_perception::gate_perception (const rclcpp::NodeOptions &options) : Node ("gate_perception", options) {
-    gate_pose_publisher_       = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/gate_pose", 1);
-    debug_left_detection_area_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/debug/left_detection_area", 1);
-    debug_right_detection_area_ = this->create_publisher<geometry_msgs::msg::PoseArray> ("/debug/right_detection_area", 1);
-    gate_placement_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/gate_placement_pose", 1, std::bind (&gate_perception::pose_callback, this, std::placeholders::_1));
-    lidar_subscriber_          = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&gate_perception::lidar_callback, this, std::placeholders::_1));
-    is_red_subscriber_         = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&gate_perception::is_red_callback, this, std::placeholders::_1));
-    tf_buffer_                 = std::make_unique<tf2_ros::Buffer> (this->get_clock ());
-    tf_listener_               = std::make_shared<tf2_ros::TransformListener> (*tf_buffer_);
-    iter                       = this->declare_parameter<int> ("iter", 500);
-    distance_threshold         = this->declare_parameter<double> ("distance_threshold", 0.025);
-    detection_width            = this->declare_parameter<double> ("detection_width", 2.3);
-    detection_length           = this->declare_parameter<double> ("detection_length", 0.7);
+    gate_pose_publisher_        = this->create_publisher<geometry_msgs::msg::PoseArray> ("/perception/gate_pose", 1);
+    debug_left_detection_area_  = this->create_publisher<visualization_msgs::msg::Marker> ("/debug/left_detection_area", 1);
+    debug_right_detection_area_ = this->create_publisher<visualization_msgs::msg::Marker> ("/debug/right_detection_area", 1);
+    gate_placement_subscriber_  = this->create_subscription<geometry_msgs::msg::PoseStamped> ("/behavior/gate_placement_pose", 1, std::bind (&gate_perception::pose_callback, this, std::placeholders::_1));
+    lidar_subscriber_           = this->create_subscription<sensor_msgs::msg::PointCloud2> ("/sensor/lidar", 1, std::bind (&gate_perception::lidar_callback, this, std::placeholders::_1));
+    is_red_subscriber_          = this->create_subscription<std_msgs::msg::Bool> ("/is_red", 1, std::bind (&gate_perception::is_red_callback, this, std::placeholders::_1));
+    tf_buffer_                  = std::make_unique<tf2_ros::Buffer> (this->get_clock ());
+    tf_listener_                = std::make_shared<tf2_ros::TransformListener> (*tf_buffer_);
+    iter                        = this->declare_parameter<int> ("iter", 500);
+    distance_threshold          = this->declare_parameter<double> ("distance_threshold", 0.025);
+    detection_width             = this->declare_parameter<double> ("detection_width", 2.8);
+    detection_length            = this->declare_parameter<double> ("detection_length", 1.0);
 }
 
 void gate_perception::pose_callback (const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+    detection_count_++;
+    RCLCPP_INFO (this->get_logger (), "detection count: %d", detection_count_);
     // 手順1　点群フィルタリング
-    std::vector<Point> inliers, rest_points_;
-    gate_placement_pose_                      = *msg;
-    std::vector<Point> points                 = cloud_to_points (point_cloud);
-    std::vector<Point> detection_areas_       = get_robot_backward_area (gate_placement_pose_, detection_width, detection_length);
-    std::vector<Point> filtered_points        = filtering_points (points, detection_areas_);
-    std::vector<Point> left_detection_areas_  = get_rear_side_detection_area (gate_placement_pose_, detection_width, detection_length, false);
+    gate_placement_pose_                     = *msg;
+    std::vector<Point> points                = cloud_to_points (point_cloud);
+    std::vector<Point> detection_areas_      = get_robot_backward_area (gate_placement_pose_, detection_width, detection_length);
+    std::vector<Point> filtered_points       = filtering_points (points, detection_areas_);
+    std::vector<Point> left_detection_areas_ = get_rear_side_detection_area (gate_placement_pose_, detection_width, detection_length, false);
+    RCLCPP_INFO (
+        this->get_logger (), "left detection area corner: (%lf, %lf), (%lf, %lf), (%lf, %lf), (%lf, %lf)", left_detection_areas_[0].first, left_detection_areas_[0].second, left_detection_areas_[1].first, left_detection_areas_[1].second,
+        left_detection_areas_[2].first, left_detection_areas_[2].second, left_detection_areas_[3].first, left_detection_areas_[3].second);
     std::vector<Point> right_detection_areas_ = get_rear_side_detection_area (gate_placement_pose_, detection_width, detection_length, true);
-    std::vector<Point> left_points            = filtering_points (filtered_points, left_detection_areas_);
-    std::vector<Point> right_points           = filtering_points (filtered_points, right_detection_areas_);
+    RCLCPP_INFO (
+        this->get_logger (), "right detection area corner: (%lf, %lf), (%lf, %lf), (%lf, %lf), (%lf, %lf)", right_detection_areas_[0].first, right_detection_areas_[0].second, right_detection_areas_[1].first, right_detection_areas_[1].second,
+        right_detection_areas_[2].first, right_detection_areas_[2].second, right_detection_areas_[3].first, right_detection_areas_[3].second);
+    std::vector<Point> left_points  = filtering_points (filtered_points, left_detection_areas_);
+    std::vector<Point> right_points = filtering_points (filtered_points, right_detection_areas_);
     RCLCPP_INFO (this->get_logger (), "filtered points size: %lu", filtered_points.size ());
-    geometry_msgs::msg::PoseArray debug_left_area, debug_right_area;
+    visualization_msgs::msg::Marker area;
+    area.header.frame_id    = "map";
+    area.header.stamp       = this->now ();
+    area.type               = visualization_msgs::msg::Marker::LINE_STRIP;
+    area.action             = visualization_msgs::msg::Marker::ADD;
+    area.scale.x            = 0.005;
+    area.color.g            = 1.0;
+    area.color.a            = 1.0;
+    area.pose.orientation.w = 1.0;
     for (const auto &p : left_detection_areas_) {
-        geometry_msgs::msg::Pose pose;
-        pose.position.x  = p.first;
-        pose.position.y  = p.second;
-        pose.position.z  = 0.0;
-        pose.orientation = gate_placement_pose_.pose.orientation;
-        debug_left_area.poses.push_back (pose);
+        geometry_msgs::msg::Point pt;
+        pt.x = p.first;
+        pt.y = p.second;
+        pt.z = 0.0;
+        area.points.push_back (pt);
     }
-    debug_left_detection_area_->publish (debug_left_area);
+    geometry_msgs::msg::Point pt;
+    pt.x = left_detection_areas_[0].first;
+    pt.y = left_detection_areas_[0].second;
+    pt.z = 0.0;
+    area.points.push_back (pt);
+    debug_left_detection_area_->publish (area);
+    area.points.clear ();
     for (const auto &p : right_detection_areas_) {
-        geometry_msgs::msg::Pose pose;
-        pose.position.x  = p.first;
-        pose.position.y  = p.second;
-        pose.position.z  = 0.0;
-        pose.orientation = gate_placement_pose_.pose.orientation;
-        debug_right_area.poses.push_back (pose);
+        geometry_msgs::msg::Point pt;
+        pt.x = p.first;
+        pt.y = p.second;
+        pt.z = 0.0;
+        area.points.push_back (pt);
     }
-    debug_right_detection_area_->publish (debug_right_area);
+    pt.x = right_detection_areas_[0].first;
+    pt.y = right_detection_areas_[0].second;
+    pt.z = 0.0;
+    area.points.push_back (pt);
+    debug_right_detection_area_->publish (area);
 
     // 手順2 RANSACで直線検出1
-    Line best_line1 = {0, 0, 0}, second_line1 = {0, 0, 0};
-    best_line1   = ransac_line (left_points, inliers);
-    rest_points_ = remove_inliers_points (left_points, inliers);
-    second_line1 = ransac_line (rest_points_, inliers);
-    rest_points_.clear ();
+    std::vector<Point> inliers1, inliers2;
+    Point              line_intersection1;
+    Line               best_line1 = {0, 0, 0}, second_line1 = {0, 0, 0};
+    best_line1 = ransac_line (left_points, inliers1);
+    std::vector<Point> remaining1;
+    for (const auto &pt : points) {
+        if (std::find (inliers1.begin (), inliers1.end (), pt) == inliers1.end ()) {
+            remaining1.push_back (pt);
+        }
+    }
+    second_line1 = ransac_line (remaining1, inliers2);
+    if (second_line1.a == 0 && second_line1.b == 0 && second_line1.c == 0) {
+        if (inliers2.empty ()) {
+            line_intersection1 = closest_endpoint_to_robot (gate_placement_pose_, best_line1);
+        }
+    } else {
+        line_intersection1 = line_intersection (best_line1, second_line1);
+    }
+    RCLCPP_INFO (this->get_logger (), "line intersection1: (%f, %f)", line_intersection1.first, line_intersection1.second);
 
     // 手順3 RANSACで直線検出2
-    Line best_line2 = {0, 0, 0}, second_line2 = {0, 0, 0};
-    best_line2   = ransac_line (right_points, inliers);
-    rest_points_ = remove_inliers_points (right_points, inliers);
-    second_line2 = ransac_line (rest_points_, inliers);
-    rest_points_.clear ();
+    std::vector<Point> inliers3, inliers4;
+    Point              line_intersection2;
+    Line               best_line2 = {0, 0, 0}, second_line2 = {0, 0, 0};
+    best_line2 = ransac_line (left_points, inliers3);
+    std::vector<Point> remaining2;
+    for (const auto &pt : points) {
+        if (std::find (inliers1.begin (), inliers1.end (), pt) == inliers1.end ()) {
+            remaining2.push_back (pt);
+        }
+    }
+    second_line2 = ransac_line (remaining2, inliers4);
+    if (second_line2.a == 0 && second_line2.b == 0 && second_line2.c == 0) {
+        if (inliers2.empty ()) {
+            line_intersection1 = closest_endpoint_to_robot (gate_placement_pose_, best_line2);
+        }
+    } else {
+        line_intersection1 = line_intersection (best_line2, second_line2);
+    }
+    RCLCPP_INFO (this->get_logger (), "line intersection1: (%f, %f)", line_intersection1.first, line_intersection1.second);
 
     // 手順4 各交点を算出
-    Point line_intersection1 = line_intersection (best_line1, second_line1);
-    RCLCPP_INFO (this->get_logger (), "line intersection1: (%f, %f)", line_intersection1.first, line_intersection1.second);
-    Point line_intersection2 = line_intersection (best_line2, second_line2);
-    RCLCPP_INFO (this->get_logger (), "line intersection2: (%f, %f)", line_intersection2.first, line_intersection2.second);
+    // Point line_intersection1 = line_intersection (best_line1, second_line1);
+    // RCLCPP_INFO (this->get_logger (), "line intersection1: (%f, %f)", line_intersection1.first, line_intersection1.second);
+    // Point line_intersection2 = line_intersection (best_line2, second_line2);
+    // RCLCPP_INFO (this->get_logger (), "line intersection2: (%f, %f)", line_intersection2.first, line_intersection2.second);
 
     // 手順5 交点同士の中点をとり、poseを生成
     Point                         midpoint = compute_midpoint ({line_intersection1, line_intersection2});
     geometry_msgs::msg::PoseArray gate_detection_pose_array;
     geometry_msgs::msg::Pose      pose;
-    pose.position.x  = midpoint.first;
-    pose.position.y  = midpoint.second;
-    pose.position.z  = 0.0;
-    pose.orientation = gate_placement_pose_.pose.orientation;
+    pose.position.x = midpoint.first;
+    pose.position.y = midpoint.second;
+    pose.position.z = 0.0;
+    if (detection_count_ >= 2) {
+        double yaw = tf2::getYaw (gate_placement_pose_.pose.orientation) + M_PI;
+        yaw        = std::atan2 (std::sin (yaw), std::cos (yaw));
+        tf2::Quaternion q;
+        q.setRPY (0.0, 0.0, yaw);
+        pose.orientation = tf2::toMsg (q);
+    } else {
+        pose.orientation = gate_placement_pose_.pose.orientation;
+    }
     gate_detection_pose_array.poses.push_back (pose);
     gate_pose_publisher_->publish (gate_detection_pose_array);
+    RCLCPP_INFO (this->get_logger (), "gate detection pose: (%f, %f)", pose.position.x, pose.position.y);
 }
 
 void gate_perception::lidar_callback (const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
@@ -119,10 +179,8 @@ bool gate_perception::isInsidePolygon (const Point &pt, const std::vector<Point>
 std::vector<gate_perception::Point> gate_perception::filtering_points (const std::vector<gate_perception::Point> &data, const std::vector<Point> &polygon) {
     std::vector<Point> filtered;
     for (const auto &p : data) {
-        if (!isInsidePolygon (p, polygon)) {
-            if (p.first >= min_x && p.first <= max_x && p.second >= min_y && p.second <= max_y) {
-                filtered.push_back (p);
-            }
+        if (isInsidePolygon (p, polygon)) {
+            filtered.push_back (p);
         }
     }
     return filtered;
@@ -280,27 +338,14 @@ std::vector<gate_perception::Point> gate_perception::get_rear_side_detection_are
     return c;
 }
 
-std::vector<gate_perception::Point> gate_perception::remove_inliers_points (const std::vector<Point> &points, const std::vector<Point> &inliers) {
-    std::vector<Point> result;
-    result.reserve (points.size ());
-    const double epsilon = 1e-6;
-    for (const auto &p : points) {
-        bool is_inlier = false;
-        for (const auto &in : inliers) {
-            double dx    = p.first - in.first;
-            double dy    = p.second - in.second;
-            double dist2 = dx * dx + dy * dy;
-            if (dist2 < epsilon * epsilon) {
-                is_inlier = true;
-                break;
-            }
-        }
-        if (!is_inlier) {
-            result.push_back (p);
-        }
-    }
-    return result;
+gate_perception::Point gate_perception::closest_endpoint_to_robot (const geometry_msgs::msg::PoseStamped &robot_pose, const Line &line) {
+    double rx         = robot_pose.pose.position.x;
+    double ry         = robot_pose.pose.position.y;
+    double dist_start = std::hypot (line.start.first - rx, line.start.second - ry);
+    double dist_end   = std::hypot (line.end.first - rx, line.end.second - ry);
+    return (dist_start < dist_end) ? line.start : line.end;
 }
+
 }  // namespace gate_perception
 
 #include <rclcpp_components/register_node_macro.hpp>
