@@ -89,11 +89,14 @@ class canable : public rclcpp::Node {
     int  robomas_current_[2]      = {0};
     bool robomas_current_flag_[2] = {false};
 
-    bool is_red_   = false;
-    int  led_step_ = 0;
-    static const int  max_led   = 110;
-
-    std::mutex data_mutex_;
+    bool             is_red_           = false;
+    static const int max_led           = 115;
+    static const int led_move_length   = 4;  // 各塊のLED数
+    static const int led_move_count    = 4;  // 同時に進む塊の数
+    int              led_step_         = 0;
+    int              led_speed_div     = 3;  // 値を大きくすると遅くなる
+    int              led_speed_counter = 0;
+    std::mutex       data_mutex_;
 
     int  id_list[17] = {0x100, 0x101, 0x110, 0x111, 0x112, 0x113, 0x114, 0x115, 0x116, 0x117, 0x118, 0x120, 0x121, 0x122, 0x123, 0x124, 0x125};
     bool id_flag[17] = {false};

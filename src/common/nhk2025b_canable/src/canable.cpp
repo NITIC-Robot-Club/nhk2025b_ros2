@@ -373,18 +373,30 @@ void canable::timer_callback () {
     power_receive.data.sig    = command_.signal;
     power_receive.data.is_red = is_red_;
     power.data[0]             = power_receive.raw;
-    power.data[1]             = 128;
+    power.data[1]             = 64;
     if (!write (can_socket_, &power, sizeof (struct can_frame))) {
-        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN power 0x000");
     }
     std::this_thread::sleep_for (std::chrono::microseconds (500));
 
     std::array<uint8_t, max_led> leds{};
     leds.fill (0);
 
-    // 正逆方向計算
-    int led_index = (led_step_ <= max_led / 2) ? led_step_ : max_led - led_step_;
-    if (led_index >= 0 && led_index < max_led) leds[led_index] = 1;
+    // --- LED進行計算 ---
+    for (int i = 0; i < led_move_count; ++i) {
+        int offset = (max_led / led_move_count) * i;
+        int pos    = (led_step_ + offset) % max_led;
+
+        for (int j = 0; j < led_move_length; ++j) {
+            int idx = pos + j;
+            if (idx < max_led) leds[idx] = 1;
+        }
+    }
+
+    if (++led_speed_counter >= led_speed_div) {
+        led_speed_counter = 0;
+        led_step_         = (led_step_ + 1) % max_led;
+    }
 
     // --- 0x001: LED0〜63 ---
     struct can_frame led_frame1{};
@@ -397,7 +409,7 @@ void canable::timer_callback () {
         }
     }
     if (write (can_socket_, &led_frame1, sizeof (led_frame1)) <= 0) {
-        RCLCPP_ERROR (this->get_logger (), "Failed to write LED frame 0x001");
+        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN led 1 0x001");
     }
     std::this_thread::sleep_for (std::chrono::microseconds (500));
 
@@ -412,12 +424,11 @@ void canable::timer_callback () {
         }
     }
     if (write (can_socket_, &led_frame2, sizeof (led_frame2)) <= 0) {
-        RCLCPP_ERROR (this->get_logger (), "Failed to write LED frame 0x002");
+        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN led 2 0x002");
     }
     std::this_thread::sleep_for (std::chrono::microseconds (500));
 
     // 次のステップ
-    led_step_ = (led_step_ + 1) % (max_led + 1);
 
     struct can_frame claw_frame;
     std::memset (&claw_frame, 0, sizeof (struct can_frame));
@@ -425,7 +436,7 @@ void canable::timer_callback () {
     claw_frame.can_dlc = 1;
     claw_frame.data[0] = claw_receive.raw;
     if (!write (can_socket_, &claw_frame, sizeof (struct can_frame))) {
-        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN claw 0x010");
     }
     std::this_thread::sleep_for (std::chrono::microseconds (500));
 
@@ -435,7 +446,7 @@ void canable::timer_callback () {
     wing_frame.can_dlc = 1;
     wing_frame.data[0] = wing_receive.raw;
     if (!write (can_socket_, &wing_frame, sizeof (struct can_frame))) {
-        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+        RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN wing 0x020");
     }
     std::this_thread::sleep_for (std::chrono::microseconds (500));
 
@@ -452,7 +463,7 @@ void canable::timer_callback () {
             swerve.data[b + 4] = swerve_speed.bytes[b];
         }
         if (!write (can_socket_, &swerve, sizeof (struct can_frame))) {
-            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN swerve %d 0x%03X", i + 1, swerve.can_id);
         }
         std::this_thread::sleep_for (std::chrono::microseconds (500));
     }
@@ -470,7 +481,7 @@ void canable::timer_callback () {
             pylon.data[b + 4] = pylon_expand.bytes[b];
         }
         if (!write (can_socket_, &pylon, sizeof (struct can_frame))) {
-            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN pylon %d 0x%03X", i + 1, pylon.can_id);
         }
         std::this_thread::sleep_for (std::chrono::microseconds (500));
 
@@ -486,7 +497,7 @@ void canable::timer_callback () {
             pylon_conveyor.data[b + 4] = conveyor_speed.bytes[b];
         }
         if (!write (can_socket_, &pylon_conveyor, sizeof (struct can_frame))) {
-            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN pylon conveyor %d 0x%03X", i + 1, pylon_conveyor.can_id);
         }
         std::this_thread::sleep_for (std::chrono::microseconds (500));
 
@@ -502,7 +513,7 @@ void canable::timer_callback () {
             box_arm.data[b + 4] = box_arm_expand.bytes[b];
         }
         if (!write (can_socket_, &box_arm, sizeof (struct can_frame))) {
-            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN box arm %d 0x%03X", i + 1, box_arm.can_id);
         }
         std::this_thread::sleep_for (std::chrono::microseconds (500));
 
@@ -516,7 +527,7 @@ void canable::timer_callback () {
             arm.data[b] = arm_position_hand.bytes[b];
         }
         if (!write (can_socket_, &arm, sizeof (struct can_frame))) {
-            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN socket");
+            RCLCPP_ERROR (this->get_logger (), "Failed to write to CAN arm %d 0x%03X", i + 1, arm.can_id);
         }
         std::this_thread::sleep_for (std::chrono::microseconds (500));
     }
