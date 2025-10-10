@@ -52,7 +52,8 @@ void path_planner::timer_callback () {
     //     delta_yaw -= 2 * M_PI;
     // else if (delta_yaw < -M_PI)
     //     delta_yaw += 2 * M_PI;
-    send_path.header.stamp = this->now ();
+    send_path.header.frame_id = "map";
+    send_path.header.stamp    = this->now ();
     path_publisher->publish (send_path);
 }
 
@@ -68,15 +69,15 @@ void path_planner::create_path () {
     if (original_map.header.stamp.sec == 0) return;
     if (current_pose.header.stamp.sec == 0) return;
     if (goal_pose_array.header.stamp.sec == 0) return;
-    RCLCPP_INFO (this->get_logger (), "create path");
 
     geometry_msgs::msg::PoseArray    use_goal_array   = goal_pose_array;
     geometry_msgs::msg::PoseStamped  use_current      = current_pose;
     nav_msgs::msg::OccupancyGrid     use_occ_map      = occ_map;
     std::vector<std::vector<int8_t>> use_inflated_map = inflated_map;
 
-    nav_msgs::msg::Path path;
-    path.header.frame_id = "map";
+    std::set<int> fixed_index;
+
+    nav_msgs::msg::Path linear_path;
 
     geometry_msgs::msg::PoseStamped unit_goal;
     geometry_msgs::msg::PoseStamped unit_start;
@@ -85,23 +86,27 @@ void path_planner::create_path () {
         if (i != 0) {
             unit_start.pose = unit_goal.pose;
         }
-        unit_goal.pose = use_goal_array.poses[i];
-        nav_msgs::msg::Path unit_path;
-        nav_msgs::msg::Path linear_path   = linear_astar (unit_start, unit_goal, use_inflated_map);
-        nav_msgs::msg::Path smoothed_path = path_smoother (linear_path, use_occ_map);
-        angular_astar (unit_path, smoothed_path, unit_start, unit_goal, use_inflated_map);
-        if (unit_path.poses.size () == 0) {
+        unit_goal.pose                       = use_goal_array.poses[i];
+        nav_msgs::msg::Path unit_linear_path = linear_astar (unit_start, unit_goal, use_inflated_map);
+        // nav_msgs::msg::Path smoothed_path = path_smoother (linear_path, use_occ_map);
+        // angular_astar (unit_path, smoothed_path, unit_start, unit_goal, use_inflated_map);
+        if (unit_linear_path.poses.size () == 0) {
             RCLCPP_WARN (this->get_logger (), "path not found");
             return;
         }
-        if (i == 0) {
-            path.poses = unit_path.poses;
-            continue;
-        }
-        path.poses.insert (path.poses.end (), unit_path.poses.begin (), unit_path.poses.end ());
+        linear_path.poses.insert (linear_path.poses.end (), unit_linear_path.poses.begin (), unit_linear_path.poses.end ());
+        linear_path.poses[linear_path.poses.size () - 1].pose.orientation = unit_goal.pose.orientation;
+        fixed_index.insert (linear_path.poses.size () - 1);
     }
+    nav_msgs::msg::Path smoothed_path = path_smoother (linear_path, use_occ_map, fixed_index);
+    // RCLCPP_INFO (this->get_logger (), "smoothed: %d", smoothed_path.poses.size ());
+
+    nav_msgs::msg::Path path;
+    // path = smoothed_path;
+    angular_astar (path, smoothed_path, use_current, unit_goal, use_inflated_map, fixed_index);
     // RCLCPP_INFO (this->get_logger (), "num %d, %d, %d", linear_path.poses.size (), smoothed_path.poses.size (), path.poses.size ());
-    path.header.stamp = this->now ();
+    path.header.frame_id = "map";
+    path.header.stamp    = this->now ();
     for (int i = 0; i < path.poses.size (); i++) {
         path.poses[i].header = path.header;
     }
@@ -176,7 +181,7 @@ std::pair<int, int> path_planner::to_grid (double x, double y) {
     gy     = std::clamp (gy, 0, map_height - 1);
     return {gx, gy};
 }
-nav_msgs::msg::Path path_planner::path_smoother (const nav_msgs::msg::Path &linear_path, const nav_msgs::msg::OccupancyGrid &use_occ_map) {
+nav_msgs::msg::Path path_planner::path_smoother (const nav_msgs::msg::Path &linear_path, const nav_msgs::msg::OccupancyGrid &use_occ_map, const std::set<int> &fixed_index) {
     auto get_cost = [&] (int x, int y) -> double {
         if (x < 0 || y < 0 || x >= map_width || y >= map_height) return 1.0;
         return static_cast<double> (use_occ_map.data[y * map_width + x]) / 100.0;
@@ -195,6 +200,7 @@ nav_msgs::msg::Path path_planner::path_smoother (const nav_msgs::msg::Path &line
     }
     for (int iter = 0; iter < max_iterations; ++iter) {
         for (size_t i = 1; i + 1 < path.poses.size (); ++i) {
+            if (fixed_index.count (i)) continue;
             geometry_msgs::msg::PoseStamped p_prev = path.poses[i - 1];
             geometry_msgs::msg::PoseStamped p_curr = path.poses[i];
             geometry_msgs::msg::PoseStamped p_next = path.poses[i + 1];
@@ -205,6 +211,10 @@ nav_msgs::msg::Path path_planner::path_smoother (const nav_msgs::msg::Path &line
             // 曲率項（滑らかさ） : 2nd derivative
             double smooth_x = p_curr.pose.position.x - 0.5 * (p_prev.pose.position.x + p_next.pose.position.x);
             double smooth_y = p_curr.pose.position.y - 0.5 * (p_prev.pose.position.y + p_next.pose.position.y);
+            if (i >= 2 && i + 2 < path.poses.size ()) {
+                smooth_x = p_curr.pose.position.x - 0.25 * (path.poses[i - 2].pose.position.x + path.poses[i + 2].pose.position.x + p_prev.pose.position.x + p_next.pose.position.x);
+                smooth_y = p_curr.pose.position.y - 0.25 * (path.poses[i - 2].pose.position.y + path.poses[i + 2].pose.position.y + p_prev.pose.position.y + p_next.pose.position.y);
+            }
 
             // 元のパスからの引き戻し項
             double anchor_x = p_curr.pose.position.x - linear_path.poses[i].pose.position.x;
@@ -221,7 +231,7 @@ nav_msgs::msg::Path path_planner::path_smoother (const nav_msgs::msg::Path &line
     }
     return path;
 }
-std::vector<std::pair<int, double>> path_planner::angular_smoother (std::vector<std::pair<int, double>> theta_path) {
+std::vector<std::pair<int, double>> path_planner::angular_smoother (std::vector<std::pair<int, double>> theta_path, std::set<int> fixed_index) {
     auto idx_to_rad = [&] (double idx) { return idx * 2 * M_PI / angle_cost_map[0].size (); };
 
     auto rad_to_idx = [&] (double rad) {
@@ -243,9 +253,16 @@ std::vector<std::pair<int, double>> path_planner::angular_smoother (std::vector<
         return theta_path;
     }
     for (int iter = 0; iter < max_iterations; ++iter) {
-        for (size_t i = 1; i + 1 < theta_path.size (); ++i) {
+        for (size_t i = theta_path.size () - 2; i > 0; --i) {
+            if (fixed_index.count (theta_path[i].first)) {
+                fixed_index.erase (theta_path[i].first);
+                continue;
+            }
             // 曲率項（滑らかさ）
             double mid_y    = mid_index (theta_path[i - 1].second, theta_path[i + 1].second);
+            if (i >= 2 && i + 2 < theta_path.size ()) {
+                mid_y = mid_index (mid_y, mid_index (theta_path[i - 2].second, theta_path[i + 2].second));
+            }
             double smooth_y = theta_path[i].second - mid_y;
 
             // 勾配降下による更新
@@ -328,15 +345,11 @@ nav_msgs::msg::Path path_planner::linear_astar (const geometry_msgs::msg::PoseSt
     return path;
 }
 void path_planner::angular_astar (
-    nav_msgs::msg::Path &path, const nav_msgs::msg::Path &smoothed_path, const geometry_msgs::msg::PoseStamped &use_current_pose, const geometry_msgs::msg::PoseStamped &use_goal_pose, const std::vector<std::vector<int8_t>> &use_inflated_map) {
+    nav_msgs::msg::Path &path, const nav_msgs::msg::Path &smoothed_path, const geometry_msgs::msg::PoseStamped &use_current_pose, const geometry_msgs::msg::PoseStamped &use_goal_pose, const std::vector<std::vector<int8_t>> &use_inflated_map,
+    const std::set<int> &fixed_index) {
     if (smoothed_path.poses.size () == 0) {
         return;
     }
-
-    int start_theta = rad_to_deg (get_yaw_2d (use_current_pose.pose.orientation));
-    int goal_theta  = rad_to_deg (get_yaw_2d (use_goal_pose.pose.orientation));
-    start_theta     = angle_to_index (start_theta);
-    goal_theta      = angle_to_index (goal_theta);
 
     std::priority_queue<astar_node, std::vector<astar_node>, std::greater<astar_node>> open;
     std::unordered_map<int, std::pair<int, int>>                                       came_from;
@@ -368,53 +381,77 @@ void path_planner::angular_astar (
     }
     theta_map_publisher->publish (theta_map);
 
-    auto to_index = [&] (int x, int y) { return y * angle_cost_map.size () + x; };
-    open.push ({0, start_theta, 0.0, 0.0});
-    cost_so_far[to_index (0, start_theta)] = 0.0;
+    std::vector<std::pair<int, double>> theta_path;
 
-    while (!open.empty ()) {
-        astar_node current = open.top ();
-        open.pop ();
-        if (current.x == smoothed_path.poses.size () - 1 && current.y == goal_theta) {
-            break;
+    int                      current_index = 0;
+    geometry_msgs::msg::Pose current_pose  = use_current_pose.pose;
+    geometry_msgs::msg::Pose goal_pose;
+    for (int goal_index : fixed_index) {
+        if (current_index != 0) {
+            current_pose = goal_pose;
         }
-        for (auto dx : {0, 1}) {
-            for (auto dth : rotations) {
-                if (dx == 0 && dth == 0) continue;
-                int next_x = current.x + dx, next_theta = current.y + dth;
-                if (next_x >= smoothed_path.poses.size ()) continue;
-                if (next_theta < 0) {
-                    next_theta += angle_cost_map[0].size ();
-                } else if (next_theta >= angle_cost_map[0].size ()) {
-                    next_theta -= angle_cost_map[0].size ();
-                }
-                if (angle_cost_map[next_x][next_theta] > 50) continue;
+        goal_pose = smoothed_path.poses[goal_index].pose;
 
-                double new_cost = cost_so_far[to_index (current.x, current.y)] + theta_heuristic (dx, dth);
-                if (!cost_so_far.count (to_index (next_x, next_theta)) || new_cost < cost_so_far[to_index (next_x, next_theta)]) {
-                    cost_so_far[to_index (next_x, next_theta)] = new_cost;
+        int start_theta = rad_to_deg (get_yaw_2d (use_current_pose.pose.orientation));
+        int goal_theta  = rad_to_deg (get_yaw_2d (goal_pose.orientation));
+        start_theta     = angle_to_index (start_theta);
+        goal_theta      = angle_to_index (goal_theta);
 
-                    double priority = new_cost + theta_heuristic (angle_cost_map.size () - 1 - next_x, goal_theta - next_theta);
-                    open.push ({next_x, next_theta, new_cost, priority});
-                    came_from[to_index (next_x, next_theta)] = {current.x, current.y};
+        auto to_index = [&] (int x, int y) { return y * angle_cost_map.size () + x; };
+        open.push ({current_index, start_theta, 0.0, 0.0});
+        cost_so_far[to_index (current_index, start_theta)] = 0.0;
+
+        while (!open.empty ()) {
+            astar_node current = open.top ();
+            open.pop ();
+            if (current.x == goal_index && current.y == goal_theta) {
+                break;
+            }
+            for (auto dx : {0, 1}) {
+                for (auto dth : rotations) {
+                    if (dx == 0 && dth == 0) continue;
+                    int next_x = current.x + dx, next_theta = current.y + dth;
+                    if (next_x > goal_index) continue;
+                    if (next_theta < 0) {
+                        next_theta += angle_cost_map[0].size ();
+                    } else if (next_theta >= angle_cost_map[0].size ()) {
+                        next_theta -= angle_cost_map[0].size ();
+                    }
+                    if (angle_cost_map[next_x][next_theta] > 50) continue;
+
+                    double new_cost = cost_so_far[to_index (current.x, current.y)] + theta_heuristic (dx, dth);
+                    if (!cost_so_far.count (to_index (next_x, next_theta)) || new_cost < cost_so_far[to_index (next_x, next_theta)]) {
+                        cost_so_far[to_index (next_x, next_theta)] = new_cost;
+
+                        double priority = new_cost + theta_heuristic (angle_cost_map.size () - 1 - next_x, goal_theta - next_theta);
+                        open.push ({next_x, next_theta, new_cost, priority});
+                        came_from[to_index (next_x, next_theta)] = {current.x, current.y};
+                    }
                 }
             }
         }
-    }
-    std::vector<std::pair<int, double>> theta_path;
-    auto                                curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
-    while (curr.first != 0 || curr.second != start_theta) {
-        theta_path.push_back (std::make_pair (curr.first, curr.second));
-        int idx = to_index (curr.first, curr.second);
-        if (!came_from.count (idx)) {
-            path.poses.clear ();
-            return;
+        std::vector<std::pair<int, double>> unit_theta_path;
+
+        auto curr = std::make_pair (goal_index, goal_theta);
+        while (curr.first != current_index || curr.second != start_theta) {
+            unit_theta_path.push_back (std::make_pair (curr.first, curr.second));
+            int idx = to_index (curr.first, curr.second);
+            if (!came_from.count (idx)) {
+                path.poses.clear ();
+                return;
+            }
+            curr = came_from[idx];
         }
-        curr = came_from[idx];
+        if (current_index == 0) unit_theta_path.push_back (std::make_pair (current_index, start_theta));
+        std::reverse (unit_theta_path.begin (), unit_theta_path.end ());
+
+        theta_path.insert (theta_path.end (), unit_theta_path.begin (), unit_theta_path.end ());
+
+        current_index = goal_index;
     }
-    theta_path.push_back (std::make_pair (0, start_theta));
-    std::reverse (theta_path.begin (), theta_path.end ());
-    theta_path = angular_smoother (theta_path);
+
+    // RCLCPP_INFO (this->get_logger (), "theta_path size: %d", theta_path.size ());
+    theta_path = angular_smoother (theta_path, fixed_index);
     for (int i = 0; i < theta_path.size (); i++) {
         geometry_msgs::msg::PoseStamped pose;
         int                             index = theta_path[i].first;

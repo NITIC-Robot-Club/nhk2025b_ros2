@@ -70,12 +70,12 @@ class path_planner : public rclcpp::Node {
     void   unit_path (nav_msgs::msg::Path& path, const geometry_msgs::msg::PoseStamped& use_start_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose);
     double theta_heuristic (int dx, int theta);
     void   angular_astar (
-          nav_msgs::msg::Path& path, const nav_msgs::msg::Path& smoothed_path, const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
+          nav_msgs::msg::Path& path, const nav_msgs::msg::Path& smoothed_path, const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map, const std::set<int>& fixed_index);
 
     nav_msgs::msg::Path linear_astar (const geometry_msgs::msg::PoseStamped& use_current_pose, const geometry_msgs::msg::PoseStamped& use_goal_pose, const std::vector<std::vector<int8_t>>& use_inflated_map);
-    nav_msgs::msg::Path path_smoother (const nav_msgs::msg::Path& linear_path, const nav_msgs::msg::OccupancyGrid& use_occ_map);
+    nav_msgs::msg::Path path_smoother (const nav_msgs::msg::Path& linear_path, const nav_msgs::msg::OccupancyGrid& use_occ_map, const std::set<int>& fixed_index);
 
-    std::vector<std::pair<int, double>> angular_smoother (std::vector<std::pair<int, double>> theta_path);
+    std::vector<std::pair<int, double>> angular_smoother (std::vector<std::pair<int, double>> theta_path, std::set<int> fixed_index);
     std::pair<int, int>                 to_grid (double x, double y);
 
     double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
