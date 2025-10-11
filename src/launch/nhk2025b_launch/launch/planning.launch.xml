@@ -7,9 +7,5 @@
     <composable_node pkg="nhk2025b_pure_pursuit" plugin="pure_pursuit::pure_pursuit" name="pure_pursuit">
       <param from="$(find-pkg-share nhk2025b_launch)/param/control.yaml"/>
     </composable_node>
-    <composable_node pkg="nhk2025b_velocity_smoother" plugin="velocity_smoother::velocity_smoother" name="velocity_smoother">
-      <param from="$(find-pkg-share nhk2025b_launch)/param/control.yaml"/>
-      <param name="allow_automate_always" value="true"/>
-    </composable_node>
   </node_container>
 </launch>

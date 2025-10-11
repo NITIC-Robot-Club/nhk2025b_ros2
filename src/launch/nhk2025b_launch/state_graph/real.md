@@ -13,13 +13,13 @@ stateDiagram-v2
 
 #    [*]                  --> start_get_box
 
-    start_get_box        --> start_position_0
-    start_position_0     --> start_pylon_height
+    start_get_box        --> start_pylon_height
     start_pylon_height   --> start_pylon_expand
     start_pylon_expand   --> start_box_arm_height
     start_box_arm_height --> start_box_arm_expand
     start_box_arm_expand --> start_e_arm
-    start_e_arm          --> start_position_1 : check_pylon_arm() and check_e_arm() and check_box_arm()
+    start_e_arm          --> start_position_0
+    start_position_0     --> start_position_1 : check_pylon_arm() and check_e_arm() and check_box_arm()
 
 
     pylon_0_position_get   : パイロン0 移動
