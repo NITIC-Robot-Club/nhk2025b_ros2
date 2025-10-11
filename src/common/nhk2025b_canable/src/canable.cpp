@@ -382,22 +382,23 @@ void canable::timer_callback () {
     std::array<uint8_t, max_led> leds{};
     leds.fill (0);
 
-    // --- LED進行計算 ---
-    for (int i = 0; i < led_move_count; ++i) {
-        int offset = (max_led / led_move_count) * i;
-        int pos    = (led_step_ + offset) % max_led;
+    if (robot_status_.signal) {
+        // --- LED進行計算 ---
+        for (int i = 0; i < led_move_count; ++i) {
+            int offset = (max_led / led_move_count) * i;
+            int pos    = (led_step_ + offset) % max_led;
 
-        for (int j = 0; j < led_move_length; ++j) {
-            int idx = pos + j;
-            if (idx < max_led) leds[idx] = 1;
+            for (int j = 0; j < led_move_length; ++j) {
+                int idx = pos + j;
+                if (idx < max_led) leds[idx] = 1;
+            }
+        }
+
+        if (++led_speed_counter >= led_speed_div) {
+            led_speed_counter = 0;
+            led_step_         = (led_step_ + 1) % max_led;
         }
     }
-
-    if (++led_speed_counter >= led_speed_div) {
-        led_speed_counter = 0;
-        led_step_         = (led_step_ + 1) % max_led;
-    }
-
     // --- 0x001: LED0〜63 ---
     struct can_frame led_frame1{};
     led_frame1.can_id  = 0x001;
