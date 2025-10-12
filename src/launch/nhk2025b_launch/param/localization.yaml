@@ -2,7 +2,7 @@ mcl:
   ros__parameters:
     gaussian_stddev_angle: 0.3
     gaussian_stddev_linear: 0.3
-    motion_noise_angle: 0.05
-    motion_noise_linear: 0.04
+    motion_noise_angle: 0.08
+    motion_noise_linear: 0.06
     num_particles: 500
     random_particle_map_num: 0

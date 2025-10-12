@@ -2,18 +2,18 @@ pure_pursuit:
   ros__parameters:
     lookahead_time: 0.4
     min_lookahead_distance: 0.2
-    max_lookahead_distance: 1.6
-    angle_speed_p: 1.0
-    curvature_decceleration_p: 1.0
-    min_curvature_speed_m_s: 0.3
+    max_lookahead_distance: 2.0
+    angle_speed_p: 0.8
+    curvature_decceleration_p: 0.3
+    min_curvature_speed_m_s: 0.0
     angle_decceleration_p: 0.5
-    max_acceleration_xy_m_s2_: 4.0
+    max_acceleration_xy_m_s2_: 1.0
     max_speed_xy_m_s: 4.0
-    min_speed_xy_m_s: 0.1
+    min_speed_xy_m_s: 0.2
     max_speed_z_deg_s: 180.0
-    min_speed_z_deg_s: 50.0
+    min_speed_z_deg_s: 70.0
     max_acceleration_z_deg_s2: 360.0
-    goal_deceleration_m_s2: 2.0
+    goal_deceleration_m_s2: 1.0
     goal_deceleration_distance_p: 1.5
     goal_position_tolerance_m: 0.05
     goal_yaw_tolerance_deg: 5.0
@@ -26,11 +26,11 @@ velocity_smoother:
 
 behavior_manager:
   ros__parameters:
-    default_acceleration_m_s2: 4.0
+    default_acceleration_m_s2: 1.0
     default_speed_m_s: 4.0
     default_yaw_acceleration_deg_s2: 360.0
     default_yaw_speed_deg_s: 180.0
-    slow_acceleration_m_s2: 0.3
+    slow_acceleration_m_s2: 0.5
     slow_speed_m_s: 1.0
     slow_yaw_acceleration_deg_s2: 60.0
     slow_yaw_speed_deg_s: 30.0
