@@ -93,7 +93,7 @@ class nhk2025b_behavior(Node):
         # parameter
         self.declare_parameter('pylon_arm_height_tolerance', 0.01)
         self.declare_parameter('pylon_arm_expand_tolerance', 0.1)
-        self.declare_parameter('box_arm_height_tolerance', 0.01)
+        self.declare_parameter('box_arm_height_tolerance', 0.05)
         self.declare_parameter('box_arm_expand_tolerance', 0.1)
         self.declare_parameter('e_arm_expand_tolerance', 0.1)
         self.declare_parameter('e_arm_get_tolerance', 0.01)
@@ -264,7 +264,6 @@ class nhk2025b_behavior(Node):
         for i in range(2):
             if msg.expand[i] > 0.1:
                 expanded = True
-        
         if self.get_box_mode:
             self.robot_width_pub.publish(Float32(data=self.robot_box_get_width))
         elif expanded:

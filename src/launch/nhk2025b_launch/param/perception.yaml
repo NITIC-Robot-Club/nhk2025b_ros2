@@ -2,71 +2,71 @@ initial_box_publisher:
   ros__parameters:
     a0:
       position:
-        x: 8.56
-        y: 1.75
+        x: 8.5
+        y: 1.95
         z: 0.0
       orientation:
         yaw: 0.0
 
     a1:
       position:
-        x: 8.56
-        y: 1.75
+        x: 8.5
+        y: 1.95
         z: 0.3
       orientation:
         yaw: 0.0
 
     a2:
       position:
-        x: 8.56
-        y: 1.75
+        x: 8.5
+        y: 1.95
         z: 0.6
       orientation:
         yaw: 0.0
 
     a3:
       position:
-        x: 8.56
-        y: 1.75
+        x: 8.5
+        y: 1.95
         z: 0.9
       orientation:
         yaw: 0.0
 
     a4:
       position:
-        x: 8.56
-        y: 0.15
+        x: 8.5
+        y: 0.65
         z: 0.0
       orientation:
         yaw: 0.0
 
     a5:
       position:
-        x: 8.56
-        y: 0.15
+        x: 8.5
+        y: 0.65
         z: 0.3
       orientation:
         yaw: 0.0
 
     a6:
       position:
-        x: 8.56
-        y: 0.15
+        x: 8.5
+        y: 0.65
         z: 0.6
       orientation:
         yaw: 0.0
 
     a7:
       position:
-        x: 8.56
-        y: 0.15
+        x: 8.5
+        y: 0.65
         z: 0.9
       orientation:
         yaw: 0.0
 
     b0:
       position:
-        x: 8.7
+        x: 8.55
         y: 2.3
         z: 0.0
       orientation:
@@ -74,7 +74,7 @@ initial_box_publisher:
 
     b1:
       position:
-        x: 8.7
+        x: 8.6
         y: 2.3
         z: 0.4
       orientation:

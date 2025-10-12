@@ -28,7 +28,7 @@ stateDiagram-v2
     pylon_0_position_out_0 : set_position(6.0, 1.15, 180.0)
     pylon_0_position_out_1 : set_position(5.0, 1.15, 180.0)
     pylon_0_box_arm_expand : set_box_arm_expand(90)
-    pylon_0_box_arm_height : set_box_arm_height(0.0)
+    pylon_0_box_arm_height : set_box_arm_height(0.1)
     pylon_0_box_arm_hand   : set_box_arm_hand(right = 0.0, left = 0.0)
 
 #    start_position_1       --> pylon_0_position_get
@@ -129,11 +129,11 @@ stateDiagram-v2
 
 
     e_12_position_drop     : E12 吐き出し
-    e_12_position_drop     : set_position(3.0, 4.0, 90.0)
+    e_12_position_drop     : set_position(3.0, 2.5, 90.0)
     e_12_pylon_height_drop : set_pylon_arm_height(right = 0.2, left = 0.2)
     e_12_pylon_rpm_drop    : set_pylon_arm_rpm(right = 0, left = 0)
     e_12_conveyor_drop     : set_conveyor_rpm(right = -400, left = -400)
-    e_12_position_drop_out : set_position(3.0, 3.0, 90.0)
+    e_12_position_drop_out : set_position(3.0, 2.0, 90.0)
     
     e_12_position_hold     --> e_12_position_drop
     e_12_position_drop     --> e_12_pylon_height_drop
@@ -143,7 +143,7 @@ stateDiagram-v2
 
 
     pylon_12_position_setup_0 : パイロン12　移動
-    pylon_12_position_setup_0 : set_position(1.5, 2.0, 0.0)
+    pylon_12_position_setup_0 : set_position(1.5, 1.5, 0.0)
     pylon_12_pylon_expand     : set_pylon_arm_expand(right = 90, left = 90)
     pylon_12_conveyor_stop    : set_conveyor_rpm(right = 0, left = 0)
     pylon_12_position_setup_1 : set_position(1.5, 1.2, 0.0)
@@ -155,9 +155,9 @@ stateDiagram-v2
     pylon_12_conveyor_stop    --> pylon_12_position_setup_1
 
 
-    pylon_12_position_get  : set_position(2.6, 1.2, 0.0)
-    pylon_12_position_drop : set_position(6.0, 1.2, 0.0)
-    pylon_12_position_out  : set_position(5.0, 1.2, 0.0)
+    pylon_12_position_get  : set_position(2.6, 1.1, 0.0)
+    pylon_12_position_drop : set_position(5.0, 1.1, 0.0)
+    pylon_12_position_out  : set_position(4.0, 1.1, 0.0)
 
     pylon_12_position_setup_1 --> pylon_12_position_get
     pylon_12_position_get     --> pylon_12_position_drop
@@ -167,37 +167,40 @@ stateDiagram-v2
     ex_0_init      : 専有0
     ex_0_init      : set_position(7.0, 3.4, 90.0)
     ex_0_height    : set_box_arm_height(0.0)
-    ex_0_hand_init : set_box_arm_hand(right = 0.55, left = 0.55)
-    ex_0_setup     : set_position(9.5, 3.4, 90.0)
+    ex_0_hand_init : set_box_arm_hand(right = 0.0, left = 0.0)
+    ex_0_setup     : set_position(9.35, 3.4, 90.0)
     ex_0_mode      : set_get_box_mode(True)
-    ex_0_get       : set_position(9.5, 2.5, 90.0)
-    ex_0_hand_ok   : set_box_arm_hand(right = 0.4, left = 0.4)
-    ex_0_height_ok : set_box_arm_height(0.2)
-    ex_0_get_ok    : set_position(9.5, 3.5, 90.0)
+    ex_0_get       : ex 0 get
+    ex_0_get       : set_position(9.35, 2.3, 90.0)
+    ex_0_hand_ok   : set_box_arm_hand(right = 1000, left = 1000)
+    ex_0_height_ok : ex 0 height
+    ex_0_height_ok : set_box_arm_height(0.1)
+    ex_0_get_ok    : set_position(9.35, 3.5, 90.0)
 
     pylon_12_position_out --> ex_0_init
     ex_0_init             --> ex_0_height
     ex_0_height           --> ex_0_hand_init
     ex_0_hand_init        --> ex_0_setup
     ex_0_setup            --> ex_0_mode
-    ex_0_mode             --> ex_0_get : check_box_arm()
+#    ex_0_mode             --> ex_0_get : check_box_arm()
     ex_0_get              --> ex_0_hand_ok
-    ex_0_hand_ok          --> ex_0_height_ok : check_box_arm()
-    ex_0_height_ok        --> ex_0_get_ok : check_box_arm()
+#    ex_0_hand_ok          --> ex_0_height_ok : check_box_arm()
+    ex_0_height_ok        --> ex_0_get_ok
 
 
     gate_0_init   : ゲート作成0
-    gate_0_init   : set_position(3.5, 2.0, 90.0)
-    gate_0_turn   : set_position(3.5, 2.0, 180.0)
+    gate_0_init   : set_position(3.5, 1.5, 90.0)
+    gate_0_turn   : set_position(3.5, 1.5, 180.0)
     gate_0_height : set_box_arm_height(0.0)
-    gate_0_hand   : set_box_arm_hand(right = 0.5, left = 0.5)
-    gate_0_out    : set_position(2.0, 2.0, 180.0)
+    gate_0_hand   : gate 0 ok
+    gate_0_hand   : set_box_arm_hand(right = 0.0, left = 0.0)
+    gate_0_out    : set_position(2.0, 1.5, 180.0)
 
     ex_0_get_ok   --> gate_0_init
     gate_0_init   --> gate_0_turn
     gate_0_turn   --> gate_0_height
-    gate_0_height --> gate_0_hand : check_box_arm()
-    gate_0_hand   --> gate_0_out : check_box_arm()
+#    gate_0_height --> gate_0_hand : check_box_arm()
+#    gate_0_hand   --> gate_0_out : check_box_arm()
 
     e_init : E回収
     e_init : set_position(2.0, 3.0, 0.0)
@@ -208,46 +211,70 @@ stateDiagram-v2
     ex_1_height_init : set_box_arm_height(0.9)
     ex_1_init        : set_position(8.5, 3.0, 0.0)
     ex_1_setup       : set_position(9.5, 3.0, 0.0)
-    ex_1_hand_init   : set_box_arm_hand(right = 0.55, left = 0.55)
-    ex_1_get         : set_position(9.5, 1.0, 0.0)
-    ex_1_get_ok      : set_position(8.5, 1.0, 0.0)
+    ex_1_hand_init   : set_box_arm_hand(right = 0.0, left = 0.0)
+    ex_1_get         : set_position(9.5, 1.2, 0.0)
+    ex_1_get_ok      : ex 1 get ok
+    ex_1_get_ok      : set_position(8.5, 1.2, 0.0)
     ex_1_height_ok   : set_box_arm_height(0.0)
-    ex_1_hand_ok     : set_box_arm_hand(right = 0.3, left = 0.3)
+    ex_1_hand_ok     : ex 1 hand ok
+    ex_1_hand_ok     : set_box_arm_hand(right = 1000, left = 1000)
 
     e_init           --> ex_1_height_init
     ex_1_height_init --> ex_1_init
     ex_1_init        --> ex_1_setup
     ex_1_setup       --> ex_1_hand_init
     ex_1_hand_init   --> ex_1_get
-    ex_1_get         --> ex_1_get_ok : check_box_arm()
+#    ex_1_get         --> ex_1_get_ok : check_box_arm()
     ex_1_get_ok      --> ex_1_height_ok
-    ex_1_height_ok   --> ex_1_hand_ok : check_box_arm()
+#    ex_1_height_ok   --> ex_1_hand_ok : check_box_arm()
 
     gate_1_init   : ゲート作成1
-    gate_1_init   : set_position(4.0, 2.0, 0.0)
+    gate_1_init   : set_position(4.0, 1.5, 0.0)
     gate_1_height : set_box_arm_height(0.9)
-    gate_1_ok     : set_position(3.5, 2.0, 0.0)
-    gate_1_out    : set_position(4.0, 2.0, 0.0)
+    gate_1_ok     : gate 1 ok
+    gate_1_ok     : set_position(3.5, 1.5, 0.0)
+    gate_1_hand   : set_box_arm_hand(right = 0.0, left = 0.0)
+    gate_1_out    : set_position(4.0, 1.5, 0.0)
 
     ex_1_hand_ok  --> gate_1_init
     gate_1_init   --> gate_1_height
-    gate_1_height --> gate_1_ok : check_box_arm()
-    gate_1_ok     --> gate_1_out
+#    gate_1_height --> gate_1_ok
+    gate_1_ok     --> gate_1_hand
+    gate_1_hand   --> gate_1_out
 
-    people_setup : 台車連結
-    people_setup : set_position(9.5, 1.0, 90.0)
+    people : 台車連結
+    people : set_get_box_mode(False)
+    people_setup : set_position(8.5, 1.0, 90.0)
+    people_ok    : set_position(9.0, 0.6, 90.0)
     people_pylon_height   : set_pylon_arm_height(right = 0.0, left = 0.0)
     people_pylon_expand   : set_pylon_arm_expand(right = 90,  left = 90)
     people_box_arm_height : set_box_arm_height(0.9)
     people_box_arm_expand : set_box_arm_expand(0.0)
     people_e_arm          : set_e_arm(expand = 0, get = 0.00)
-    people_gate           : set_position(2.0, 2.0, 90.0)
+    
+    people_gate_0 : ゲートくぐる
+    people_gate_0 : set_position(6.0, 1.5, 90.0)
+    people_gate_1 : set_position(1.0, 1.5, 90.0)
 
-    gate_1_out            --> people_setup
-    people_setup          --> people_pylon_height
+    gate_1_out            --> people
+    people                --> people_pylon_height
     people_pylon_height   --> people_pylon_expand
     people_pylon_expand   --> people_box_arm_height
     people_box_arm_height --> people_box_arm_expand
     people_box_arm_expand --> people_e_arm
-    people_e_arm          --> people_gate : check_box_arm() and check_e_arm() and check_pylon_arm()
+    people_e_arm          --> people_setup
+    people_setup          --> people_ok
+    
+    people_gate_0 --> people_gate_1
+    
+    people_gate_2 : set_position(2.0, 3.5, 0.0)
+    people_gate_3 : set_position(4.0, 3.5, -60.0)
+    people_gate_4 : set_position(6.0, 1.5, -90.0)
+    people_gate_5 : set_position(1.0, 1.5, -90.0)
+
+    people_gate_1 --> people_gate_2
+    people_gate_2 --> people_gate_3
+    people_gate_3 --> people_gate_4
+    people_gate_4 --> people_gate_5
+#    people_e_arm          --> people_gate : check_box_arm() and check_e_arm() and check_pylon_arm()
 ```
