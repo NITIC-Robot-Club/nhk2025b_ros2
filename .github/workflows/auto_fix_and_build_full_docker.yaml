@@ -1,6 +1,6 @@
 name: auto fix and build full docker
 on:
-  # push:
+  push:
   workflow_dispatch:
 
 
