@@ -37,7 +37,7 @@ void e_box_perception::pose_callback (const geometry_msgs::msg::PoseStamped::Sha
     get_robot_forward_area (e_drop_pose_);
 
     // detection_areas_ をメンバ変数の四隅で作る（順序は CW/CCW を保つ）
-    detection_areas_ = { (fl), (fr), (br), (bl) };
+    detection_areas_ = {(fl), (fr), (br), (bl)};
 
     std::vector<e_box_perception::Point> filtered_points = filtering_points (points, detection_areas_);
 
@@ -360,16 +360,16 @@ void e_box_perception::get_robot_forward_area (const geometry_msgs::msg::PoseSta
     double ly  = cos (yaw);
 
     // NOTE: メンバ変数 fl, fr, bl, br を上書きする（ヘッダにメンバがある前提）
-    fl.first = pose.pose.position.x + fx * front_max + lx * side_half;
+    fl.first  = pose.pose.position.x + fx * front_max + lx * side_half;
     fl.second = pose.pose.position.y + fy * front_max + ly * side_half;
 
-    fr.first = pose.pose.position.x + fx * front_max - lx * side_half;
+    fr.first  = pose.pose.position.x + fx * front_max - lx * side_half;
     fr.second = pose.pose.position.y + fy * front_max - ly * side_half;
 
-    bl.first = pose.pose.position.x + fx * front_min + lx * side_half;
+    bl.first  = pose.pose.position.x + fx * front_min + lx * side_half;
     bl.second = pose.pose.position.y + fy * front_min + ly * side_half;
 
-    br.first = pose.pose.position.x + fx * front_min - lx * side_half;
+    br.first  = pose.pose.position.x + fx * front_min - lx * side_half;
     br.second = pose.pose.position.y + fy * front_min - ly * side_half;
 
     visualization_msgs::msg::Marker detection_area;
@@ -382,10 +382,18 @@ void e_box_perception::get_robot_forward_area (const geometry_msgs::msg::PoseSta
     detection_area.color.a         = 1.0;
 
     geometry_msgs::msg::Point p1, p2, p3, p4;
-    p1.x = fl.first; p1.y = fl.second; p1.z = 0.0;
-    p2.x = fr.first; p2.y = fr.second; p2.z = 0.0;
-    p3.x = br.first; p3.y = br.second; p3.z = 0.0;
-    p4.x = bl.first; p4.y = bl.second; p4.z = 0.0;
+    p1.x = fl.first;
+    p1.y = fl.second;
+    p1.z = 0.0;
+    p2.x = fr.first;
+    p2.y = fr.second;
+    p2.z = 0.0;
+    p3.x = br.first;
+    p3.y = br.second;
+    p3.z = 0.0;
+    p4.x = bl.first;
+    p4.y = bl.second;
+    p4.z = 0.0;
 
     detection_area.points = {p1, p2, p3, p4, p1};
     detection_area_publisher_->publish (detection_area);
@@ -401,7 +409,7 @@ double e_box_perception::lineLength (const Line& line, const std::vector<Point>&
             for (size_t j = i + 1; j < inliers.size (); ++j) {
                 double dx = inliers[i].first - inliers[j].first;
                 double dy = inliers[i].second - inliers[j].second;
-                double d = std::sqrt (dx * dx + dy * dy);
+                double d  = std::sqrt (dx * dx + dy * dy);
                 if (d > maxd) maxd = d;
             }
         }

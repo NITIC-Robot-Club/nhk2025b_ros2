@@ -13,12 +13,12 @@ box_state_simulation::box_state_simulation (const rclcpp::NodeOptions &options) 
 
 void box_state_simulation::point_callback (const geometry_msgs::msg::PointStamped::SharedPtr msg) {
     nhk2025b_msgs::msg::Box box;
-    box.info.type     = nhk2025b_msgs::msg::BoxInfo::E;       // Example type
-    box.info.id       = current_box_array.boxes.size () + 1;  // Incremental ID
-    box.pose.position = msg->point;
-    box.size.x        = box_size_x;
-    box.size.y        = box_size_y;
-    box.size.z        = box_size_z;
+    box.info.type          = nhk2025b_msgs::msg::BoxInfo::E;       // Example type
+    box.info.id            = current_box_array.boxes.size () + 1;  // Incremental ID
+    box.pose.position      = msg->point;
+    box.size.x             = box_size_x;
+    box.size.y             = box_size_y;
+    box.size.z             = box_size_z;
     box.pose.orientation.x = 0.0;
     box.pose.orientation.y = 0.0;
     box.pose.orientation.z = 0.258819045;

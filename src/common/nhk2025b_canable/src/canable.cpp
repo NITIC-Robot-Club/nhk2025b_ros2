@@ -400,7 +400,7 @@ void canable::timer_callback () {
         }
     }
     // --- 0x001: LED0〜63 ---
-    struct can_frame led_frame1{};
+    struct can_frame led_frame1 {};
     led_frame1.can_id  = 0x001;
     led_frame1.can_dlc = 8;
     for (int i = 0; i < 8; ++i) {      // 8バイト
@@ -415,7 +415,7 @@ void canable::timer_callback () {
     std::this_thread::sleep_for (std::chrono::microseconds (500));
 
     // --- 0x002: LED64〜109 ---
-    struct can_frame led_frame2{};
+    struct can_frame led_frame2 {};
     led_frame2.can_id  = 0x002;
     led_frame2.can_dlc = 8;
     for (int i = 0; i < 8; ++i) {      // 8バイト

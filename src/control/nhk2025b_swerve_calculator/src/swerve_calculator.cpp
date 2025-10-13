@@ -34,7 +34,7 @@ void swerve_calculator::timer_callback () {
     nhk2025b_msgs::msg::Swerve swerve_msg;
     geometry_msgs::msg::Twist  twist;
 
-    if(current_command_.allow_automate) {
+    if (current_command_.allow_automate) {
         twist = twist_auto.twist;
     } else {
         twist = twist_controller.twist;

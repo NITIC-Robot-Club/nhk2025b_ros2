@@ -28,15 +28,15 @@ class map_publisher : public rclcpp::Node {
     double resolution_;
 
     double field_data_raw[5][4] = {
-        // {x0,x1,y0,y1}
-        // 青ゾーン前提で設定
+  // {x0,x1,y0,y1}
+  // 青ゾーン前提で設定
         {  0.0, 0.15,   0.0,  5.4}, // 手前
         {  0.0, 10.8,   0.0, 0.15}, // 右
         {10.65, 10.8,   0.0,  5.4}, // 奥
         { 6.95, 10.8, 5.175,  5.4}, //  共有
         {  0.0, 10.8,  5.37,  5.4}, // 左
     };
-    double field_data[5][4]; // x0,x1,y0,y1
+    double field_data[5][4];  // x0,x1,y0,y1
 
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr    publisher_;
     rclcpp::Subscription<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_subscriber_;

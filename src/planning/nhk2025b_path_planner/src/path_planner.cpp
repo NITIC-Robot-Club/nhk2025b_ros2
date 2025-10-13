@@ -77,7 +77,7 @@ void path_planner::create_path () {
     nav_msgs::msg::Path path;
     path.header.frame_id = "map";
 
-    nav_msgs::msg::Path linear_path = linear_astar (use_current, use_goal, use_inflated_map);
+    nav_msgs::msg::Path linear_path   = linear_astar (use_current, use_goal, use_inflated_map);
     nav_msgs::msg::Path smoothed_path = path_smoother (linear_path, use_occ_map);
 
     angular_astar (path, smoothed_path, use_current, use_goal, use_inflated_map);
@@ -383,9 +383,9 @@ void path_planner::angular_astar (
         }
     }
     std::vector<std::pair<int, double>> theta_path;
-    auto                curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
+    auto                                curr = std::make_pair (smoothed_path.poses.size () - 1, goal_theta);
     while (curr.first != 0 || curr.second != start_theta) {
-        theta_path.push_back (std::make_pair(curr.first, curr.second));
+        theta_path.push_back (std::make_pair (curr.first, curr.second));
         int idx = to_index (curr.first, curr.second);
         if (!came_from.count (idx)) {
             path.poses.clear ();
@@ -393,17 +393,17 @@ void path_planner::angular_astar (
         }
         curr = came_from[idx];
     }
-    theta_path.push_back (std::make_pair(0, start_theta));
+    theta_path.push_back (std::make_pair (0, start_theta));
     std::reverse (theta_path.begin (), theta_path.end ());
     theta_path = angular_smoother (theta_path);
     for (int i = 0; i < theta_path.size (); i++) {
         geometry_msgs::msg::PoseStamped pose;
-        int index = theta_path[i].first;
-        pose.pose.position.x    = smoothed_path.poses[index].pose.position.x;
-        pose.pose.position.y    = smoothed_path.poses[index].pose.position.y;
-        double yaw              = theta_path[i].second * theta_resolution * M_PI / 180.0;
-        pose.pose.orientation.z = std::sin (yaw / 2.0);
-        pose.pose.orientation.w = std::cos (yaw / 2.0);
+        int                             index = theta_path[i].first;
+        pose.pose.position.x                  = smoothed_path.poses[index].pose.position.x;
+        pose.pose.position.y                  = smoothed_path.poses[index].pose.position.y;
+        double yaw                            = theta_path[i].second * theta_resolution * M_PI / 180.0;
+        pose.pose.orientation.z               = std::sin (yaw / 2.0);
+        pose.pose.orientation.w               = std::cos (yaw / 2.0);
         path.poses.push_back (pose);
     }
 }

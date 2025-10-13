@@ -10,9 +10,9 @@ arm_simulation::arm_simulation (const rclcpp::NodeOptions &options) : Node ("arm
     box_arm_pub_   = this->create_publisher<nhk2025b_msgs::msg::BoxArm> ("/box_arm/result", rclcpp::QoS (10));
 
     pylon_arm_sub_ = this->create_subscription<nhk2025b_msgs::msg::PylonArm> ("/pylon_arm/cmd", rclcpp::QoS (10), std::bind (&arm_simulation::pylon_arm_callback, this, std::placeholders::_1));
-    e_arm_sub_ = this->create_subscription<nhk2025b_msgs::msg::EArm> ("/e_arm/cmd", rclcpp::QoS (10), std::bind (&arm_simulation::e_arm_callback, this, std::placeholders::_1));
-    box_arm_sub_ = this->create_subscription<nhk2025b_msgs::msg::BoxArm> ("/box_arm/cmd", rclcpp::QoS (10), std::bind (&arm_simulation::box_arm_callback, this, std::placeholders::_1));
-    timer_ = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&arm_simulation::publish_arms, this));
+    e_arm_sub_     = this->create_subscription<nhk2025b_msgs::msg::EArm> ("/e_arm/cmd", rclcpp::QoS (10), std::bind (&arm_simulation::e_arm_callback, this, std::placeholders::_1));
+    box_arm_sub_   = this->create_subscription<nhk2025b_msgs::msg::BoxArm> ("/box_arm/cmd", rclcpp::QoS (10), std::bind (&arm_simulation::box_arm_callback, this, std::placeholders::_1));
+    timer_         = this->create_wall_timer (std::chrono::milliseconds (100), std::bind (&arm_simulation::publish_arms, this));
 }
 
 void arm_simulation::pylon_arm_callback (const nhk2025b_msgs::msg::PylonArm::SharedPtr msg) {

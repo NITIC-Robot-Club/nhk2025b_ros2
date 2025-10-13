@@ -24,7 +24,7 @@ void visualize_path_collision::timer_callback () {
         {-robot_length / 2.0, -robot_width / 2.0},
         {+robot_length / 2.0, -robot_width / 2.0},
         {+robot_length / 2.0, +robot_width / 2.0}
-        // 最後の点は最初の点と同じにする
+  // 最後の点は最初の点と同じにする
     };
 
     visualization_msgs::msg::MarkerArray marker_array;
