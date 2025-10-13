@@ -74,7 +74,7 @@ class path_planner : public rclcpp::Node {
     nav_msgs::msg::Path path_smoother (const nav_msgs::msg::Path& linear_path, const nav_msgs::msg::OccupancyGrid& use_occ_map);
 
     std::vector<std::pair<int, double>> angular_smoother (std::vector<std::pair<int, double>> theta_path);
-    std::pair<int, int> to_grid (double x, double y);
+    std::pair<int, int>                 to_grid (double x, double y);
 
     double get_yaw_2d (const geometry_msgs::msg::Quaternion& orientation) {
         return std::atan2 (2.0 * (orientation.z * orientation.w), 1.0 - 2.0 * (orientation.z * orientation.z));

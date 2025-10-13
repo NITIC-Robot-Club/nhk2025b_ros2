@@ -47,7 +47,7 @@ class mcl : public rclcpp::Node {
     void timer_callback ();
 
     // 内部処理
-    void publish_velocity();
+    void publish_velocity ();
     void initialize_particles_gaussian (const geometry_msgs::msg::Pose &initial_pose);
     void motion_update (const geometry_msgs::msg::Pose &current, const geometry_msgs::msg::Pose &last);
     void sensor_update (const sensor_msgs::msg::PointCloud2 &cloud);

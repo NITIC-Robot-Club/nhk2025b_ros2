@@ -9,7 +9,7 @@ wheel_odometry::wheel_odometry (const rclcpp::NodeOptions &options) : Node ("whe
     robot_width       = this->declare_parameter ("swerve_width", 0.8);
     robot_length      = this->declare_parameter ("swerve_length", 0.6);
 
-    publish_rate_hz       = this->declare_parameter<int> ("publish_rate_hz", 10);
+    publish_rate_hz = this->declare_parameter<int> ("publish_rate_hz", 10);
 
     timer = this->create_wall_timer (std::chrono::milliseconds (1000 / publish_rate_hz), std::bind (&wheel_odometry::timer_callback, this));
 

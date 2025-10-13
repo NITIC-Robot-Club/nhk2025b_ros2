@@ -3,10 +3,10 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <sensor_msgs/msg/joint_state.hpp>
-#include <nhk2025b_msgs/msg/pylon_arm.hpp>
-#include <nhk2025b_msgs/msg/e_arm.hpp>
 #include <nhk2025b_msgs/msg/box_arm.hpp>
+#include <nhk2025b_msgs/msg/e_arm.hpp>
+#include <nhk2025b_msgs/msg/pylon_arm.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
 
 #include <queue>
 
@@ -21,15 +21,15 @@ class joint_state_publisher : public rclcpp::Node {
     void e_arm_callback (const nhk2025b_msgs::msg::EArm::SharedPtr msg);
     void box_arm_callback (const nhk2025b_msgs::msg::BoxArm::SharedPtr msg);
 
-    std::string topicname;
-    nhk2025b_msgs::msg::PylonArm pylon_arm_msg;
-    nhk2025b_msgs::msg::EArm     e_arm_msg;
-    nhk2025b_msgs::msg::BoxArm   box_arm_msg;
-    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr _joint_state_publisher;
+    std::string                                                   topicname;
+    nhk2025b_msgs::msg::PylonArm                                  pylon_arm_msg;
+    nhk2025b_msgs::msg::EArm                                      e_arm_msg;
+    nhk2025b_msgs::msg::BoxArm                                    box_arm_msg;
+    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr    _joint_state_publisher;
     rclcpp::Subscription<nhk2025b_msgs::msg::PylonArm>::SharedPtr pylon_arm_subscriber;
-    rclcpp::Subscription<nhk2025b_msgs::msg::EArm>::SharedPtr e_arm_subscriber;
-    rclcpp::Subscription<nhk2025b_msgs::msg::BoxArm>::SharedPtr box_arm_subscriber;
-    rclcpp::TimerBase::SharedPtr                                      timer_;
+    rclcpp::Subscription<nhk2025b_msgs::msg::EArm>::SharedPtr     e_arm_subscriber;
+    rclcpp::Subscription<nhk2025b_msgs::msg::BoxArm>::SharedPtr   box_arm_subscriber;
+    rclcpp::TimerBase::SharedPtr                                  timer_;
 };
 }  // namespace joint_state_publisher
 

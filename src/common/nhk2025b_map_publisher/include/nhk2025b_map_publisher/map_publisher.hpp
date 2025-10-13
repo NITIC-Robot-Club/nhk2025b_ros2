@@ -36,7 +36,7 @@ class map_publisher : public rclcpp::Node {
         { 6.95, 10.8, 5.175,  5.4}, //  共有
         {  0.0, 10.8,  5.37,  5.4}, // 左
     };
-    double field_data[5][4]; // x0,x1,y0,y1
+    double field_data[5][4];  // x0,x1,y0,y1
 
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr    publisher_;
     rclcpp::Subscription<nhk2025b_msgs::msg::BoxArray>::SharedPtr box_subscriber_;
