@@ -28,8 +28,8 @@ class map_publisher : public rclcpp::Node {
     double resolution_;
 
     double field_data_raw[5][4] = {
-        // {x0,x1,y0,y1}
-        // 青ゾーン前提で設定
+  // {x0,x1,y0,y1}
+  // 青ゾーン前提で設定
         {  0.0, 0.15,   0.0,  5.4}, // 手前
         {  0.0, 10.8,   0.0, 0.15}, // 右
         {10.65, 10.8,   0.0,  5.4}, // 奥

@@ -15,5 +15,5 @@ namespace nhk2025b_utils {
  */
 geometry_msgs::msg::Vector3 get_box_size (const nhk2025b_msgs::msg::BoxInfo& box_info);
 
-};  // namespace nhk2025b_utils
+};      // namespace nhk2025b_utils
 #endif  // __nhk2025b_utils_get_box_size_hpp__
