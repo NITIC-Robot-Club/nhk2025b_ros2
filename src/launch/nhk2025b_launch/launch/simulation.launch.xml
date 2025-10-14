@@ -14,6 +14,7 @@
     <composable_node pkg="nhk2025b_simulation" plugin="box_state_simulation::box_state_simulation" name="box_state_simulation"/>
     <composable_node pkg="nhk2025b_swerve_calculator" plugin="swerve_calculator::swerve_calculator" name="swerve_calculator">
       <param from="$(find-pkg-share nhk2025b_launch)/param/global_settings.yaml"/>
+      <param name="initial_allow_automate" value="true"/>
     </composable_node>
     <composable_node pkg="nhk2025b_simulation" plugin="arm_simulation::arm_simulation" name="arm_simulation"/>
   </node_container>

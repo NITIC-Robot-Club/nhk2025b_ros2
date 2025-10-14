@@ -4,6 +4,30 @@ ros2のwsです
 
 [Document](https://nitic-robot-club.github.io/nhk2025b_ros2)
 
+# install for simulation
+## 1. install dep
+```bash
+sudo apt install ros-humble-xacro
+```
+
+## 2. clone repo
+```bash
+mkdir -p ~/NITIC_NHK2025B
+cd ~/NITIC_NHK2025B
+git clone https://github.com/NITIC-Robot-Club/nhk2025b_ros2
+cd nhk2025b_ros2
+```
+
+## 3. build
+```bash
+./build_all.sh
+```
+
+## 4. run
+```bash
+ros2 launch nhk2025b_launch simulation.launch.xml
+```
+
 # install
 ```bash
 sudo apt install ros-humble-xacro

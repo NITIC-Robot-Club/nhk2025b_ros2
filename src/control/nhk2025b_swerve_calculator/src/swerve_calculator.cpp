@@ -10,6 +10,8 @@ swerve_calculator::swerve_calculator (const rclcpp::NodeOptions& options) : Node
     robot_width           = this->declare_parameter<double> ("swerve_width", 0.8);
     robot_length          = this->declare_parameter<double> ("swerve_length", 0.6);
     wheel_radius          = this->declare_parameter<double> ("wheel_radius", 0.0325);
+    this->declare_parameter("initial_allow_automate", false);
+    current_command_.allow_automate = this->get_parameter("initial_allow_automate").as_bool();
 }
 
 void swerve_calculator::command_callback (const nhk2025b_msgs::msg::Command::SharedPtr msg) {
